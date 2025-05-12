@@ -1,0 +1,202 @@
+"use client"
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { CreditStats } from "@/components/credit-stats"
+import { CreditHistory } from "@/components/credit-history"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useEffect, useState } from "react"
+import { userApi } from "@/lib/api"
+import { useAuth } from "@/context/auth-context"
+import { Button } from "@/components/ui/button"
+import { RefreshCw } from "lucide-react"
+import { AuthError } from "@/components/auth-error"
+import { GiveCreditButton } from "@/components/give-credit-button"
+
+export default function Dashboard() {
+  const { user, loading: authLoading } = useAuth()
+  const [isLoading, setIsLoading] = useState(!user)
+  const [userData, setUserData] = useState(user || null)
+
+  // Check if we're still on the dashboard after a couple of seconds
+  // This helps debug redirect loops
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log("Dashboard mounted - checking auth state")
+
+      // Check if we're on the dashboard page
+      const isDashboard = window.location.pathname.includes('/dashboard')
+      if (isDashboard) {
+        console.log("Dashboard page - Auth state:",
+          user ? "User authenticated" : "No user",
+          "Loading:", authLoading
+        )
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    // Check if we have cookies set by our API route
+    const hasAuthCookie = document.cookie.includes('user_session=');
+    console.log("Dashboard - Auth cookie check:", hasAuthCookie ? "Found" : "Not found");
+
+    // If we already have user data from auth context, use that
+    if (user) {
+      console.log("Dashboard - Using user data from auth context");
+      setUserData(user);
+      setIsLoading(false);
+      return;
+    }
+
+    // Otherwise fetch from API
+    const fetchUserData = async () => {
+      try {
+        console.log("Dashboard - Fetching user data from API");
+        setIsLoading(true);
+        const response = await userApi.getCurrentUser();
+
+        if (response.data?.user) {
+          console.log("Dashboard - User data fetched successfully");
+          const fetchedUser = {
+            name: response.data.user.name,
+            employeeId: response.data.user.employeeId,
+            department: response.data.user.Department?.name,
+            email: response.data.user.email,
+            id: response.data.user.id,
+            role: response.data.user.role,
+          };
+
+          setUserData(fetchedUser);
+
+          // If we got user data from API but not from context,
+          // update the auth context as well (for next time)
+          if (!user) {
+            console.log("Dashboard - Updating auth context with fetched user data");
+
+            // Store the user data in localStorage/sessionStorage through the auth lib
+            const authUser = {
+              id: response.data.user.id,
+              name: response.data.user.name,
+              email: response.data.user.email,
+              picture: response.data.user.profilePicture,
+              role: response.data.user.role,
+              department: response.data.user.Department?.name,
+              employeeId: response.data.user.employeeId,
+            };
+
+            // Import dynamically to avoid circular dependencies
+            const authModule = await import('@/lib/auth');
+            authModule.setCurrentUser(authUser);
+          }
+        } else {
+          console.log("Dashboard - No user data returned from API");
+        }
+      } catch (error) {
+        console.error("Dashboard - Failed to fetch user data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [user])
+
+  // Handle manual refresh if needed
+  const handleManualRefresh = () => {
+    window.location.reload()
+  }
+
+  // Function to check if user should see dashboard
+  const shouldShowDashboard = () => {
+    // If we have valid user data, show dashboard
+    if (userData && !isLoading) {
+      return true
+    }
+
+    // If still loading, show dashboard with loading state
+    if (isLoading && (user || authLoading)) {
+      return true
+    }
+
+    // Otherwise, don't show dashboard
+    return false
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      {shouldShowDashboard() ? (
+        <>
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold">員工儀表板</h1>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+              onClick={handleManualRefresh}
+            >
+              <RefreshCw className="h-4 w-4" />
+              重新載入
+            </Button>
+          </div>
+          <div className="flex flex-col space-y-4 md:flex-row md:space-x-4 md:space-y-0">
+            <Card className="flex-1 border-none shadow-md bg-white">
+              <CardHeader>
+                <CardTitle>個人資料</CardTitle>
+                <CardDescription>您的基本資訊</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <div className="flex justify-between">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <div className="flex justify-between">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </div>
+                ) : userData ? (
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-500">姓名</span>
+                      <span>{userData.name || "于小明"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-500">工號</span>
+                      <span>{userData.employeeId || "EMP001"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-500">部門</span>
+                      <span>{userData.department || "工程部"}</span>
+                    </div>
+                    {(userData.email || true) && (
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium text-gray-500">Email</span>
+                        <span className="truncate max-w-[180px]">{userData.email || "xiaoming.wang@example.com"}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-2 text-gray-500">無法載入數據</div>
+                )}
+              </CardContent>
+            </Card>
+
+            <CreditStats />
+          </div>
+
+          <CreditHistory />
+          <GiveCreditButton />
+        </>
+      ) : (
+        <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+          <AuthError />
+        </div>
+      )}
+    </div>
+  )
+}
