@@ -250,15 +250,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
-    // Clear auth token
-    removeAuthToken()
+    try {
+      // Show loading state
+      setLoading(true)
 
-    // Use the logout function from auth.ts - note it's async now
-    await authLogout()
-    setUser(null)
+      // Create a special logout URL that will bypass the middleware
+      // First, clear the React state
+      setUser(null)
 
-    // Redirect to home page
-    router.push('/')
+      // Show toast notification
+      toast({
+        title: "登出中...",
+        description: "請稍候",
+      })
+
+      // Create a form to post to logout
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = '/api/auth/logout?redirect=true'
+      document.body.appendChild(form)
+
+      // Submit the form - this will call our API and handle the redirect
+      // all in one server-side operation (avoiding the auth error flash)
+      form.submit()
+
+      // This is a fallback in case the form submission fails
+      setTimeout(() => {
+        // Manual cleanup and redirect
+        removeAuthToken()
+        authLogout()
+        window.location.href = '/'
+      }, 2000)
+    } catch (error) {
+      console.error('Logout error:', error)
+
+      // Still try to clean up client state
+      removeAuthToken()
+      setUser(null)
+
+      // Force redirect to login page
+      window.location.href = '/'
+    }
   }
 
   return (

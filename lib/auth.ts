@@ -85,24 +85,36 @@ export async function logout() {
 
     // Logout from LINE if logged in
     if (liff.isLoggedIn()) {
+      console.log('Logging out from LINE...')
       liff.logout()
     }
   } catch (error) {
     console.error('Error during LINE logout:', error)
   }
 
-  // Clear all storage
+  // Clear all browser storage
+  console.log('Clearing all auth data from browser storage')
+
+  // Session storage
   sessionStorage.removeItem('user')
   sessionStorage.removeItem('lineProfile')
   sessionStorage.removeItem('authToken')
+
+  // Local storage
   localStorage.removeItem('user')
   localStorage.removeItem('lineProfile')
   localStorage.removeItem('authToken')
 
+  // Additional items that might exist
+  sessionStorage.removeItem('liff.state')
+  localStorage.removeItem('liff.state')
+  sessionStorage.removeItem('liff.auth.client_id')
+  localStorage.removeItem('liff.auth.client_id')
+
   console.log("All auth data cleared from storage")
 
-  // Redirect to home page
-  window.location.href = '/'
+  // Note: No redirect here - we leave that to the auth-context logout function
+  // to ensure proper coordination with the API call and React state updates
 }
 
 /**

@@ -32,8 +32,11 @@ export function middleware(request: NextRequest) {
   if (!pathname.startsWith('/api')) {
     // If the path is protected and user is not authenticated, redirect to login
     if (isProtectedPath && !isAuthenticated) {
-      console.log('Middleware: Redirecting to login page due to missing authentication');
-      return NextResponse.redirect(new URL('/', request.url))
+      // Don't redirect if we're already at the home/login page to prevent infinite loops
+      if (pathname !== '/') {
+        console.log('Middleware: Redirecting to login page due to missing authentication');
+        return NextResponse.redirect(new URL('/', request.url))
+      }
     }
 
     // If the path is admin-only and user is not an admin, redirect to dashboard

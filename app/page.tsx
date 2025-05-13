@@ -34,13 +34,19 @@ export default function Home() {
     }
   }, [user])
 
-  // If we're in the middle of a LINE redirect, show loading
+  // If we're in the middle of a LINE redirect, show login loading
   if (isRedirect || loading) {
+    // Check if we're coming from logout (using URL parameters)
+    const url = new URL(window.location.href);
+    const isLogout = url.searchParams.has('logout');
+
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-green-50 to-green-100">
         <div className="flex flex-col items-center justify-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin text-green-600" />
-          <p className="text-xl font-medium text-gray-700">登入處理中，請稍候...</p>
+          <p className="text-xl font-medium text-gray-700">
+            {isLogout ? "已登出系統，請重新登入" : "登入處理中，請稍候..."}
+          </p>
         </div>
       </div>
     )

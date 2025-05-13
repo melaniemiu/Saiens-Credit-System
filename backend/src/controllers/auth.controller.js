@@ -247,3 +247,22 @@ exports.verifyToken = (token) => {
     return null;
   }
 };
+
+// Logout controller
+exports.logout = async (req, res) => {
+  try {
+    // Clear authentication cookies on the server-side
+    res.clearCookie('user_session');
+    res.clearCookie('admin_role');
+
+    return res.status(200).json({
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return res.status(500).json({
+      message: 'Server error during logout',
+      error: error.message
+    });
+  }
+};

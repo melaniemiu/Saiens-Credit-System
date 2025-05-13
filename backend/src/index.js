@@ -55,10 +55,10 @@ app.use((err, req, res, next) => {
 // Start server
 const startServer = async () => {
   try {
-    // Sync database (don't force in production)
-    await sequelize.sync({ force: process.env.NODE_ENV !== 'production' });
+    // Sync database (don't drop tables in any environment)
+    await sequelize.sync({ force: false });
     console.log('Database synced successfully');
-    
+
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });

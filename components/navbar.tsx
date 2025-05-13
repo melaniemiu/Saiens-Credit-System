@@ -6,10 +6,12 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { UserCircle, Home, Gift, Clock, LogOut, Menu } from "lucide-react"
+import { useAuth } from "@/context/auth-context"
 
 export function Navbar() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
+  const { logout } = useAuth()
 
   const isActive = (path: string) => {
     return pathname === path
@@ -88,24 +90,27 @@ export function Navbar() {
                     </Link>
                   ))}
                   <div className="my-2 border-t" />
-                  <Link href="/" onClick={() => setIsOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start gap-2">
-                      <LogOut className="h-4 w-4" />
-                      登出
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-2"
+                    onClick={() => {
+                      setIsOpen(false)
+                      logout()
+                    }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    登出
+                  </Button>
                 </div>
               </SheetContent>
             </Sheet>
           </div>
 
           <div className="hidden md:block">
-            <Link href="/">
-              <Button variant="ghost" size="icon">
-                <LogOut className="h-5 w-5" />
-                <span className="sr-only">登出</span>
-              </Button>
-            </Link>
+            <Button variant="ghost" size="icon" onClick={logout}>
+              <LogOut className="h-5 w-5" />
+              <span className="sr-only">登出</span>
+            </Button>
           </div>
         </div>
       </div>

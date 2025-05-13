@@ -1,25 +1,46 @@
 const dotenv = require("dotenv");
-const { sequelize, Department, User } = require("../models");
 dotenv.config();
+const { sequelize, Department, User } = require("../models");
 // Seeds the database with initial data
 async function seed() {
   try {
-    // Sync database (force: true will drop tables and recreate them)
-    // This ensures our schema changes to User take effect
-    await sequelize.sync({ force: true });
-    console.log("Database synced and recreated");
+    // Check if we should force sync (drop all tables)
+    const forceDrop = process.argv.includes("--force");
 
-    // Create departments
-    const departments = await Department.bulkCreate([
-      { name: "工程部", description: "負責公司的技術開發與維護" },
-      { name: "行銷部", description: "負責公司的營銷策略與執行" },
-      { name: "人資部", description: "負責公司的人員管理與招聘" },
-      { name: "財務部", description: "負責公司的財務管理與規劃" },
-      { name: "客服部", description: "負責客戶服務與支援" },
-      { name: "設計部", description: "負責產品與視覺設計" },
-    ]);
+    if (forceDrop) {
+      // Sync database (force: true will drop tables and recreate them)
+      console.log("⚠️ WARNING: Dropping all tables and recreating schema...");
+      await sequelize.sync({ force: true });
+      console.log("Database synced and recreated");
+    } else {
+      console.log("Using existing database schema (no force sync)");
+      await sequelize.sync({ force: false });
+      console.log("Database synced without dropping tables");
+    }
 
-    console.log(`Created ${departments.length} departments`);
+    // Check if departments already exist
+    const existingDeptCount = await Department.count();
+    let departments = [];
+
+    if (existingDeptCount > 0 && !forceDrop) {
+      console.log(
+        `Found ${existingDeptCount} existing departments, skipping department creation`
+      );
+      // Get existing departments
+      departments = await Department.findAll();
+    } else {
+      // Create departments
+      departments = await Department.bulkCreate([
+        { name: "工程部", description: "負責公司的技術開發與維護" },
+        { name: "行銷部", description: "負責公司的營銷策略與執行" },
+        { name: "人資部", description: "負責公司的人員管理與招聘" },
+        { name: "財務部", description: "負責公司的財務管理與規劃" },
+        { name: "客服部", description: "負責客戶服務與支援" },
+        { name: "設計部", description: "負責產品與視覺設計" },
+      ]);
+
+      console.log(`Created ${departments.length} departments`);
+    }
 
     // Map department names to IDs for easier reference
     const deptMap = {};
@@ -33,11 +54,17 @@ async function seed() {
 
     // Let's try a direct approach to department assignment
     // First, find departments by their names
-    const engineeringDept = await Department.findOne({ where: { name: "工程部" } });
-    const marketingDept = await Department.findOne({ where: { name: "行銷部" } });
+    const engineeringDept = await Department.findOne({
+      where: { name: "工程部" },
+    });
+    const marketingDept = await Department.findOne({
+      where: { name: "行銷部" },
+    });
     const hrDept = await Department.findOne({ where: { name: "人資部" } });
     const financeDept = await Department.findOne({ where: { name: "財務部" } });
-    const customerDept = await Department.findOne({ where: { name: "客服部" } });
+    const customerDept = await Department.findOne({
+      where: { name: "客服部" },
+    });
     const designDept = await Department.findOne({ where: { name: "設計部" } });
 
     // Verify departments were found
@@ -55,10 +82,23 @@ async function seed() {
       console.log("Engineering department details:", {
         id: engineeringDept.id,
         name: engineeringDept.name,
-        raw: JSON.stringify(engineeringDept.toJSON())
+        raw: JSON.stringify(engineeringDept.toJSON()),
       });
     } else {
       console.log("WARNING: Engineering department not found!");
+    }
+
+    // Check if users already exist
+    const existingUserCount = await User.count();
+    let users = [];
+
+    if (existingUserCount > 0 && !forceDrop) {
+      console.log(
+        `Found ${existingUserCount} existing users, skipping user creation`
+      );
+      users = await User.findAll();
+      console.log(`Retrieved ${users.length} existing users`);
+      return;
     }
 
     // Create users one by one to ensure proper department assignment
@@ -184,7 +224,18 @@ async function seed() {
     console.log("User 10 created with DepartmentId:", user10.DepartmentId);
 
     // Collect all users
-    const users = [user1, user2, user3, user4, user5, user6, user7, user8, user9, user10];
+    users = [
+      user1,
+      user2,
+      user3,
+      user4,
+      user5,
+      user6,
+      user7,
+      user8,
+      user9,
+      user10,
+    ];
 
     console.log(`Created ${users.length} users`);
 
