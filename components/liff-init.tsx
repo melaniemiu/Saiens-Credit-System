@@ -18,6 +18,18 @@ export function LiffInit() {
   const { toast } = useToast()
 
   useEffect(() => {
+    // Check for binding page flag or path
+    const onBindingPage = (typeof window !== 'undefined' && 
+      (window.location.pathname === '/bind' || 
+       window.location.pathname === '/bind-employee' || 
+       sessionStorage.getItem('on_binding_page') === 'true'));
+    
+    if (onBindingPage) {
+      console.log("On binding page or binding flag set, skipping LIFF initialization");
+      setIsLoading(false);
+      return;
+    }
+    
     // Check if we're on the redirect URL with a code parameter
     const url = new URL(window.location.href)
     const hasAuthCode = url.searchParams.has('code')
@@ -103,12 +115,44 @@ export function LiffInit() {
                     }
                   }
                 } else {
-                  // Handle error from server
-                  const errorData = await response.json();
-                  console.error("❌ Server login failed:", errorData);
+                  console.error("❌ Server login failed with status:", response.status);
+                  
+                  // Handle error from server safely
+                  let errorMessage = "驗證失敗，請重試";
+                  try {
+                    const errorData = await response.json();
+                    console.log("Error data:", errorData);
+                    
+                    // If this is a binding case, redirect to the binding page
+                    if (response.status === 403 && (
+                      errorData.error === "User not registered in the system" ||
+                      (errorData.error && errorData.error.includes("not registered"))
+                    )) {
+                      console.log("Detected user needs to bind employee ID, redirecting to binding page");
+                      
+                      // Extract LINE user data if available
+                      const lineData = errorData.lineData || {};
+                      const lineParams = lineData.userId ? 
+                        `?lineUserId=${encodeURIComponent(lineData.userId)}` +
+                        `&userName=${encodeURIComponent(lineData.name || '')}` +
+                        `&picture=${encodeURIComponent(lineData.picture || '')}`
+                        : '';
+                      
+                      // Navigate to the binding page with LINE parameters
+                      console.log("Redirecting to binding page with params...");
+                      window.location.href = `/bind${lineParams}`;
+                      return;
+                    }
+                    
+                    // Otherwise show error toast
+                    errorMessage = errorData.error || errorMessage;
+                  } catch (parseError) {
+                    console.error("Error parsing error response:", parseError);
+                  }
+                  
                   toast({
                     title: "登入失敗",
-                    description: errorData.error || "驗證失敗，請重試",
+                    description: errorMessage,
                     variant: "destructive",
                   });
                 }

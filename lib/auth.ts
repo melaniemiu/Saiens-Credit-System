@@ -93,12 +93,28 @@ export async function logout() {
   }
 
   // Clear all browser storage
+  clearAuthStorage();
+
+  // Note: No redirect here - we leave that to the auth-context logout function
+  // to ensure proper coordination with the API call and React state updates
+}
+
+/**
+ * Clean all auth-related storage
+ */
+export function clearAuthStorage() {
   console.log('Clearing all auth data from browser storage')
 
   // Session storage
   sessionStorage.removeItem('user')
   sessionStorage.removeItem('lineProfile')
   sessionStorage.removeItem('authToken')
+  sessionStorage.removeItem('auth_redirect')
+  sessionStorage.removeItem('processed_code')
+
+  // Redirection tracking
+  sessionStorage.removeItem('auth_redirect')
+  sessionStorage.removeItem('processed_code')
 
   // Local storage
   localStorage.removeItem('user')
@@ -111,10 +127,70 @@ export async function logout() {
   sessionStorage.removeItem('liff.auth.client_id')
   localStorage.removeItem('liff.auth.client_id')
 
-  console.log("All auth data cleared from storage")
+  // Cache-related items
+  sessionStorage.removeItem('current_user_profile')
+  localStorage.removeItem('current_user_profile')
 
-  // Note: No redirect here - we leave that to the auth-context logout function
-  // to ensure proper coordination with the API call and React state updates
+  // Clear all LIFF-related cookies (if possible)
+  try {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i];
+      const eqPos = cookie.indexOf('=');
+      const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+      
+      // Clear all cookies that might be related to auth
+      if (name.includes('line') || name.includes('liff') || 
+          name.includes('auth') || name.includes('user') || 
+          name.includes('session')) {
+        document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;';
+      }
+    }
+  } catch (e) {
+    console.error('Error clearing cookies:', e);
+  }
+
+  console.log("All auth data cleared from storage")
+}
+
+/**
+ * Debug helper - check all storage and cookies
+ */
+export function debugAuthStorage() {
+  if (typeof window === 'undefined') return {};
+  
+  const output = {
+    session: {},
+    local: {},
+    cookies: document.cookie,
+  };
+  
+  // Session storage
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const key = sessionStorage.key(i);
+    if (key) {
+      try {
+        output.session[key] = sessionStorage.getItem(key);
+      } catch (e) {
+        output.session[key] = `[Error reading: ${e}]`;
+      }
+    }
+  }
+  
+  // Local storage
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key) {
+      try {
+        output.local[key] = localStorage.getItem(key);
+      } catch (e) {
+        output.local[key] = `[Error reading: ${e}]`;
+      }
+    }
+  }
+  
+  console.log('Auth storage debug:', output);
+  return output;
 }
 
 /**

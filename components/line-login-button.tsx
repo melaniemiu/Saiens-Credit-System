@@ -38,6 +38,10 @@ export function LineLoginButton() {
 
   const handleLogin = async () => {
     try {
+      // First clear any existing auth data
+      const { clearAuthStorage } = await import('@/lib/auth');
+      clearAuthStorage();
+      
       // Force logout and re-login to avoid expired token issues
       if (liff.isLoggedIn()) {
         console.log("Logging out to refresh session...")

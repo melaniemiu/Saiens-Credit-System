@@ -25,10 +25,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
   const { toast } = useToast()
 
+  // Helper function to check if on a binding page
+  const isOnBindingPage = () => {
+    if (typeof window === 'undefined') return false;
+    
+    // Check URL path
+    const isBindPath = window.location.pathname === '/bind' || 
+                      window.location.pathname === '/bind-employee';
+                      
+    // Check for binding page flag
+    const hasBindFlag = sessionStorage.getItem('on_binding_page') === 'true';
+    
+    return isBindPath || hasBindFlag;
+  };
+
   // Initialize auth state
   useEffect(() => {
     async function initAuth() {
       try {
+        // Skip auth initialization on binding pages
+        if (isOnBindingPage()) {
+          console.log("On binding page, skipping auth context initialization");
+          setLoading(false);
+          return;
+        }
+        
         setLoading(true)
 
         // Check if user is already authenticated
@@ -116,6 +137,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async () => {
     try {
+      // Skip login on binding pages
+      if (isOnBindingPage()) {
+        console.log("On binding page, skipping login process");
+        return;
+      }
+      
       setLoading(true)
       setError(null)
 
@@ -167,7 +194,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await authApi.lineLogin(idToken)
 
       if (response.error || !response.data) {
-        console.error("Backend auth error:", response.error);
+        // Check if this is a binding case first, before showing any error message
+        const isBindingCase = 
+          response.status === 403 || 
+          (response.error && (
+            response.error === "User not registered in the system" || 
+            response.error.includes("not registered") ||
+            response.error.includes("User not registered")
+          ));
+        
+        // Only log as error if it's not a binding case
+        if (!isBindingCase) {
+          console.error("Backend auth error:", response.error);
+        } else {
+          console.log("Backend response (binding case):", response.error);
+        }
+
+        // Special handling for user not registered in system (needs employee ID binding)
+        console.log("Checking for binding case:", response.error, response.status)
+        
+        if (isBindingCase) {
+          
+          console.log("✅ User needs to bind employee ID - redirecting to binding page")
+          // Only show this toast once the user is on the binding page to avoid confusion
+          // The message will be shown on the binding page itself
+          
+          // Import debug and clear functions
+          const { clearAuthStorage, debugAuthStorage } = await import('@/lib/auth')
+          
+          // Debug current storage state
+          console.log("Before handling binding case:")
+          debugAuthStorage()
+          
+          // Clean all auth storage to ensure a fresh start
+          // This is important to prevent cached users causing issues
+          clearAuthStorage()
+          
+          // Get LINE user data from the response
+          const lineData = response.lineData || {}
+          const lineParams = lineData.userId ? 
+            `?lineUserId=${encodeURIComponent(lineData.userId)}` +
+            `&userName=${encodeURIComponent(lineData.name || '')}` +
+            `&picture=${encodeURIComponent(lineData.picture || '')}`
+            : ''
+          
+          // Force clean any existing LIFF login session first
+          try {
+            liff.logout()
+            console.log("Logged out of LINE before redirecting to binding page")
+          } catch (e) {
+            console.error("Error logging out of LINE:", e)
+          }
+          
+          // Redirect to employee ID binding page with LINE parameters
+          const bindingUrl = `/bind-employee${lineParams}`
+          
+          console.log("Redirecting to binding page with params:", bindingUrl)
+          
+          // Set a flag in sessionStorage to indicate we're redirecting
+          // This helps prevent the home page from staying in a loading state
+          try {
+            sessionStorage.setItem('auth_redirect', 'bind-employee')
+            console.log("Set auth_redirect flag in sessionStorage")
+          } catch (e) {
+            console.error("Failed to set sessionStorage flag:", e)
+          }
+          
+          // Instead of trying to use the complex internal binding flow, direct users to the dedicated binding page
+          console.log("Redirecting to dedicated binding page at /bind")
+          window.location.href = "/bind"
+          
+          setLoading(false)
+          return
+        }
 
         // Special handling for token expiration
         if (response.error === "token_expired" ||
@@ -198,13 +297,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        // Other errors
-        toast({
-          title: "登入失敗",
-          description: response.error || "無法驗證您的身份",
-          variant: "destructive",
-        })
-        throw new Error(response.error || 'Authentication failed')
+        // Check if it's a binding case one more time (the previous check might have been modified)
+        const maybeBindingCase = 
+          response.status === 403 || 
+          (response.error && (
+            response.error === "User not registered in the system" || 
+            response.error.includes("not registered") ||
+            response.error.includes("User not registered")
+          ));
+          
+        if (!maybeBindingCase) {
+          // Only show toast for non-binding errors
+          toast({
+            title: "登入失敗",
+            description: response.error || "無法驗證您的身份",
+            variant: "destructive",
+          })
+          throw new Error(response.error || 'Authentication failed')
+        } else {
+          // For binding case, don't show error toast and don't throw
+          console.log("Skipping error toast for binding case")
+        }
+      }
+
+      // Check if user has an employee ID
+      if (!response.data.user.employeeId) {
+        console.log("User doesn't have employee ID, redirecting to binding page")
+        // Redirect to employee ID binding page
+        router.push('/bind-employee')
+        setLoading(false)
+        return
       }
 
       // Save the JWT token

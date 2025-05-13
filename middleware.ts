@@ -13,11 +13,19 @@ const ADMIN_PATHS = [
   '/admin',
 ]
 
+// Define paths that should be accessible without authentication
+const PUBLIC_PATHS = [
+  '/',
+  '/bind',
+  '/bind-employee',
+]
+
 export function middleware(request: NextRequest) {
   // Get the pathname from the URL
   const { pathname } = request.nextUrl
   const isProtectedPath = PROTECTED_PATHS.some(path => pathname.startsWith(path))
   const isAdminPath = ADMIN_PATHS.some(path => pathname.startsWith(path))
+  const isPublicPath = PUBLIC_PATHS.some(path => pathname === path || pathname.startsWith(path))
 
   // Check for authentication cookie
   const isAuthenticated = request.cookies.has('user_session')
@@ -57,7 +65,8 @@ export const config = {
      * - Static files (/_next/, /images/, etc.)
      * - API routes (/api/)
      * - Root path (/)
+     * - Bind pages (/bind, /bind-employee)
      */
-    '/((?!_next|images|api|$).*)',
+    '/((?!_next|images|api|bind|bind-employee|$).*)',
   ],
 }

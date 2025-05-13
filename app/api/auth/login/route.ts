@@ -29,8 +29,14 @@ export async function POST(request: NextRequest) {
     // If there's an error from the backend
     if (!response.ok) {
       console.error('Backend auth error:', data);
+      // Include more details from the backend response
       return NextResponse.json(
-        { error: data.message || 'Authentication failed' },
+        { 
+          error: data.message || 'Authentication failed',
+          detail: data.detail,
+          status: response.status,
+          lineData: data.lineData
+        },
         { status: response.status }
       );
     }

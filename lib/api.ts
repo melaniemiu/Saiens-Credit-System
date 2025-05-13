@@ -96,6 +96,15 @@ export const authApi = {
       body: JSON.stringify({ idToken }),
     });
   },
+  
+  // Bind employee ID to LINE user
+  bindEmployeeId: async (employeeId: string, lineUserId: string) => {
+    return fetchApi<{ token: string; user: any }>('/auth/bind-employee', {
+      method: 'POST',
+      headers: createHeaders(false),
+      body: JSON.stringify({ employeeId, lineUserId }),
+    });
+  },
 };
 
 // User API

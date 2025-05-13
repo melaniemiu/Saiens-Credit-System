@@ -84,58 +84,17 @@ exports.lineLogin = async (req, res, next) => {
         }`);
         console.log("=======================================================\n\n");
 
-        // Create a simple auto-registration for development
-        // This should be removed in production and replaced with proper user management
-        if (process.env.NODE_ENV === 'development') {
-          console.log("🔄 Development mode: Auto-creating user for LINE ID");
-
-          try {
-            // Try to find first department for new user
-            const department = await Department.findOne();
-            if (!department) {
-              throw new Error("No department found for auto-registration");
-            }
-
-            // Create new user with LINE data
-            user = await User.create({
-              employeeId: `EMP${Date.now().toString().slice(-6)}`,
-              name: lineUserData.name || 'LINE User',
-              email: lineUserData.email,
-              lineUserId: lineUserData.sub,
-              profilePicture: lineUserData.picture,
-              departmentId: department.id,
-              role: 'user',
-              remainingDailyCredits: process.env.DAILY_CREDIT_LIMIT || 5,
-              dailyCreditResetDate: new Date()
-            });
-
-            console.log("✅ Auto-created new user:", user.name);
-          } catch (createError) {
-            console.error("❌ Failed to auto-create user:", createError);
-
-            return res.status(403).json({
-              message: "User not registered in the system",
-              detail: "Auto-registration failed. Please contact administrator.",
-              lineData: {
-                userId: lineUserData.sub,
-                name: lineUserData.name,
-                email: lineUserData.email,
-              },
-            });
-          }
-        } else {
-          // In production, just return error
-          return res.status(403).json({
-            message: "User not registered in the system",
-            detail: "Please contact your administrator to register your LINE account.",
-            lineData: {
-              userId: lineUserData.sub,
-              name: lineUserData.name,
-              email: lineUserData.email,
-              picture: lineUserData.picture,
-            },
-          });
-        }
+        // Always return error for unregistered users - they need to use the binding page
+        return res.status(403).json({
+          message: "User not registered in the system",
+          detail: "Please enter your employee ID to continue.",
+          lineData: {
+            userId: lineUserData.sub,
+            name: lineUserData.name,
+            email: lineUserData.email,
+            picture: lineUserData.picture,
+          },
+        });
       }
 
       // Update the user with LINE user ID
@@ -264,5 +223,83 @@ exports.logout = async (req, res) => {
       message: 'Server error during logout',
       error: error.message
     });
+  }
+};
+
+// Bind employee ID to LINE user ID
+exports.bindEmployeeId = async (req, res, next) => {
+  try {
+    const { employeeId, lineUserId } = req.body;
+
+    if (!employeeId || !lineUserId) {
+      return res.status(400).json({ 
+        message: "Employee ID and LINE user ID are required" 
+      });
+    }
+
+    // Find user by employee ID
+    let user = await User.findOne({ 
+      where: { employeeId },
+      include: [{ model: Department, as: 'Department' }]
+    });
+
+    if (!user) {
+      console.log("❌ No user found with employee ID:", employeeId);
+      return res.status(404).json({ 
+        message: "Employee ID not found in the system", 
+        detail: "請檢查員工編號是否正確" 
+      });
+    }
+
+    // Check if another user already has this LINE user ID
+    const existingUser = await User.findOne({ where: { lineUserId } });
+    if (existingUser && existingUser.id !== user.id) {
+      console.log("❌ LINE user ID already linked to another employee:", existingUser.employeeId);
+      return res.status(409).json({ 
+        message: "LINE account already linked to another employee", 
+        detail: "此LINE帳號已連結至其他員工" 
+      });
+    }
+
+    // Update user with LINE user ID
+    user.lineUserId = lineUserId;
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Check and reset daily credits if needed
+    await user.checkAndResetDailyCredits();
+
+    // Create JWT token
+    const token = jwt.sign(
+      {
+        id: user.id,
+        role: user.role,
+        employeeId: user.employeeId,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRATION || "24h" }
+    );
+
+    // Return user data and token
+    return res.status(200).json({
+      message: "Employee ID binding successful",
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        employeeId: user.employeeId,
+        email: user.email,
+        role: user.role,
+        profilePicture: user.profilePicture,
+        departmentId: user.departmentId,
+        departmentName: user.Department?.name,
+        remainingDailyCredits: user.remainingDailyCredits,
+        creditsReceived: user.creditsReceived,
+        creditsGiven: user.creditsGiven,
+      },
+    });
+  } catch (error) {
+    console.error("Employee ID binding error:", error);
+    next(error);
   }
 };
