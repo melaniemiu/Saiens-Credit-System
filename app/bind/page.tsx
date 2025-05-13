@@ -148,7 +148,22 @@ export default function BindPage() {
         body: JSON.stringify({ employeeId, lineUserId }),
       })
 
-      const data = await response.json()
+      // Safely parse JSON response
+      let data;
+      try {
+        const text = await response.text();
+        // Log the raw response for debugging
+        console.log("Raw API response:", text.substring(0, 200) + (text.length > 200 ? '...' : ''));
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          console.error("JSON parse error:", parseError);
+          throw new Error(`Invalid JSON response: ${text.substring(0, 100)}`);
+        }
+      } catch (error) {
+        console.error("Error reading response:", error);
+        throw error;
+      }
 
       if (!response.ok) {
         console.error("Employee ID binding error:", data)
@@ -162,27 +177,54 @@ export default function BindPage() {
         return
       }
 
-      // Success - save token and user data
+      // Success - save token and user data more comprehensively
       if (data.token) {
+        // Save auth token in both storages
         localStorage.setItem("authToken", data.token)
         sessionStorage.setItem("authToken", data.token)
+        
+        // Set cookie directly (although browser will receive it from response)
+        document.cookie = `user_session=${data.token}; path=/; max-age=${60 * 60 * 24}`;
       }
       
       if (data.user) {
+        // Save user data in both storages
         localStorage.setItem("user", JSON.stringify(data.user))
         sessionStorage.setItem("user", JSON.stringify(data.user))
+        
+        // If admin, set a flag
+        if (data.user.role === 'admin') {
+          sessionStorage.setItem('is_admin', 'true');
+          localStorage.setItem('is_admin', 'true');
+        }
       }
+
+      // Set all authentication flags
+      sessionStorage.setItem('authenticated', 'true');
+      localStorage.setItem('authenticated', 'true');
 
       // Show success toast
       toast({
         title: "綁定成功",
         description: "即將前往儀表板",
       })
+      
+      // Remove the binding page flag to prevent redirection loops
+      try {
+        sessionStorage.removeItem('on_binding_page');
+        console.log("Removed binding page flag before dashboard redirect");
+      } catch (e) {
+        console.error("Error removing binding flag:", e);
+      }
 
-      // Redirect to dashboard
-      setTimeout(() => {
-        window.location.href = '/dashboard'
-      }, 1000)
+      // Redirect to dashboard with direct navigation to bypass any middleware checks
+      // Use a loading state to prevent any flicker
+      setSubmitting(true);
+      setError(null);
+      
+      // Redirect immediately with auth bypass parameter
+      console.log("Direct navigation to dashboard with auth bypass");
+      window.location.href = '/dashboard?auth_bypass=true';
     } catch (err) {
       console.error('Error during employee ID binding:', err)
       setError('系統錯誤，請稍後再試')
@@ -274,57 +316,6 @@ export default function BindPage() {
                   "繼續"
                 )}
               </Button>
-              
-              {process.env.NODE_ENV !== "production" && (
-                <div className="pt-4 border-t mt-4">
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    className="w-full text-xs"
-                    onClick={() => {
-                      console.log({
-                        lineUserId,
-                        employeeId,
-                        userName,
-                        localStorage: Object.keys(localStorage),
-                        sessionStorage: Object.keys(sessionStorage),
-                      })
-                      toast({
-                        title: "Debug info",
-                        description: "Check console for state",
-                      })
-                    }}
-                  >
-                    Debug State
-                  </Button>
-                  
-                  <Button 
-                    type="button"
-                    variant="destructive"
-                    className="w-full text-xs mt-2"
-                    onClick={() => {
-                      clearAuthStorage()
-                      toast({
-                        title: "Auth storage cleared",
-                        description: "All auth data has been reset",
-                      })
-                    }}
-                  >
-                    Clear Auth Storage
-                  </Button>
-                  
-                  <Button 
-                    type="button"
-                    variant="secondary"
-                    className="w-full text-xs mt-2"
-                    onClick={() => {
-                      window.location.href = '/'
-                    }}
-                  >
-                    Return to Login
-                  </Button>
-                </div>
-              )}
             </div>
           </form>
         </CardContent>

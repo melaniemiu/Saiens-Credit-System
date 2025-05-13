@@ -1,5 +1,6 @@
 // API service for communicating with the backend
 import { API_URL } from '@/lib/env';
+import { apiCache } from '@/lib/cache';
 
 // API base URL - use the hardcoded URL as the API_URL from env might not be loaded
 const API_BASE_URL = 'https://5.unayung.cc/api';
@@ -116,8 +117,6 @@ export const userApi = {
     try {
       // If bypassCache is true, skip cache lookup
       if (!bypassCache) {
-        const { apiCache } = await import('@/lib/cache');
-        
         // Check if we have a cached response and it's fresh
         const cachedData = apiCache.get<ApiResponse<{ user: any }>>(cacheKey);
         if (cachedData) {
@@ -136,7 +135,6 @@ export const userApi = {
       
       // Cache the response for 30 seconds if it's successful and not bypassing cache
       if (response.data && !response.error && !bypassCache) {
-        const { apiCache } = await import('@/lib/cache');
         apiCache.set(cacheKey, response, 30000);
       }
       
@@ -160,11 +158,7 @@ export const userApi = {
     // Create a cache key based on the query parameters
     const cacheKey = `users_list_${departmentId || ''}_${searchTerm || ''}`;
     
-    // Try to import cache dynamically to avoid circular dependencies
-    // but fall back to normal API call if import fails
     try {
-      const { apiCache } = await import('@/lib/cache');
-      
       // Check if we have a cached response
       const cachedData = apiCache.get<ApiResponse<{ users: any[] }>>(cacheKey);
       if (cachedData) {
@@ -185,6 +179,7 @@ export const userApi = {
       
       return response;
     } catch (error) {
+      console.error("Error with users cache, falling back to direct API call:", error);
       // If there's any error with the cache, just do a normal fetch
       return fetchApi<{ users: any[] }>(`/users/list?${query}`, {
         method: 'GET',
@@ -245,13 +240,8 @@ export const creditApi = {
 
     // If the credit was given successfully, invalidate user cache to refresh the data
     if (response.data && !response.error) {
-      try {
-        const { apiCache } = await import('@/lib/cache');
-        // Invalidate current user cache to refresh remaining credits
-        apiCache.delete('current_user_profile');
-      } catch (error) {
-        console.error("Error invalidating cache:", error);
-      }
+      // Invalidate current user cache to refresh remaining credits
+      apiCache.delete('current_user_profile');
     }
 
     return response;

@@ -128,47 +128,89 @@ export default function BindEmployeePage() {
     setError(null)
 
     try {
-      const response = await authApi.bindEmployeeId(employeeId, lineUserId)
+      let responseData;
+      
+      try {
+        const response = await authApi.bindEmployeeId(employeeId, lineUserId)
 
-      if (response.error || !response.data) {
-        console.error("Employee ID binding error:", response.error)
-        setError(response.error || "綁定失敗，請檢查員工編號是否正確")
+        if (response.error || !response.data) {
+          console.error("Employee ID binding error:", response.error)
+          setError(response.error || "綁定失敗，請檢查員工編號是否正確")
+          toast({
+            title: "綁定失敗",
+            description: response.error || "請檢查員工編號是否正確",
+            variant: "destructive",
+          })
+          setSubmitting(false)
+          return
+        }
+        
+        // Store response data
+        responseData = response.data;
+      } catch (apiError) {
+        console.error("API call failed:", apiError)
+        setError("API 呼叫失敗，請聯繫管理員")
         toast({
-          title: "綁定失敗",
-          description: response.error || "請檢查員工編號是否正確",
+          title: "系統錯誤",
+          description: "API 呼叫失敗",
           variant: "destructive",
         })
         setSubmitting(false)
         return
       }
 
-      // Success - save token and user data
-      setAuthToken(response.data.token)
+      // Success - save token and user data comprehensively
+      if (responseData && responseData.token) {
+        setAuthToken(responseData.token)
       
-      // Create user object
-      const backendUser = {
-        id: response.data.user.id,
-        name: response.data.user.name,
-        email: response.data.user.email,
-        picture: response.data.user.profilePicture,
-        role: response.data.user.role,
-        department: response.data.user.departmentName,
-        employeeId: response.data.user.employeeId,
+        // Set cookie directly as well (though response already includes it)
+        if (typeof document !== 'undefined') {
+          document.cookie = `user_session=${responseData.token}; path=/; max-age=${60 * 60 * 24}`;
+        }
+        
+        // Create user object if user data is available
+        if (responseData.user) {
+          const backendUser = {
+            id: responseData.user.id,
+            name: responseData.user.name,
+            email: responseData.user.email,
+            picture: responseData.user.profilePicture,
+            role: responseData.user.role,
+            department: responseData.user.departmentName,
+            employeeId: responseData.user.employeeId,
+          };
+
+          // Save user data
+          setCurrentUser(backendUser);
+          
+          // Set additional auth flags for direct navigation
+          sessionStorage.setItem('authenticated', 'true');
+          localStorage.setItem('authenticated', 'true');
+          
+          // If admin, set admin flags
+          if (backendUser.role === 'admin') {
+            sessionStorage.setItem('is_admin', 'true');
+            localStorage.setItem('is_admin', 'true');
+          }
+        
+          // Remove any binding page flags
+          try {
+            sessionStorage.removeItem('on_binding_page');
+          } catch (e) {
+            console.error("Error removing binding flag:", e);
+          }
+
+          // Show success toast
+          toast({
+            title: "綁定成功",
+            description: "即將前往儀表板",
+          });
+
+          // Use direct navigation with auth bypass for immediate access
+          console.log("Direct navigation to dashboard with auth bypass");
+          window.location.href = '/dashboard?auth_bypass=true';
+        }
       }
-
-      // Save user data
-      setCurrentUser(backendUser)
-
-      // Show success toast
-      toast({
-        title: "綁定成功",
-        description: "即將前往儀表板",
-      })
-
-      // Redirect to dashboard
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1000)
     } catch (err) {
       console.error('Error during employee ID binding:', err)
       setError('系統錯誤，請稍後再試')
@@ -245,7 +287,7 @@ export default function BindEmployeePage() {
               )}
             </div>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-6">
               <Button 
                 type="submit" 
                 className="w-full" 
@@ -260,53 +302,6 @@ export default function BindEmployeePage() {
                   "繼續"
                 )}
               </Button>
-              
-              {process.env.NODE_ENV === 'development' && (
-                <div className="pt-4 border-t mt-4">
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    className="w-full text-xs"
-                    onClick={async () => {
-                      const { clearAuthStorage, debugAuthStorage } = await import('@/lib/auth')
-                      debugAuthStorage()
-                      toast({
-                        title: "Debug info",
-                        description: "Check console for auth state",
-                      })
-                    }}
-                  >
-                    Debug Auth State
-                  </Button>
-                  
-                  <Button 
-                    type="button"
-                    variant="destructive"
-                    className="w-full text-xs mt-2"
-                    onClick={async () => {
-                      const { clearAuthStorage } = await import('@/lib/auth')
-                      clearAuthStorage()
-                      toast({
-                        title: "Auth storage cleared",
-                        description: "All auth data has been reset",
-                      })
-                    }}
-                  >
-                    Clear Auth Storage
-                  </Button>
-                  
-                  <Button 
-                    type="button"
-                    variant="secondary"
-                    className="w-full text-xs mt-2"
-                    onClick={() => {
-                      window.location.href = '/'
-                    }}
-                  >
-                    Return to Login
-                  </Button>
-                </div>
-              )}
             </div>
           </form>
         </CardContent>

@@ -120,34 +120,44 @@ export function LiffInit() {
                   // Handle error from server safely
                   let errorMessage = "驗證失敗，請重試";
                   try {
-                    const errorData = await response.json();
-                    console.log("Error data:", errorData);
+                    // Get text response first
+                    const text = await response.text();
+                    // Log the raw response for debugging
+                    console.log("Raw API error response:", text.substring(0, 200) + (text.length > 200 ? '...' : ''));
                     
-                    // If this is a binding case, redirect to the binding page
-                    if (response.status === 403 && (
-                      errorData.error === "User not registered in the system" ||
-                      (errorData.error && errorData.error.includes("not registered"))
-                    )) {
-                      console.log("Detected user needs to bind employee ID, redirecting to binding page");
+                    let errorData;
+                    try {
+                      errorData = JSON.parse(text);
+                      console.log("Error data:", errorData);
+                    
+                      // If this is a binding case, redirect to the binding page
+                      if (response.status === 403 && (
+                        errorData.error === "User not registered in the system" ||
+                        (errorData.error && errorData.error.includes("not registered"))
+                      )) {
+                        console.log("Detected user needs to bind employee ID, redirecting to binding page");
+                        
+                        // Extract LINE user data if available
+                        const lineData = errorData.lineData || {};
+                        const lineParams = lineData.userId ? 
+                          `?lineUserId=${encodeURIComponent(lineData.userId)}` +
+                          `&userName=${encodeURIComponent(lineData.name || '')}` +
+                          `&picture=${encodeURIComponent(lineData.picture || '')}`
+                          : '';
+                        
+                        // Navigate to the binding page with LINE parameters
+                        console.log("Redirecting to binding page with params...");
+                        window.location.href = `/bind${lineParams}`;
+                        return;
+                      }
                       
-                      // Extract LINE user data if available
-                      const lineData = errorData.lineData || {};
-                      const lineParams = lineData.userId ? 
-                        `?lineUserId=${encodeURIComponent(lineData.userId)}` +
-                        `&userName=${encodeURIComponent(lineData.name || '')}` +
-                        `&picture=${encodeURIComponent(lineData.picture || '')}`
-                        : '';
-                      
-                      // Navigate to the binding page with LINE parameters
-                      console.log("Redirecting to binding page with params...");
-                      window.location.href = `/bind${lineParams}`;
-                      return;
+                      // Otherwise show error toast
+                      errorMessage = errorData.error || errorMessage;
+                    } catch (parseError) {
+                      console.error("JSON parse error:", parseError);
                     }
-                    
-                    // Otherwise show error toast
-                    errorMessage = errorData.error || errorMessage;
-                  } catch (parseError) {
-                    console.error("Error parsing error response:", parseError);
+                  } catch (textError) {
+                    console.error("Error reading response text:", textError);
                   }
                   
                   toast({

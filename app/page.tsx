@@ -3,13 +3,14 @@
 import React, { useEffect, useState, useRef } from "react"
 import { LineLoginButton } from "@/components/line-login-button"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Loader2 } from "lucide-react"
 
 export default function Home() {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isRedirect, setIsRedirect] = useState(false)
   const [showTimeoutMessage, setShowTimeoutMessage] = useState(false)
 
@@ -60,51 +61,43 @@ export default function Home() {
     
     // Check if this is a LINE redirect by looking for code parameter
     try {
-      // Check if we've already processed this code
-      const processedCode = sessionStorage.getItem('processed_code');
-      const url = new URL(window.location.href);
-      const currentCode = url.searchParams.get('code');
-      
-      // Only handle code param if it exists and we haven't processed it yet
-      if (currentCode && (!processedCode || processedCode !== currentCode)) {
-        console.log("Home page - New LINE redirect code detected");
+      if (typeof window !== 'undefined') {
+        // Check if we've already processed this code
+        const processedCode = sessionStorage.getItem('processed_code');
         
-        // Mark this code as processed
-        sessionStorage.setItem('processed_code', currentCode);
+        // Use the Next.js searchParams hook instead of window.location
+        const currentCode = searchParams?.get('code');
         
-        // Show redirect loading state
-        setIsRedirect(true);
-        
-        // Set timeout to show error message if redirect takes too long
-        setTimeout(() => {
-          // Check for redirect flag again before showing error
-          if (!checkRedirectFlag()) {
-            console.log("Home page - Loading timeout reached");
-            setIsRedirect(false);
-            setShowTimeoutMessage(true);
-          }
-        }, 10000);
+        // Only handle code param if it exists and we haven't processed it yet
+        if (currentCode && (!processedCode || processedCode !== currentCode)) {
+          console.log("Home page - New LINE redirect code detected");
+          
+          // Mark this code as processed
+          sessionStorage.setItem('processed_code', currentCode);
+          
+          // Show redirect loading state
+          setIsRedirect(true);
+          
+          // Set timeout to show error message if redirect takes too long
+          setTimeout(() => {
+            // Check for redirect flag again before showing error
+            if (!checkRedirectFlag()) {
+              console.log("Home page - Loading timeout reached");
+              setIsRedirect(false);
+              setShowTimeoutMessage(true);
+            }
+          }, 10000);
+        }
       }
     } catch (error) {
       console.error("Error checking URL params:", error);
     }
-  }, [user, isRedirect]);
+  }, [user, isRedirect, searchParams]);
   
   // If we're in the middle of a LINE redirect, show loading state
   if (isRedirect || loading) {
-    // Check if we're coming from logout (using URL parameters safely)
-    const isLogout = (() => {
-      try {
-        // Only run this on client-side
-        if (typeof window !== 'undefined') {
-          const url = new URL(window.location.href);
-          return url.searchParams.has('logout');
-        }
-        return false;
-      } catch (e) {
-        return false;
-      }
-    })();
+    // Use Next.js searchParams hook which works safely in both server and client environments
+    const isLogout = searchParams?.has('logout');
 
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-green-50 to-green-100">
