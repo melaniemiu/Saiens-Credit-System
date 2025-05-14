@@ -82,9 +82,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             if (lineProfile) {
               // We got LINE profile, but no backend validation yet
-              // We'll let the login button handle the full login flow
-              setUser(null)
+              // Check if auto-login has been processed before trying to login
+              const autoLoginProcessed = sessionStorage.getItem('auto_login_processed') === 'true';
+              
+              if (!autoLoginProcessed) {
+                console.log("LINE profile available but no user data. LiffInit should handle auto-login.");
+                // Let LiffInit handle the auto-login flow
+                setUser(null)
+              } else {
+                console.log("LINE profile available but auto-login already processed. Not triggering login again.");
+              }
             }
+          }
+        } else {
+          // Not authenticated - check if we're in the LIFF browser
+          try {
+            // Check for LIFF browser and auto-login flag
+            const liffModule = await import('@line/liff');
+            const liff = liffModule.default;
+            
+            // Only proceed if LIFF is available and we're not on the binding page
+            if (typeof liff !== 'undefined' && liff.isInClient() && !isOnBindingPage()) {
+              const autoLoginProcessed = sessionStorage.getItem('auto_login_processed') === 'true';
+              
+              if (!autoLoginProcessed) {
+                console.log("🔄 In LIFF browser but not authenticated. LiffInit should handle auto-login.");
+                // Let LiffInit handle the auto-login
+              }
+            }
+          } catch (e) {
+            console.error("Error checking LIFF environment:", e);
           }
         }
       } catch (err) {
@@ -140,6 +167,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Skip login on binding pages
       if (isOnBindingPage()) {
         console.log("On binding page, skipping login process");
+        return;
+      }
+      
+      // Check if auto-login was already processed
+      const autoLoginProcessed = sessionStorage.getItem('auto_login_processed') === 'true';
+      const isAlreadyAuthenticated = isAuthenticated();
+      
+      // If already authenticated via auto-login, just redirect to dashboard
+      if (autoLoginProcessed && isAlreadyAuthenticated) {
+        console.log("User already authenticated via auto-login, redirecting to dashboard");
+        window.location.href = '/dashboard';
         return;
       }
       
@@ -246,26 +284,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error("Error logging out of LINE:", e)
           }
           
-          // Redirect to employee ID binding page with LINE parameters
-          const bindingUrl = `/bind-employee${lineParams}`
-          
-          console.log("Redirecting to binding page with params:", bindingUrl)
-          
-          // Set a flag in sessionStorage to indicate we're redirecting
-          // This helps prevent the home page from staying in a loading state
+          // Set a flag to prevent auto-login on binding page
           try {
-            sessionStorage.setItem('auth_redirect', 'bind-employee')
-            console.log("Set auth_redirect flag in sessionStorage")
+            sessionStorage.setItem('on_binding_page', 'true');
+            sessionStorage.setItem('auth_redirect', 'bind-employee');
+            console.log("Set binding page flags in sessionStorage");
           } catch (e) {
-            console.error("Failed to set sessionStorage flag:", e)
+            console.error("Failed to set sessionStorage flags:", e);
           }
           
-          // Instead of trying to use the complex internal binding flow, direct users to the dedicated binding page
-          console.log("Redirecting to dedicated binding page at /bind")
-          window.location.href = "/bind"
+          // Redirect to dedicated binding page
+          console.log("Redirecting to dedicated binding page at /bind");
+          window.location.href = `/bind${lineParams}`;
           
-          setLoading(false)
-          return
+          setLoading(false);
+          return;
         }
 
         // Special handling for token expiration
@@ -346,6 +379,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Update user state
       setCurrentUser(backendUser)
       setUser(backendUser)
+      
+      // Mark that we've processed login
+      sessionStorage.setItem('auto_login_processed', 'true');
+
+      // Show success toast
+      toast({
+        title: "登入成功",
+        description: `歡迎回來，${response.data.user.name}`,
+      })
 
       // Redirect to dashboard with multiple methods to ensure it works
       console.log("🔄 Auth context redirecting to dashboard...")
@@ -376,33 +418,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Show loading state
       setLoading(true)
 
-      // Create a special logout URL that will bypass the middleware
+      // Check if we're in LIFF browser environment
+      const liffModule = await import('@line/liff')
+      const liff = liffModule.default
+      const isInLiffBrowser = liff.isInClient && liff.isInClient()
+
       // First, clear the React state
       setUser(null)
 
-      // Show toast notification
-      toast({
-        title: "登出中...",
-        description: "請稍候",
-      })
+      if (isInLiffBrowser) {
+        // In LIFF browser, we can't actually log out of LINE
+        // We just clear the app state and reload
+        toast({
+          title: "清除資料中...",
+          description: "將重新載入應用程式",
+        })
 
-      // Create a form to post to logout
-      const form = document.createElement('form')
-      form.method = 'POST'
-      form.action = '/api/auth/logout?redirect=true'
-      document.body.appendChild(form)
+        // Call our API directly to clear cookies
+        try {
+          await fetch('/api/auth/logout', {
+            method: 'POST',
+          })
+        } catch (e) {
+          console.error("Error calling logout API:", e)
+        }
 
-      // Submit the form - this will call our API and handle the redirect
-      // all in one server-side operation (avoiding the auth error flash)
-      form.submit()
-
-      // This is a fallback in case the form submission fails
-      setTimeout(() => {
-        // Manual cleanup and redirect
+        // Clear all local storage and tokens
         removeAuthToken()
         authLogout()
-        window.location.href = '/'
-      }, 2000)
+        
+        // Clear auto-login flag to force a fresh start
+        try {
+          sessionStorage.removeItem('auto_login_processed')
+          localStorage.removeItem('auto_login_processed')
+        } catch (e) {
+          console.error("Error clearing storage flags:", e)
+        }
+        
+        // For LIFF browser, reload the app instead of redirecting to login
+        toast({
+          title: "已清除資料",
+          description: "重新整理應用程式",
+        })
+
+        // Reload with a timestamp to prevent caching
+        setTimeout(() => {
+          window.location.replace(`/?reload=${Date.now()}`)
+        }, 1000)
+      } else {
+        // For regular browsers, proceed with normal logout
+        // Show toast notification
+        toast({
+          title: "登出中...",
+          description: "請稍候",
+        })
+
+        // Create a form to post to logout
+        const form = document.createElement('form')
+        form.method = 'POST'
+        form.action = '/api/auth/logout?redirect=true'
+        document.body.appendChild(form)
+
+        // Submit the form - this will call our API and handle the redirect
+        // all in one server-side operation (avoiding the auth error flash)
+        form.submit()
+
+        // This is a fallback in case the form submission fails
+        setTimeout(() => {
+          // Manual cleanup and redirect
+          removeAuthToken()
+          authLogout()
+          window.location.href = '/'
+        }, 2000)
+      }
     } catch (error) {
       console.error('Logout error:', error)
 
@@ -412,6 +500,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Force redirect to login page
       window.location.href = '/'
+    } finally {
+      setLoading(false)
     }
   }
 

@@ -43,11 +43,37 @@ export async function POST(request: NextRequest) {
             <meta http-equiv="refresh" content="0;url=/?logout=true" />
             <script>
               // Clear all storage
-              sessionStorage.clear();
-              localStorage.clear();
-
-              // Redirect to homepage with logout parameter
-              window.location.href = '/?logout=true';
+              try {
+                sessionStorage.clear();
+                localStorage.clear();
+                
+                // Also try to log out from LINE LIFF if available
+                const isInLiffBrowser = window.liff && typeof window.liff.isInClient === 'function' && window.liff.isInClient();
+                
+                if (isInLiffBrowser) {
+                  console.log("Detected LIFF browser, using special logout procedure");
+                  
+                  // In LIFF browser, we need to first load LIFF, then try to log out
+                  if (typeof window.liff.logout === 'function') {
+                    try {
+                      window.liff.logout();
+                      console.log("LINE LIFF logout successful");
+                    } catch (e) {
+                      console.error("LINE LIFF logout error:", e);
+                    }
+                  }
+                  
+                  // For LIFF browser, we need to reload the page to ensure a clean state
+                  window.location.replace('/?logout=true&ts=' + new Date().getTime());
+                } else {
+                  // Standard browser - redirect to homepage with logout parameter
+                  window.location.href = '/?logout=true';
+                }
+              } catch (e) {
+                console.error("Error during logout cleanup:", e);
+                // Fallback redirect
+                window.location.href = '/?logout=true';
+              }
             </script>
           </head>
           <body style="font-family: system-ui, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f3f4f6;">

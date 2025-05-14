@@ -29,6 +29,8 @@ export default function BindPage() {
     // Store a flag in sessionStorage to prevent automatic login redirects
     try {
       sessionStorage.setItem('on_binding_page', 'true');
+      // Clear any auto-login processed flag to ensure we can complete the binding process
+      sessionStorage.removeItem('auto_login_processed');
     } catch (e) {
       console.error("Failed to set sessionStorage flag:", e);
     }
@@ -52,6 +54,13 @@ export default function BindPage() {
           setUserName(urlUserName || "LINE User");
           setPicture(urlPicture || null);
           setLoading(false);
+          
+          // Show welcome toast with URL parameters
+          toast({
+            title: "連結帳號",
+            description: "請輸入您的員工編號以連結帳號",
+          });
+          
           return;
         }
         
@@ -60,8 +69,11 @@ export default function BindPage() {
         await liff.init({ liffId: LIFF_ID })
         console.log("LIFF initialized successfully")
         
+        // Check if we're in LIFF browser - it's always logged in in this case
+        const isInLiffBrowser = liff.isInClient();
+        
         // Check if user is logged in with LIFF
-        if (!liff.isLoggedIn()) {
+        if (!liff.isLoggedIn() && !isInLiffBrowser) {
           console.log("User not logged in with LINE, initiating login...")
           toast({
             title: "請登入LINE",
@@ -202,6 +214,9 @@ export default function BindPage() {
       // Set all authentication flags
       sessionStorage.setItem('authenticated', 'true');
       localStorage.setItem('authenticated', 'true');
+      
+      // Mark that auto-login is now processed to prevent repeat logins
+      sessionStorage.setItem('auto_login_processed', 'true');
 
       // Show success toast
       toast({
@@ -209,12 +224,21 @@ export default function BindPage() {
         description: "即將前往儀表板",
       })
       
-      // Remove the binding page flag to prevent redirection loops
+      // Set all flags needed for smooth transition to dashboard
       try {
+        // Remove binding page flag
         sessionStorage.removeItem('on_binding_page');
-        console.log("Removed binding page flag before dashboard redirect");
+        
+        // Set flag to skip auto-login redirects
+        if (liff.isInClient()) {
+          // In LIFF browser, we need these extra flags to ensure smooth transition
+          sessionStorage.setItem('dashboard_direct', 'true');
+          localStorage.setItem('dashboard_direct', 'true');
+        }
+        
+        console.log("Updated session flags before dashboard redirect");
       } catch (e) {
-        console.error("Error removing binding flag:", e);
+        console.error("Error updating session flags:", e);
       }
 
       // Redirect to dashboard with direct navigation to bypass any middleware checks
@@ -224,7 +248,15 @@ export default function BindPage() {
       
       // Redirect immediately with auth bypass parameter
       console.log("Direct navigation to dashboard with auth bypass");
-      window.location.href = '/dashboard?auth_bypass=true';
+      
+      // For LIFF browser, need different approach to avoid redirect loop
+      if (liff.isInClient()) {
+        // Use more direct approach in LIFF browser
+        window.location.replace('/dashboard?auth_bypass=true');
+      } else {
+        // Standard navigation for non-LIFF browser
+        window.location.href = '/dashboard?auth_bypass=true';
+      }
     } catch (err) {
       console.error('Error during employee ID binding:', err)
       setError('系統錯誤，請稍後再試')

@@ -30,6 +30,32 @@ export default function Dashboard() {
           user ? "User authenticated" : "No user",
           "Loading:", authLoading
         )
+        
+        // Check for direct dashboard access flag from binding
+        const hasDashboardDirectFlag = 
+          sessionStorage.getItem('dashboard_direct') === 'true' || 
+          localStorage.getItem('dashboard_direct') === 'true';
+        
+        if (hasDashboardDirectFlag) {
+          console.log("Dashboard direct access flag detected - cleaning up");
+          
+          // Clear the flag to prevent issues with future visits
+          try {
+            sessionStorage.removeItem('dashboard_direct');
+            localStorage.removeItem('dashboard_direct');
+            
+            // Also ensure auto-login processed flag is set
+            sessionStorage.setItem('auto_login_processed', 'true');
+            
+            // Remove URL parameters to clean up the URL
+            if (window.location.search) {
+              const cleanUrl = window.location.pathname;
+              window.history.replaceState({}, document.title, cleanUrl);
+            }
+          } catch (e) {
+            console.error("Error cleaning up dashboard direct flags:", e);
+          }
+        }
       }
     }
   }, [])
