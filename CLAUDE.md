@@ -19,11 +19,16 @@ Saiens Credit System is an employee recognition system with LINE login integrati
    - LIFF (LINE Front-end Framework) integration
    - Secure token-based authentication
    - User profile retrieval from LINE
+   - Auto-login for users in LINE LIFF browser
+   - Hardcoded LIFF_ID for mobile reliability
+   - Fallback mechanisms for initialization failures
 
 2. **Session Management**
    - Cookie-based authentication sessions
-   - JWT token storage
+   - JWT token storage in both localStorage and sessionStorage
    - Auto-redirection based on authentication state
+   - Optimized mobile authentication flow
+   - Browser detection for LINE LIFF environment
    - Secure logout process
 
 3. **Role-based Access Control**
@@ -127,12 +132,22 @@ Important models:
 
 ## Authentication Flow
 
-1. User authenticates with LINE Login via LIFF SDK
-2. Frontend gets LINE ID token
-3. Token is sent to backend via `/api/auth/login` NextJS route
-4. Backend validates token with LINE API and creates/finds user
-5. JWT token is returned and stored in cookies and localStorage
-6. Middleware validates JWT token for protected routes
+### Regular Browser Flow
+1. User clicks the LINE Login button on the homepage
+2. LIFF SDK initializes and opens LINE authentication
+3. Frontend gets LINE ID token after successful authentication
+4. Token is sent to backend via `/api/auth/login` NextJS route
+5. Backend validates token with LINE API and creates/finds user
+6. JWT token is returned and stored in cookies, localStorage, and sessionStorage
+7. Middleware validates JWT token for protected routes
+
+### LINE LIFF Browser Flow (Mobile)
+1. System automatically detects LINE LIFF browser environment
+2. LIFF SDK initializes with hardcoded LIFF_ID for reliability
+3. Frontend retrieves LINE ID token without manual login step
+4. Auto-login process sends token to backend
+5. Upon successful authentication, user is automatically redirected to dashboard
+6. Error handling and status messages guide user through the process
 
 ## API Routes
 
@@ -150,8 +165,16 @@ Important models:
 
 - `context/auth-context.tsx`: Central authentication state management
 - `middleware.ts`: Route protection and auth verification
-- `lib/auth.ts`: Authentication utilities
+- `lib/auth.ts`: Authentication utilities and token storage
 - `lib/api.ts`: API client for backend communication
+- `components/liff-init.tsx`: LIFF SDK initialization with error handling
+- `components/line-login-button.tsx`: Regular browser login button
+- `components/line-auto-redirect.tsx`: Auto-login for LINE LIFF browser
+- `lib/direct-liff.ts`: Simplified LIFF integration for mobile
+- `app/page.tsx`: Conditional rendering based on browser environment
+- `app/api/auth/login/route.ts`: LINE authentication handler
+- `app/api/auth/logout/route.ts`: Logout handler that clears tokens
 - `backend/src/index.js`: Main backend entry point
 - `backend/src/controllers`: Business logic handlers
+- `backend/src/controllers/auth.controller.js`: Authentication logic
 - `components/navbar.tsx`: Main navigation including logout button
