@@ -47,6 +47,44 @@ function HomeContent() {
     
     console.log("Home page - Auth state:", user ? "User authenticated" : "No user");
     
+    // Check if logout parameter is present
+    if (isLogout) {
+      console.log("Logout parameter detected - clearing all storage and preventing auto-login");
+      
+      // Clear all auth storage completely
+      try {
+        // Clear all possible auth-related keys
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('authenticated');
+        localStorage.removeItem('auto_login_processed');
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('authenticated');
+        sessionStorage.removeItem('auto_login_processed');
+        sessionStorage.removeItem('processed_code');
+        sessionStorage.removeItem('auth_redirect');
+        sessionStorage.removeItem('on_binding_page');
+        
+        // Set a flag to prevent auto-login on this page load
+        sessionStorage.setItem('prevent_auto_login', 'true');
+        
+        // Clear using the clear method as well
+        sessionStorage.clear();
+        localStorage.clear();
+      } catch (e) {
+        console.error("Error clearing storage:", e);
+      }
+      
+      // Update message
+      setAutoLoginMessage("已登出系統");
+      
+      // Remove the logout parameter to prevent loops
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('logout');
+      window.history.replaceState({}, document.title, newUrl.href);
+    }
+    
     // Check if token expired (from middleware redirect)
     const tokenExpired = searchParams?.has('token_expired');
     if (tokenExpired) {
@@ -102,8 +140,9 @@ function HomeContent() {
       window.location.replace("/dashboard");
     };
     
-    // If user is already authenticated, redirect to dashboard
-    if (user) {
+    // If user is already authenticated and we're not logging out, redirect to dashboard
+    const preventAutoLogin = sessionStorage.getItem('prevent_auto_login') === 'true';
+    if (user && !isLogout && !preventAutoLogin) {
       goToDashboard();
       return;
     }
@@ -210,7 +249,7 @@ function HomeContent() {
     } catch (error) {
       console.error("Error checking URL params:", error);
     }
-  }, [user, isRedirect, searchParams, autoLoginInProgress]);
+  }, [user, isRedirect, searchParams, autoLoginInProgress, isLogout]);
   
   // Unified useEffect for LIFF browser detection and auto-login
   useEffect(() => {
@@ -234,6 +273,11 @@ function HomeContent() {
           const inLiffBrowser = liff.isInClient && liff.isInClient();
           console.log("LIFF browser check result:", inLiffBrowser);
           setIsInLiffBrowser(inLiffBrowser);
+          
+          // Clear prevent_auto_login flag if we're not in logout scenario
+          if (!isLogout && !hasReloadParam) {
+            sessionStorage.removeItem('prevent_auto_login');
+          }
         } catch (e) {
           // If LIFF initialization fails, assume not in LIFF browser
           console.log("LIFF initialization failed, assuming not in LIFF browser:", e);
@@ -255,6 +299,11 @@ function HomeContent() {
                   sessionStorage.removeItem('auto_login_processed');
                   localStorage.removeItem('auto_login_processed');
                   
+                  // Set prevent_auto_login flag for logout case
+                  if (isLogout) {
+                    sessionStorage.setItem('prevent_auto_login', 'true');
+                  }
+                  
                   // After a short delay, reload without the parameters
                   setTimeout(() => {
                     // Redirect to clean URL only if we still have parameters
@@ -267,6 +316,13 @@ function HomeContent() {
                   console.error("Error cleaning up state:", e);
                 }
             } else {
+                // Check if auto-login should be prevented
+                const preventAutoLogin = sessionStorage.getItem('prevent_auto_login') === 'true';
+                if (preventAutoLogin) {
+                  console.log("Auto-login prevented due to logout");
+                  sessionStorage.removeItem('prevent_auto_login');
+                  return;
+                }
                 // We're in LIFF browser but not handling logout/reload
                 // This is crucial for auto-login in LIFF browser
                 console.log("In LIFF browser on normal page load");

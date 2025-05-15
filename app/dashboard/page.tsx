@@ -19,14 +19,16 @@ function DashboardContent() {
   const [userData, setUserData] = useState(user || null)
   const searchParams = useSearchParams()
 
-  // Handle auth token from URL (for LIFF browser redirect)
+  // Handle auth token from URL (for LIFF browser redirect and binding process)
   useEffect(() => {
     const authToken = searchParams?.get('auth_token')
     const liffAuth = searchParams?.get('liff_auth')
+    const authBypass = searchParams?.get('auth_bypass')
     
     console.log('[Dashboard] URL params:', {
       authToken: authToken ? 'present' : 'missing',
-      liffAuth: liffAuth
+      liffAuth: liffAuth,
+      authBypass: authBypass
     });
     
     if (authToken) {
@@ -43,9 +45,27 @@ function DashboardContent() {
       const url = new URL(window.location.href)
       url.searchParams.delete('auth_token')
       url.searchParams.delete('liff_auth')
+      url.searchParams.delete('auth_bypass')
       window.history.replaceState({}, document.title, url.toString())
       
       console.log('[Dashboard] Auth token stored, auth should update automatically');
+    } else if (authBypass) {
+      console.log("[Dashboard] Auth bypass detected from binding process")
+      
+      // Token should already be in storage from the binding process
+      const existingToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken')
+      if (existingToken) {
+        console.log('[Dashboard] Using existing token from storage')
+        setAuthToken(existingToken)
+      }
+      
+      // Clean up the URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('auth_bypass')
+      window.history.replaceState({}, document.title, url.toString())
+      
+      // Force a refresh of user data
+      setIsLoading(true)
     }
   }, [searchParams])
 
@@ -104,11 +124,18 @@ function DashboardContent() {
       setIsLoading(false);
       return;
     }
-
-    // Don't fetch if we just set the auth token from URL
-    const authToken = searchParams?.get('auth_token')
-    if (authToken) {
-      return;
+    
+    // Check for auth bypass - this means we just completed employee binding
+    const authBypass = searchParams?.get('auth_bypass')
+    if (authBypass && hasAuthToken) {
+      console.log("Dashboard - Auth bypass with token found, forcing user data fetch");
+      // Continue to fetch user data below
+    } else {
+      // Don't fetch if we just set the auth token from URL
+      const authToken = searchParams?.get('auth_token')
+      if (authToken) {
+        return;
+      }
     }
 
     // Otherwise fetch from API

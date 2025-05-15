@@ -161,9 +161,18 @@ export default function BindEmployeePage() {
 
       // Success - save token and user data comprehensively
       if (responseData && responseData.token) {
+        console.log("Employee binding successful, saving auth data");
+        
+        // Save the JWT token immediately
         setAuthToken(responseData.token)
-      
-        // No need to set cookies - JWT token is already stored
+        
+        // Also store it manually to ensure it's available
+        localStorage.setItem('authToken', responseData.token);
+        sessionStorage.setItem('authToken', responseData.token);
+        
+        // Mark as authenticated
+        localStorage.setItem('authenticated', 'true');
+        sessionStorage.setItem('authenticated', 'true');
         
         // Create user object if user data is available
         if (responseData.user) {
@@ -173,16 +182,15 @@ export default function BindEmployeePage() {
             email: responseData.user.email,
             picture: responseData.user.profilePicture,
             role: responseData.user.role,
-            department: responseData.user.departmentName,
+            department: responseData.user.departmentName || responseData.user.Department?.name,
             employeeId: responseData.user.employeeId,
+            creditsReceived: responseData.user.creditsReceived,
+            creditsGiven: responseData.user.creditsGiven,
+            remainingDailyCredits: responseData.user.remainingDailyCredits,
           };
 
           // Save user data
           setCurrentUser(backendUser);
-          
-          // Set additional auth flags for direct navigation
-          sessionStorage.setItem('authenticated', 'true');
-          localStorage.setItem('authenticated', 'true');
           
           // If admin, set admin flags
           if (backendUser.role === 'admin') {
@@ -193,8 +201,11 @@ export default function BindEmployeePage() {
           // Remove any binding page flags
           try {
             sessionStorage.removeItem('on_binding_page');
+            sessionStorage.removeItem('auth_redirect');
+            // Set auto-login as processed to prevent loops
+            sessionStorage.setItem('auto_login_processed', 'true');
           } catch (e) {
-            console.error("Error removing binding flag:", e);
+            console.error("Error removing binding flags:", e);
           }
 
           // Show success toast
@@ -203,9 +214,12 @@ export default function BindEmployeePage() {
             description: "即將前往儀表板",
           });
 
-          // Use direct navigation with auth bypass for immediate access
-          console.log("Direct navigation to dashboard with auth bypass");
-          window.location.href = '/dashboard?auth_bypass=true';
+          // Use direct navigation with auth bypass and token for immediate access
+          console.log("Direct navigation to dashboard with auth bypass and token");
+          const redirectUrl = new URL('/dashboard', window.location.origin);
+          redirectUrl.searchParams.set('auth_bypass', 'true');
+          redirectUrl.searchParams.set('auth_token', responseData.token);
+          window.location.href = redirectUrl.toString();
         }
       }
     } catch (err) {

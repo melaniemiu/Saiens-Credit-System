@@ -47,6 +47,7 @@ export function middleware(request: NextRequest) {
   const authToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
   const queryAuthToken = request.nextUrl.searchParams.get('auth_token')
   const hasLiffAuth = request.nextUrl.searchParams.has('liff_auth')
+  const hasAuthBypass = request.nextUrl.searchParams.has('auth_bypass')
   
   // Check the token (from header or query param)
   const token = authToken || queryAuthToken
@@ -62,8 +63,8 @@ export function middleware(request: NextRequest) {
     }
   }
   
-  // Also check for special auth flags for LIFF
-  if (!tokenExpired && hasLiffAuth) {
+  // Also check for special auth flags for LIFF or binding process
+  if (!tokenExpired && (hasLiffAuth || hasAuthBypass)) {
     isAuthenticated = true
   }
 
@@ -131,6 +132,12 @@ export function middleware(request: NextRequest) {
 
     // If the path is protected and user is not authenticated, redirect to login
     if (isProtectedPath && !isAuthenticated) {
+      // Special handling for auth bypass (like after employee binding)
+      if (hasAuthBypass) {
+        console.log('Middleware: Allowing access via auth bypass');
+        return NextResponse.next();
+      }
+      
       // Special handling for LIFF browsers with auth params to prevent loops
       if (isLiffRequest) {
         // If LIFF browser just got redirected with auth token, allow access
@@ -164,10 +171,10 @@ export function middleware(request: NextRequest) {
       }
     }
     
-    // If authenticated via query param (for LIFF browser), allow request to proceed
+    // If authenticated via query param (for LIFF browser or after binding), allow request to proceed
     // The page should handle storing the token in localStorage/sessionStorage
-    if (isProtectedPath && isAuthenticated && queryAuthToken) {
-      console.log('Middleware: Allowing access with auth token in query');
+    if (isProtectedPath && isAuthenticated && (queryAuthToken || hasAuthBypass)) {
+      console.log('Middleware: Allowing access with auth token in query or auth bypass');
       return NextResponse.next()
     }
 

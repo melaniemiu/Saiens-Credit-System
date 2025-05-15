@@ -34,8 +34,25 @@ export async function POST(request: NextRequest) {
             <title>登出中...</title>
             <meta http-equiv="refresh" content="0;url=/?logout=true" />
             <script>
-              // Clear all storage
+              // Clear all storage completely
               try {
+                // Clear specific auth-related keys first
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('user');
+                localStorage.removeItem('authenticated');
+                localStorage.removeItem('auto_login_processed');
+                sessionStorage.removeItem('authToken');
+                sessionStorage.removeItem('user');
+                sessionStorage.removeItem('authenticated');
+                sessionStorage.removeItem('auto_login_processed');
+                sessionStorage.removeItem('processed_code');
+                sessionStorage.removeItem('auth_redirect');
+                sessionStorage.removeItem('on_binding_page');
+                
+                // Set a flag to prevent auto-login on redirect
+                sessionStorage.setItem('prevent_auto_login', 'true');
+                
+                // Then clear all storage
                 sessionStorage.clear();
                 localStorage.clear();
                 

@@ -1,9 +1,9 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { AuthUser, getLineUserProfile, isAuthenticated, getCurrentUser, setCurrentUser, logout as authLogout } from '@/lib/auth'
+import { AuthUser, getLineUserProfile, isAuthenticated, getCurrentUser, setCurrentUser, logout as authLogout, clearAuthStorage } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
-import { authApi, userApi, setAuthToken, removeAuthToken } from '@/lib/api'
+import { authApi, userApi, setAuthToken, removeAuthToken, getAuthToken } from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
 import liff from '@line/liff'
 
@@ -129,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth()
   }, [])
 
-  // Watch for token changes in storage (specifically for LIFF browser case)
+  // Watch for token changes in storage (specifically for LIFF browser case and binding)
   useEffect(() => {
     // Only run this for LIFF browser redirect case
     if (typeof window === 'undefined') return;
@@ -144,9 +144,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Check once after a short delay (for LIFF browser case)
     const timeout = setTimeout(checkForToken, 500);
+    
+    // Also handle storage events for cross-tab/window token updates
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'authToken' && e.newValue && !user) {
+        console.log("Auth token added to storage via employee binding, updating auth state");
+        checkForToken();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
 
     // Clean up
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [user])
 
   const refreshUser = async () => {
@@ -436,6 +449,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
+    console.log("AuthContext: Logout triggered");
+    
     try {
       // Show loading state
       setLoading(true)
@@ -445,8 +460,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const liff = liffModule.default
       const isInLiffBrowser = liff.isInClient && liff.isInClient()
 
-      // First, clear the React state
+      // First, clear all auth data immediately
       setUser(null)
+      // Import and use all auth clearing functions
+      const { clearAuthStorage } = await import('@/lib/auth')
+      clearAuthStorage()
+      removeAuthToken()
+      authLogout()
+      
+      // Additional storage clearing for complete cleanup
+      try {
+        // Clear all possible auth-related keys
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('user')
+        sessionStorage.removeItem('authToken')
+        sessionStorage.removeItem('user')
+        sessionStorage.removeItem('auto_login_processed')
+        sessionStorage.removeItem('on_binding_page')
+        sessionStorage.removeItem('auth_redirect')
+        sessionStorage.clear()
+        localStorage.clear()
+      } catch (e) {
+        console.error("Error clearing storage:", e)
+      }
+      
+      // Clear API cache to prevent stale data
+      const { apiCache } = await import('@/lib/cache')
+      apiCache.clear()
 
       if (isInLiffBrowser) {
         // In LIFF browser, we can't actually log out of LINE
@@ -456,25 +496,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: "將重新載入應用程式",
         })
 
-        // Call our API directly to handle logout
+        // Call our API directly to handle logout (no need to clear again as we did above)
         try {
           await fetch('/api/auth/logout', {
             method: 'POST',
           })
         } catch (e) {
           console.error("Error calling logout API:", e)
-        }
-
-        // Clear all local storage and tokens
-        removeAuthToken()
-        authLogout()
-        
-        // Clear auto-login flag to force a fresh start
-        try {
-          sessionStorage.removeItem('auto_login_processed')
-          localStorage.removeItem('auto_login_processed')
-        } catch (e) {
-          console.error("Error clearing storage flags:", e)
         }
         
         // For LIFF browser, reload the app instead of redirecting to login
@@ -483,9 +511,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: "重新整理應用程式",
         })
 
-        // Reload with a timestamp to prevent caching
+        // Navigate directly to home with logout parameter
         setTimeout(() => {
-          window.location.replace(`/?reload=${Date.now()}`)
+          window.location.href = '/?logout=true&t=' + Date.now()
         }, 1000)
       } else {
         // For regular browsers, proceed with normal logout
@@ -495,33 +523,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: "請稍候",
         })
 
-        // Create a form to post to logout
-        const form = document.createElement('form')
-        form.method = 'POST'
-        form.action = '/api/auth/logout?redirect=true'
-        document.body.appendChild(form)
-
-        // Submit the form - this will call our API and handle the redirect
-        // all in one server-side operation (avoiding the auth error flash)
-        form.submit()
-
-        // This is a fallback in case the form submission fails
-        setTimeout(() => {
-          // Manual cleanup and redirect
-          removeAuthToken()
-          authLogout()
-          window.location.href = '/'
-        }, 2000)
+        // Navigate directly to home with logout parameter
+        window.location.href = '/?logout=true'
       }
     } catch (error) {
       console.error('Logout error:', error)
 
-      // Still try to clean up client state
-      removeAuthToken()
-      setUser(null)
-
-      // Force redirect to login page
-      window.location.href = '/'
+      // Force redirect to login page with logout parameter
+      window.location.href = '/?logout=true'
     } finally {
       setLoading(false)
     }

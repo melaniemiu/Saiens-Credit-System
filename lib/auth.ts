@@ -105,36 +105,50 @@ export async function logout() {
 export function clearAuthStorage() {
   console.log('Clearing all auth data from browser storage')
 
-  // Session storage
-  sessionStorage.removeItem('user')
-  sessionStorage.removeItem('lineProfile')
-  sessionStorage.removeItem('authToken')
-  sessionStorage.removeItem('auth_redirect')
-  sessionStorage.removeItem('processed_code')
-  sessionStorage.removeItem('auto_login_processed')
+  try {
+    // Clear specific auth-related keys first
+    // Session storage
+    sessionStorage.removeItem('authToken')
+    sessionStorage.removeItem('user')
+    sessionStorage.removeItem('authenticated')
+    sessionStorage.removeItem('lineProfile')
+    sessionStorage.removeItem('auth_redirect')
+    sessionStorage.removeItem('processed_code')
+    sessionStorage.removeItem('auto_login_processed')
+    sessionStorage.removeItem('on_binding_page')
+    sessionStorage.removeItem('prevent_auto_login')
 
-  // Redirection tracking
-  sessionStorage.removeItem('auth_redirect')
-  sessionStorage.removeItem('processed_code')
+    // Local storage
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('user')
+    localStorage.removeItem('authenticated')
+    localStorage.removeItem('lineProfile')
+    localStorage.removeItem('auto_login_processed')
 
-  // Local storage
-  localStorage.removeItem('user')
-  localStorage.removeItem('lineProfile')
-  localStorage.removeItem('authToken')
-  localStorage.removeItem('auto_login_processed')
+    // Additional items that might exist
+    sessionStorage.removeItem('liff.state')
+    localStorage.removeItem('liff.state')
+    sessionStorage.removeItem('liff.auth.client_id')
+    localStorage.removeItem('liff.auth.client_id')
 
-  // Additional items that might exist
-  sessionStorage.removeItem('liff.state')
-  localStorage.removeItem('liff.state')
-  sessionStorage.removeItem('liff.auth.client_id')
-  localStorage.removeItem('liff.auth.client_id')
+    // Cache-related items
+    sessionStorage.removeItem('current_user_profile')
+    localStorage.removeItem('current_user_profile')
 
-  // Cache-related items
-  sessionStorage.removeItem('current_user_profile')
-  localStorage.removeItem('current_user_profile')
+    // API cache keys
+    const allKeys = []
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i)
+      if (key && (key.startsWith('api_cache_') || key.startsWith('users_list_'))) {
+        allKeys.push(key)
+      }
+    }
+    allKeys.forEach(key => sessionStorage.removeItem(key))
 
-
-  console.log("All auth data cleared from storage")
+    console.log("All auth data cleared from storage")
+  } catch (e) {
+    console.error("Error clearing auth storage:", e)
+  }
 }
 
 /**
