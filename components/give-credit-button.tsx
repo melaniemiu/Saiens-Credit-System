@@ -7,9 +7,9 @@ import Link from "next/link"
 export function GiveCreditButton() {
   return (
     <Link href="/dashboard/give-credit">
-      <Button className="bg-black text-white hover:bg-gray-800 rounded-full flex items-center gap-2 fixed bottom-8 right-8 shadow-lg z-50">
-        <CirclePlus className="h-4 w-4" />
-        重新發點
+      <Button className="bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 rounded-full flex items-center gap-2 fixed bottom-8 right-8 shadow-xl z-50 px-6 py-3 transform hover:scale-105 transition-all duration-300">
+        <CirclePlus className="h-5 w-5" />
+        給予 Credit
       </Button>
     </Link>
   )

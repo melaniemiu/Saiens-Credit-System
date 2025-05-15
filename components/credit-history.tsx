@@ -98,12 +98,13 @@ export function CreditHistory() {
   }
 
   return (
-    <Card className="border-none shadow-md p-6 bg-white">
-      <CardHeader className="px-0 pt-0">
-        <CardTitle>最近 Credit 活動</CardTitle>
-        <CardDescription>您最近的 Credit 收發記錄</CardDescription>
+    <Card className="border-none shadow-lg bg-white/95 backdrop-blur-sm hover:shadow-xl transition-all duration-300 overflow-hidden group p-6">
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-50/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      <CardHeader className="px-0 pt-0 relative z-10">
+        <CardTitle className="text-lg font-semibold text-gray-800">最近 Credit 活動</CardTitle>
+        <CardDescription className="text-sm text-gray-600">您最近的 Credit 收發記錄</CardDescription>
       </CardHeader>
-      <CardContent className="px-0 pb-0">
+      <CardContent className="px-0 pb-0 relative z-10">
         <Tabs defaultValue="received" onValueChange={setActiveTab}>
           <TabsList className="mb-4 grid w-full grid-cols-2">
             <TabsTrigger value="received">收到的 Credit</TabsTrigger>
@@ -120,16 +121,18 @@ export function CreditHistory() {
         ) : (
           <>
             {receivedCredits.map((credit) => (
-              <div key={credit.id} className="rounded-lg border p-4 mb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Badge className="bg-black text-white">收到</Badge>
-                    <span className="font-medium">{credit.sender?.name || "李大壯"}</span>
-                    <span className="text-xs text-gray-500">({credit.sender?.Department?.name || "業務部"})</span>
+              <div key={credit.id} className="rounded-lg bg-gray-50/50 border border-gray-100 p-4 mb-3 hover:bg-gray-50 transition-colors duration-200 hover:border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="flex items-start sm:items-center flex-wrap sm:flex-nowrap gap-2">
+                    <Badge className="bg-green-600 text-white hover:bg-green-700 shrink-0">收到</Badge>
+                    <div className="flex items-baseline gap-1 flex-wrap">
+                      <span className="font-medium text-gray-900 whitespace-nowrap">{credit.sender?.name || "李大壯"}</span>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">({credit.sender?.Department?.name || "業務部"})</span>
+                    </div>
                   </div>
-                  <span className="text-sm text-gray-500">{new Date(credit.createdAt || "2023/6/5").toLocaleString("zh-TW")}</span>
+                  <span className="text-sm text-gray-500 whitespace-nowrap">{new Date(credit.createdAt || "2023/6/5").toLocaleString("zh-TW")}</span>
                 </div>
-                <p className="mt-2 text-gray-700">"{credit.reason || "協助解決系統問題，快速且有效率"}"</p>
+                <p className="mt-3 text-gray-700 italic">"{credit.reason || "協助解決系統問題，快速且有效率"}"</p>
               </div>
             ))}
 
@@ -164,16 +167,18 @@ export function CreditHistory() {
         ) : (
           <>
             {givenCredits.map((credit) => (
-              <div key={credit.id} className="rounded-lg border p-4 mb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline">送出</Badge>
-                    <span className="font-medium">{credit.receiver?.name || "張素芬"}</span>
-                    <span className="text-xs text-gray-500">({credit.receiver?.Department?.name || "人資部"})</span>
+              <div key={credit.id} className="rounded-lg bg-gray-50/50 border border-gray-100 p-4 mb-3 hover:bg-gray-50 transition-colors duration-200 hover:border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="flex items-start sm:items-center flex-wrap sm:flex-nowrap gap-2">
+                    <Badge variant="outline" className="border-blue-600 text-blue-600 shrink-0">送出</Badge>
+                    <div className="flex items-baseline gap-1 flex-wrap">
+                      <span className="font-medium text-gray-900 whitespace-nowrap">{credit.receiver?.name || "張素芬"}</span>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">({credit.receiver?.Department?.name || "人資部"})</span>
+                    </div>
                   </div>
-                  <span className="text-sm text-gray-500">{new Date(credit.createdAt || "2023/6/14").toLocaleString("zh-TW")}</span>
+                  <span className="text-sm text-gray-500 whitespace-nowrap">{new Date(credit.createdAt || "2023/6/14").toLocaleString("zh-TW")}</span>
                 </div>
-                <p className="mt-2 text-gray-700">"{credit.reason || "主動協助新同仁適應工作環境"}"</p>
+                <p className="mt-3 text-gray-700 italic">"{credit.reason || "主動協助新同仁適應工作環境"}"</p>
               </div>
             ))}
 

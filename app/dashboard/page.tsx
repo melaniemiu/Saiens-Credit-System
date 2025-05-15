@@ -164,12 +164,13 @@ export default function Dashboard() {
             </Button>
           </div>
           <div className="flex flex-col space-y-4 md:flex-row md:space-x-4 md:space-y-0">
-            <Card className="flex-1 border-none shadow-md bg-white">
-              <CardHeader>
-                <CardTitle>個人資料</CardTitle>
-                <CardDescription>您的基本資訊</CardDescription>
+            <Card className="flex-1 border-none shadow-lg bg-white/95 backdrop-blur-sm hover:shadow-xl transition-all duration-300 overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <CardHeader className="relative z-10 pb-3">
+                <CardTitle className="text-base font-semibold text-gray-800">個人資料</CardTitle>
+                <CardDescription className="text-xs text-gray-600">您的基本資訊</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative z-10">
                 {isLoading ? (
                   <div className="space-y-4">
                     <div className="flex justify-between">
@@ -186,23 +187,23 @@ export default function Dashboard() {
                     </div>
                   </div>
                 ) : userData ? (
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-500">姓名</span>
-                      <span>{userData.name || "于小明"}</span>
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center py-1 px-2 rounded hover:bg-gray-50 transition-colors duration-200">
+                      <span className="text-xs font-medium text-gray-600">姓名</span>
+                      <span className="text-sm font-medium text-gray-900">{userData.name || "于小明"}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-500">工號</span>
-                      <span>{userData.employeeId || "EMP001"}</span>
+                    <div className="flex justify-between items-center py-1 px-2 rounded hover:bg-gray-50 transition-colors duration-200">
+                      <span className="text-xs font-medium text-gray-600">工號</span>
+                      <span className="text-sm font-medium text-gray-900">{userData.employeeId || "EMP001"}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-500">部門</span>
-                      <span>{userData.department || "工程部"}</span>
+                    <div className="flex justify-between items-center py-1 px-2 rounded hover:bg-gray-50 transition-colors duration-200">
+                      <span className="text-xs font-medium text-gray-600">部門</span>
+                      <span className="text-sm font-medium text-gray-900">{userData.department || "工程部"}</span>
                     </div>
                     {(userData.email || true) && (
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium text-gray-500">Email</span>
-                        <span className="truncate max-w-[180px]">{userData.email || "xiaoming.wang@example.com"}</span>
+                      <div className="flex justify-between items-center py-1 px-2 rounded hover:bg-gray-50 transition-colors duration-200">
+                        <span className="text-xs font-medium text-gray-600">Email</span>
+                        <span className="text-sm truncate max-w-[140px] sm:max-w-[180px] font-medium text-gray-900">{userData.email || "xiaoming.wang@example.com"}</span>
                       </div>
                     )}
                   </div>
