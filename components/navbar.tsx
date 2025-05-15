@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { UserCircle, Home, Gift, Clock, LogOut, Menu } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 
@@ -77,6 +77,9 @@ export function Navbar() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[250px] sm:w-[300px]">
+                <SheetHeader>
+                  <SheetTitle>選單</SheetTitle>
+                </SheetHeader>
                 <div className="mt-6 flex flex-col space-y-3">
                   {navItems.map((item) => (
                     <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)}>

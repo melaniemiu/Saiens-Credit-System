@@ -19,14 +19,11 @@ interface Employee {
   id: string
   name: string
   department: string
-  originalDepartment?: any // For debugging
 }
 
 export function GiveCreditForm() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([])
-  // For logging only - to help debug the department structure
-  const [apiResponseExample, setApiResponseExample] = useState<any>(null)
   const [reason, setReason] = useState("")
   const [open, setOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -51,44 +48,23 @@ export function GiveCreditForm() {
         const response = await userApi.getUsers();
 
         if (response.data?.users && isMounted) {
-          // Store the first user to inspect the structure
-          if (response.data.users.length > 0) {
-            console.log("Example user data:", JSON.stringify(response.data.users[0], null, 2));
-            setApiResponseExample(response.data.users[0]);
-          }
 
           const mappedEmployees = response.data.users.map(emp => {
-            // Log everything to help diagnose
-            console.log("Employee data:", JSON.stringify(emp, null, 2));
-
-            // Check which field the department is in
             let departmentName = "未分配部門";
-
+            
             if (typeof emp.Department === 'object' && emp.Department && emp.Department.name) {
-              console.log("Using Department.name path for:", emp.name);
               departmentName = emp.Department.name;
-            } else {
-              console.log("No department found for employee:", emp.name);
-
-              // Log all properties to check what fields are available
-              console.log("Available properties:", Object.keys(emp));
-              if (emp.departmentId) {
-                console.log("Has departmentId but no Department object");
-              }
             }
 
             return {
               id: emp.id,
               name: emp.name,
               department: departmentName,
-              // Keep original data for debug purposes
-              originalDepartment: emp.Department
             };
           });
           setEmployees(mappedEmployees);
         }
       } catch (error) {
-        console.error("Failed to fetch employees:", error);
         if (isMounted) {
           toast({
             title: "載入失敗",
@@ -111,11 +87,9 @@ export function GiveCreditForm() {
 
         // Set remaining credits from user data
         if (user && isMounted) {
-          console.log("User remaining daily credits:", user.remainingDailyCredits);
           setRemainingCredits(user.remainingDailyCredits || 0);
         }
       } catch (error) {
-        console.error("Failed to fetch user data:", error);
       }
     };
 
@@ -206,7 +180,6 @@ export function GiveCreditForm() {
       // Refresh user data
       refreshUser()
     } catch (error) {
-      console.error("Failed to give credits:", error)
       toast({
         title: "送出失敗",
         description: error instanceof Error ? error.message : "發生錯誤，請稍後再試",
@@ -219,26 +192,6 @@ export function GiveCreditForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Debug info - only shown in development */}
-      {process.env.NODE_ENV !== 'production' && (
-        <div className="bg-gray-100 p-2 mb-4 rounded text-xs overflow-auto max-h-32">
-          {apiResponseExample && (
-            <>
-              <p>API Response Structure (Debug):</p>
-              <pre>{JSON.stringify(apiResponseExample, null, 2)}</pre>
-            </>
-          )}
-          <p className="mt-2">Selected Employee IDs: {selectedEmployeeIds.join(', ') || '(none)'}</p>
-          <p>Total Employees: {employees.length}</p>
-
-          {selectedEmployeeIds.length > 0 && (
-            <div className="mt-2">
-              <p>Selected Employees Details:</p>
-              <pre>{JSON.stringify(employees.filter(e => selectedEmployeeIds.includes(e.id)), null, 2)}</pre>
-            </div>
-          )}
-        </div>
-      )}
 
       <div className="space-y-2">
         <Label htmlFor="employee">選擇同事（可多選）</Label>
