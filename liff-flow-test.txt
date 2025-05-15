@@ -1,0 +1,13 @@
+// Test file to understand LIFF flow
+console.log('[Test] Starting LIFF authentication flow test');
+
+// Steps:
+// 1. LIFF browser opens app
+// 2. Middleware checks authentication
+// 3. If no auth, redirects to home with needs_liff_auth=true
+// 4. Home page detects LIFF browser and shows auto-redirect
+// 5. LineAutoRedirect completes login and redirects to /api/auth/liff-redirect
+// 6. /api/auth/liff-redirect sets cookies and redirects to /dashboard with auth params
+// 7. Middleware should allow access due to auth params
+// 8. Dashboard page stores auth and reloads
+

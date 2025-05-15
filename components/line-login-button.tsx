@@ -127,7 +127,17 @@ export function LineLoginButton() {
               // Navigate to dashboard after a short delay for toast visibility
               setTimeout(() => {
                 console.log("Login successful, redirecting to dashboard");
-                window.location.href = '/dashboard';
+                
+                if (isInLiffBrowser && data.token) {
+                  // Use the special redirect route for LIFF browser
+                  const redirectUrl = new URL('/api/auth/liff-redirect', window.location.origin);
+                  redirectUrl.searchParams.set('auth_token', data.token);
+                  redirectUrl.searchParams.set('destination', '/dashboard');
+                  window.location.href = redirectUrl.toString();
+                } else {
+                  // Regular redirect for non-LIFF browsers
+                  window.location.href = '/dashboard';
+                }
               }, 300);
             } else {
               console.error("Backend login error:", data.error);

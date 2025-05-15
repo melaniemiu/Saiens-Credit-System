@@ -74,13 +74,18 @@ export function LineAutoRedirect() {
             sessionStorage.setItem("user", JSON.stringify(data.user))
           }
           
-          // Redirect to dashboard
+          // Redirect to dashboard with auth token for LIFF browser
           setStatus("登入成功！轉向中...")
           console.log("[AutoRedirect] Redirecting to dashboard")
           
           // Short timeout to avoid any race conditions
           setTimeout(() => {
-            window.location.href = "/dashboard"
+            // Use the special redirect route to set cookies properly
+            const redirectUrl = new URL("/api/auth/liff-redirect", window.location.origin)
+            redirectUrl.searchParams.set("auth_token", data.token)
+            redirectUrl.searchParams.set("destination", "/dashboard")
+            console.log("[AutoRedirect] Redirecting to LIFF redirect route:", redirectUrl.toString())
+            window.location.href = redirectUrl.toString()
           }, 300)
         } else {
           // Handle binding case

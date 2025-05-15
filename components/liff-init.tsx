@@ -19,6 +19,8 @@ export function LiffInit() {
   const shouldSkipAutoLogin = () => {
     if (typeof window === 'undefined') return false;
     
+    console.log('[LiffInit] Checking if should skip auto-login for path:', window.location.pathname);
+    
     // Check URL path for binding pages
     const isBindPath = window.location.pathname === '/bind' || 
                       window.location.pathname === '/bind-employee';
@@ -29,11 +31,18 @@ export function LiffInit() {
     // Check for other special pages where auto-login should be skipped
     const isHomePage = window.location.pathname === '/';
     const hasLogoutParam = new URLSearchParams(window.location.search).has('logout');
+    const hasNeedsLiffAuth = new URLSearchParams(window.location.search).has('needs_liff_auth');
     
     // If we're on the home page with logout param, skip auto-login
     if (isHomePage && hasLogoutParam) {
-      console.log("On home page with logout param, skipping auto-login");
+      console.log("[LiffInit] On home page with logout param, skipping auto-login");
       return true;
+    }
+    
+    // If we're on home page with needs_liff_auth, don't skip - we need to handle auto-login
+    if (isHomePage && hasNeedsLiffAuth) {
+      console.log("[LiffInit] On home page with needs_liff_auth, proceeding with auto-login");
+      return false;
     }
     
     return isBindPath || hasBindFlag;
@@ -44,7 +53,7 @@ export function LiffInit() {
   useEffect(() => {
     // Check if we should skip LIFF initialization on this page
     if (shouldSkipAutoLogin()) {
-      console.log("On page that should skip auto-login, skipping LIFF initialization");
+      console.log("[LiffInit] On page that should skip auto-login, skipping LIFF initialization");
       setIsLoading(false);
       return;
     }
@@ -178,8 +187,12 @@ export function LiffInit() {
                             // Check if we need to redirect
                             if (typeof window !== 'undefined' && 
                                 !window.location.pathname.includes('/dashboard')) {
-                              // Redirect immediately without showing toast
-                              window.location.replace('/dashboard');
+                              // Use the special redirect route to set cookies properly
+                              const redirectUrl = new URL('/api/auth/liff-redirect', window.location.origin);
+                              redirectUrl.searchParams.set('auth_token', data.token);
+                              redirectUrl.searchParams.set('destination', '/dashboard');
+                              console.log('[LiffInit] Redirecting to LIFF redirect route:', redirectUrl.toString());
+                              window.location.replace(redirectUrl.toString());
                             }
                           } else {
                             // Show success toast (only in non-LIFF browser)
@@ -195,7 +208,17 @@ export function LiffInit() {
                               
                               // Use a small delay to allow toast to be visible (for non-LIFF browsers)
                               setTimeout(() => {
-                                window.location.href = '/dashboard';
+                                if (isInLiffBrowser && data.token) {
+                                  // Use the special redirect route for LIFF browser
+                                  const redirectUrl = new URL('/api/auth/liff-redirect', window.location.origin);
+                                  redirectUrl.searchParams.set('auth_token', data.token);
+                                  redirectUrl.searchParams.set('destination', '/dashboard');
+                                  console.log('[LiffInit] LIFF browser redirecting to redirect route:', redirectUrl.toString());
+                                  window.location.href = redirectUrl.toString();
+                                } else {
+                                  // Regular redirect for non-LIFF browsers
+                                  window.location.href = '/dashboard';
+                                }
                               }, 300);
                             }
                           }

@@ -25,6 +25,7 @@ function HomeContent() {
   
   // Compute values outside conditional rendering
   const isLogout = searchParams?.has('logout');
+  const needsLiffAuth = searchParams?.has('needs_liff_auth');
   
   // Determine the message to show - moved outside conditional rendering
   let message = "登入處理中，請稍候...";
@@ -33,6 +34,8 @@ function HomeContent() {
     message = isInLiffBrowser ? "清除資料中..." : "已登出系統，請重新登入";
   } else if (isReload) {
     message = "重新載入中...";
+  } else if (needsLiffAuth && isInLiffBrowser) {
+    message = "LINE 帳號驗證中...";
   } else if (autoLoginMessage) {
     message = autoLoginMessage;
   }
@@ -306,9 +309,13 @@ function HomeContent() {
                           localStorage.setItem('authenticated', 'true');
                           sessionStorage.setItem('auto_login_processed', 'true');
                           
-                          // Redirect to dashboard
+                          // Redirect to dashboard with auth for LIFF browser
                           console.log("Auto-login successful, redirecting to dashboard");
-                          window.location.replace('/dashboard');
+                          const redirectUrl = new URL('/api/auth/liff-redirect', window.location.origin);
+                          redirectUrl.searchParams.set('auth_token', data.token);
+                          redirectUrl.searchParams.set('destination', '/dashboard');
+                          console.log("[HomePage LIFF] Redirecting to LIFF redirect route:", redirectUrl.toString());
+                          window.location.replace(redirectUrl.toString());
                         } else if (!autoLoginInProgress) {
                           // If we're not already showing the auto-login state, update it
                           setAutoLoginInProgress(false);
@@ -379,8 +386,8 @@ function HomeContent() {
     );
   }
   
-  // For LINE LIFF browser, just show the auto-redirect component
-  if (isInLiffBrowser) {
+  // For LINE LIFF browser (including needs_liff_auth redirect), show the auto-redirect component
+  if (isInLiffBrowser || needsLiffAuth) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-green-50 to-green-100">
         <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-lg">

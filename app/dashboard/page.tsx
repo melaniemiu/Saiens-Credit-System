@@ -4,18 +4,52 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CreditStats } from "@/components/credit-stats"
 import { CreditHistory } from "@/components/credit-history"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { userApi } from "@/lib/api"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, Loader2 } from "lucide-react"
 import { AuthError } from "@/components/auth-error"
 import { GiveCreditButton } from "@/components/give-credit-button"
+import { useSearchParams } from "next/navigation"
 
-export default function Dashboard() {
+function DashboardContent() {
   const { user, loading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(!user)
   const [userData, setUserData] = useState(user || null)
+  const searchParams = useSearchParams()
+
+  // Handle auth token from URL (for LIFF browser redirect)
+  useEffect(() => {
+    const authToken = searchParams?.get('auth_token')
+    const liffAuth = searchParams?.get('liff_auth')
+    
+    console.log('[Dashboard] URL params:', {
+      authToken: authToken ? 'present' : 'missing',
+      liffAuth: liffAuth
+    });
+    
+    if (authToken) {
+      console.log("[Dashboard] Found auth token in URL, setting up authentication")
+      
+      // Store the token in cookies and localStorage
+      document.cookie = `user_session=${authToken}; path=/; max-age=${60 * 60 * 24}`
+      localStorage.setItem('authToken', authToken)
+      sessionStorage.setItem('authToken', authToken)
+      
+      // Clean up the URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('auth_token')
+      url.searchParams.delete('liff_auth')
+      window.history.replaceState({}, document.title, url.toString())
+      
+      // Reload the page to properly initialize with the token
+      setTimeout(() => {
+        console.log('[Dashboard] Reloading page to apply authentication');
+        window.location.reload()
+      }, 100)
+    }
+  }, [searchParams])
 
   // Check if we're still on the dashboard after a couple of seconds
   // This helps debug redirect loops
@@ -73,6 +107,12 @@ export default function Dashboard() {
       return;
     }
 
+    // Don't fetch if we just set the auth token from URL
+    const authToken = searchParams?.get('auth_token')
+    if (authToken) {
+      return;
+    }
+
     // Otherwise fetch from API
     const fetchUserData = async () => {
       try {
@@ -124,7 +164,7 @@ export default function Dashboard() {
     };
 
     fetchUserData();
-  }, [user])
+  }, [user, searchParams])
 
   // Handle manual refresh if needed
   const handleManualRefresh = () => {
@@ -225,5 +265,17 @@ export default function Dashboard() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   )
 }
