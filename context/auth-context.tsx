@@ -71,6 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 role: response.data.user.role,
                 department: response.data.user.Department?.name,
                 employeeId: response.data.user.employeeId,
+                creditsReceived: response.data.user.creditsReceived,
+                creditsGiven: response.data.user.creditsGiven,
+                remainingDailyCredits: response.data.user.remainingDailyCredits,
               }
 
               setCurrentUser(backendUser)
@@ -374,6 +377,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: response.data.user.role,
         department: response.data.user.departmentName,
         employeeId: response.data.user.employeeId,
+        creditsReceived: response.data.user.creditsReceived,
+        creditsGiven: response.data.user.creditsGiven,
+        remainingDailyCredits: response.data.user.remainingDailyCredits,
       }
 
       // Update user state

@@ -247,6 +247,28 @@ export const creditApi = {
     return response;
   },
 
+  // Give credit to multiple users (bulk operation)
+  giveBulkCredit: async (receiverIds: string[], reason: string) => {
+    const response = await fetchApi<{ 
+      message: string; 
+      creditsCreated: number;
+      remainingCredits: number;
+      credits: any[];
+    }>('/credits/bulk', {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify({ receiverIds, reason }),
+    });
+
+    // If the credit was given successfully, invalidate user cache to refresh the data
+    if (response.data && !response.error) {
+      // Invalidate current user cache to refresh remaining credits
+      apiCache.delete('current_user_profile');
+    }
+
+    return response;
+  },
+
   // Get credits received by current user
   getReceivedCredits: async (page = 1, limit = 10) => {
     return fetchApi<PaginatedResponse<any>>(`/credits/received?page=${page}&limit=${limit}`, {

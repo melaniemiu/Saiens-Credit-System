@@ -23,7 +23,27 @@ exports.getCurrentUser = async (req, res, next) => {
     // Check and reset daily credits if needed
     await user.checkAndResetDailyCredits();
     
-    return res.status(200).json({ user });
+    // Return user with explicit properties to ensure they're included
+    return res.status(200).json({ 
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        employeeId: user.employeeId,
+        role: user.role,
+        profilePicture: user.profilePicture,
+        departmentId: user.departmentId,
+        Department: user.Department,
+        creditsReceived: user.creditsReceived,
+        creditsGiven: user.creditsGiven,
+        remainingDailyCredits: user.remainingDailyCredits,
+        dailyCreditResetDate: user.dailyCreditResetDate,
+        isActive: user.isActive,
+        lastLogin: user.lastLogin,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }
+    });
   } catch (error) {
     next(error);
   }

@@ -80,6 +80,99 @@ exports.giveCredit = async (req, res, next) => {
   }
 };
 
+// Give credit to multiple users (bulk operation) - only counts as 1 daily credit
+exports.giveBulkCredit = async (req, res, next) => {
+  try {
+    const { receiverIds, reason } = req.body;
+    const senderId = req.userId; // Set by auth middleware
+    
+    // Validate input
+    if (!Array.isArray(receiverIds) || receiverIds.length === 0) {
+      return res.status(400).json({ message: 'Please provide at least one receiver' });
+    }
+    
+    // Check if sender is giving credit to themselves
+    if (receiverIds.includes(senderId)) {
+      return res.status(400).json({ message: 'You cannot give credit to yourself' });
+    }
+    
+    // Get sender
+    const sender = await User.findByPk(senderId);
+    
+    if (!sender) {
+      return res.status(404).json({ message: 'Sender not found' });
+    }
+    
+    // Check daily credit limit (only check for 1 credit)
+    await sender.checkAndResetDailyCredits();
+    
+    if (sender.remainingDailyCredits <= 0) {
+      return res.status(403).json({ 
+        message: 'Daily credit limit reached',
+        resetDate: sender.dailyCreditResetDate
+      });
+    }
+    
+    // Check if all receivers exist
+    const receivers = await User.findAll({
+      where: { id: receiverIds }
+    });
+    
+    if (receivers.length !== receiverIds.length) {
+      return res.status(400).json({ message: 'One or more receivers not found' });
+    }
+    
+    // Create credits for all receivers
+    const creditPromises = receivers.map(receiver => 
+      Credit.create({
+        senderId,
+        receiverId: receiver.id,
+        reason,
+        status: 'approved',
+        approvedAt: new Date()
+      })
+    );
+    
+    const credits = await Promise.all(creditPromises);
+    
+    // Update sender's remaining credits and credits given (only deduct 1)
+    sender.remainingDailyCredits -= 1;
+    sender.creditsGiven += credits.length; // Increase by number of credits given
+    await sender.save();
+    
+    // Update each receiver's credits received
+    for (const receiver of receivers) {
+      receiver.creditsReceived += 1;
+      await receiver.save();
+    }
+    
+    // Return the created credits
+    return res.status(201).json({
+      message: `Credit given successfully to ${receivers.length} recipients`,
+      creditsCreated: credits.length,
+      remainingCredits: sender.remainingDailyCredits,
+      credits: credits.map(credit => ({
+        id: credit.id,
+        reason: credit.reason,
+        createdAt: credit.createdAt,
+        status: credit.status,
+        sender: {
+          id: sender.id,
+          name: sender.name,
+          employeeId: sender.employeeId
+        },
+        receiver: {
+          id: receivers.find(r => r.id === credit.receiverId).id,
+          name: receivers.find(r => r.id === credit.receiverId).name,
+          employeeId: receivers.find(r => r.id === credit.receiverId).employeeId
+        }
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Get credits received by user
 exports.getReceivedCredits = async (req, res, next) => {
   try {

@@ -24,7 +24,7 @@ interface Employee {
 
 export function GiveCreditForm() {
   const [employees, setEmployees] = useState<Employee[]>([])
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("")
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([])
   // For logging only - to help debug the department structure
   const [apiResponseExample, setApiResponseExample] = useState<any>(null)
   const [reason, setReason] = useState("")
@@ -111,6 +111,7 @@ export function GiveCreditForm() {
 
         // Set remaining credits from user data
         if (user && isMounted) {
+          console.log("User remaining daily credits:", user.remainingDailyCredits);
           setRemainingCredits(user.remainingDailyCredits || 0);
         }
       } catch (error) {
@@ -131,13 +132,25 @@ export function GiveCreditForm() {
     };
   }, [toast, refreshUser, user, employees.length])
 
+  const handleToggleEmployee = (employeeId: string) => {
+    setSelectedEmployeeIds(prev => {
+      const isSelected = prev.includes(employeeId);
+      if (isSelected) {
+        return prev.filter(id => id !== employeeId);
+      } else {
+        // No need to check against remaining credits since bulk operation only uses 1 credit
+        return [...prev, employeeId];
+      }
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!selectedEmployeeId) {
+    if (selectedEmployeeIds.length === 0) {
       toast({
         title: "請選擇同事",
-        description: "您需要選擇一位同事來給予 Credit",
+        description: "您需要選擇至少一位同事來給予 Credit",
         variant: "destructive",
       })
       return
@@ -152,35 +165,48 @@ export function GiveCreditForm() {
       return
     }
 
+    if (remainingCredits <= 0) {
+      toast({
+        title: "超過每日限制",
+        description: `您今日已無剩餘的 Credit 額度`,
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
-      const response = await creditApi.giveCredit(selectedEmployeeId, reason)
+      // Use the new bulk API to send credits to all selected employees
+      const response = await creditApi.giveBulkCredit(selectedEmployeeIds, reason);
 
       if (response.error) {
-        throw new Error(response.error)
+        throw new Error(response.error);
       }
 
-      const selectedEmployee = employees.find(emp => emp.id === selectedEmployeeId)
+      const selectedEmployeeNames = selectedEmployeeIds
+        .map(id => employees.find(emp => emp.id === id)?.name)
+        .filter(Boolean)
+        .join("、");
 
       toast({
         title: "Credit 已送出",
-        description: `您已成功給予 ${selectedEmployee?.name} Credit`,
+        description: `您已成功給予 ${selectedEmployeeNames} Credit`,
       })
 
-      // Update remaining credits
+      // Update remaining credits from the response
       if (response.data?.remainingCredits !== undefined) {
-        setRemainingCredits(response.data.remainingCredits)
+        setRemainingCredits(response.data.remainingCredits);
       }
 
       // Reset form
-      setSelectedEmployeeId("")
+      setSelectedEmployeeIds([])
       setReason("")
 
       // Refresh user data
       refreshUser()
     } catch (error) {
-      console.error("Failed to give credit:", error)
+      console.error("Failed to give credits:", error)
       toast({
         title: "送出失敗",
         description: error instanceof Error ? error.message : "發生錯誤，請稍後再試",
@@ -202,20 +228,20 @@ export function GiveCreditForm() {
               <pre>{JSON.stringify(apiResponseExample, null, 2)}</pre>
             </>
           )}
-          <p className="mt-2">Selected Employee ID: {selectedEmployeeId || '(none)'}</p>
+          <p className="mt-2">Selected Employee IDs: {selectedEmployeeIds.join(', ') || '(none)'}</p>
           <p>Total Employees: {employees.length}</p>
 
-          {selectedEmployeeId && (
+          {selectedEmployeeIds.length > 0 && (
             <div className="mt-2">
-              <p>Selected Employee Details:</p>
-              <pre>{JSON.stringify(employees.find(e => e.id === selectedEmployeeId), null, 2)}</pre>
+              <p>Selected Employees Details:</p>
+              <pre>{JSON.stringify(employees.filter(e => selectedEmployeeIds.includes(e.id)), null, 2)}</pre>
             </div>
           )}
         </div>
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="employee">選擇同事</Label>
+        <Label htmlFor="employee">選擇同事（可多選）</Label>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -225,8 +251,8 @@ export function GiveCreditForm() {
               className="w-full justify-between"
               disabled={isLoading}
             >
-              {selectedEmployeeId ?
-                employees.find(emp => emp.id === selectedEmployeeId)?.name || "選擇同事..."
+              {selectedEmployeeIds.length > 0 ?
+                `已選擇 ${selectedEmployeeIds.length} 位同事`
                 : "選擇同事..."}
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -244,15 +270,13 @@ export function GiveCreditForm() {
                       key={employee.id}
                       value={`${employee.name} ${employee.department}`}
                       onSelect={() => {
-                        // Always select the employee when clicked
-                        setSelectedEmployeeId(employee.id);
-                        setOpen(false);
+                        handleToggleEmployee(employee.id);
                       }}
                     >
                       <Check
                         className={cn(
                           "mr-2 h-4 w-4",
-                          selectedEmployeeId === employee.id ? "opacity-100" : "opacity-0",
+                          selectedEmployeeIds.includes(employee.id) ? "opacity-100" : "opacity-0",
                         )}
                       />
                       <span>{employee.name}</span>
@@ -267,10 +291,10 @@ export function GiveCreditForm() {
           </PopoverContent>
         </Popover>
 
-        {selectedEmployeeId && (
+        {selectedEmployeeIds.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-2">
-            {(() => {
-              const employee = employees.find(emp => emp.id === selectedEmployeeId);
+            {selectedEmployeeIds.map(employeeId => {
+              const employee = employees.find(emp => emp.id === employeeId);
               if (!employee) return null;
 
               return (
@@ -282,15 +306,22 @@ export function GiveCreditForm() {
                   <button
                     type="button"
                     className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    onClick={() => setSelectedEmployeeId("")}
+                    onClick={() => setSelectedEmployeeIds(prev => prev.filter(id => id !== employeeId))}
                   >
                     <X className="h-3 w-3" />
                     <span className="sr-only">Remove {employee.name}</span>
                   </button>
                 </Badge>
               );
-            })()}
+            })}
           </div>
+        )}
+        
+        {/* 顯示剩餘積分提示 */}
+        {selectedEmployeeIds.length > 0 && remainingCredits > 0 && (
+          <p className="text-sm text-blue-500 mt-2">
+            提示：選擇了 {selectedEmployeeIds.length} 位同事，將使用 1 次積分額度
+          </p>
         )}
       </div>
 
@@ -311,11 +342,16 @@ export function GiveCreditForm() {
         className="w-full"
         disabled={isSubmitting || remainingCredits <= 0}
       >
-        {isSubmitting ? "處理中..." : "送出 Credit"}
+        {isSubmitting ? "處理中..." : `送出 Credit 給 ${selectedEmployeeIds.length > 0 ? selectedEmployeeIds.length + ' 位同事' : ''}`}
       </Button>
 
       <p className="text-center text-sm text-gray-500">
         您今日還可以給予 {remainingCredits} 次 Credit
+        {selectedEmployeeIds.length > 0 && (
+          <span className="block">
+            目前已選擇 {selectedEmployeeIds.length} 位同事（只計算 1 次額度）
+          </span>
+        )}
       </p>
     </form>
   )
