@@ -22,14 +22,27 @@ export default function RootLayout({
   return (
     <html lang="zh-TW" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" disableTransitionOnChange>
-          <AuthProvider>
-            {/* LIFF initializer component */}
-            <LiffInit />
-            {children}
-          </AuthProvider>
-          <Toaster />
-        </ThemeProvider>
+        {/* 背景容器 */}
+        <div className="min-h-screen relative bg-gradient-to-br from-gray-50 via-white to-gray-50/40">
+          {/* 細微的網格圖案 */}
+          <div className="fixed inset-0 pointer-events-none z-0"
+            style={{
+              backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 30px, rgba(0,0,0,0.03) 30px, rgba(0,0,0,0.03) 31px)`
+            }}>
+          </div>
+
+          {/* 主要內容 */}
+          <div className="relative z-10">
+            <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" disableTransitionOnChange>
+              <AuthProvider>
+                {/* LIFF initializer component */}
+                <LiffInit />
+                {children}
+              </AuthProvider>
+              <Toaster />
+            </ThemeProvider>
+          </div>
+        </div>
       </body>
     </html>
   )

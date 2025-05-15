@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useRef } from "react"
+import React, { useEffect, useState, useRef, Suspense } from "react"
 import { LineLoginButton } from "@/components/line-login-button"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -8,7 +8,7 @@ import { useAuth } from "@/context/auth-context"
 import { Loader2 } from "lucide-react"
 import dynamic from "next/dynamic"
 
-export default function Home() {
+function HomeContent() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -417,5 +417,13 @@ export default function Home() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

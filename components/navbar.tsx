@@ -40,7 +40,7 @@ export function Navbar() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center">
           <Link href="/dashboard" className="flex items-center">
-            <h1 className="text-xl font-bold text-green-600">員工互動表彰系統</h1>
+            <h1 className="text-xl font-bold gradient-text">員工互動表彰系統</h1>
           </Link>
         </div>
 
