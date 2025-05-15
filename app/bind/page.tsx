@@ -195,8 +195,7 @@ export default function BindPage() {
         localStorage.setItem("authToken", data.token)
         sessionStorage.setItem("authToken", data.token)
         
-        // Set cookie directly (although browser will receive it from response)
-        document.cookie = `user_session=${data.token}; path=/; max-age=${60 * 60 * 24}`;
+        // No need to set cookies - JWT token is stored in localStorage/sessionStorage
       }
       
       if (data.user) {

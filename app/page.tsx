@@ -47,6 +47,23 @@ function HomeContent() {
     
     console.log("Home page - Auth state:", user ? "User authenticated" : "No user");
     
+    // Check if token expired (from middleware redirect)
+    const tokenExpired = searchParams?.has('token_expired');
+    if (tokenExpired) {
+      console.log("Token expired - clearing all storage");
+      // Clear all auth storage
+      sessionStorage.clear();
+      localStorage.clear();
+      
+      // Update message
+      setAutoLoginMessage("登入已過期，請重新登入");
+      
+      // Remove the token_expired parameter to prevent loops
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('token_expired');
+      window.history.replaceState({}, document.title, newUrl.href);
+    }
+    
     // If we're already in a redirect state, don't do anything
     if (isRedirect) return;
     
@@ -204,31 +221,33 @@ function HomeContent() {
         setIsReload(true);
       }
       
-      // Simplified LIFF import - don't try to initialize here
+      // Import LIFF and check browser type
       import('@line/liff').then(async liffModule => {
         const liff = liffModule.default;
         
         try {
-          // Just check if we're in LIFF browser, don't initialize
-          if (liff.isInClient && liff.isInClient()) {
-            console.log("Detected LIFF browser");
-            setIsInLiffBrowser(true);
-          }
+          // Initialize LIFF to properly detect browser type
+          const liffId = '2007394904-dYXDv6o9'; // Hardcoded LIFF ID
+          await liff.init({ liffId });
+          
+          // Check if we're in LIFF browser
+          const inLiffBrowser = liff.isInClient && liff.isInClient();
+          console.log("LIFF browser check result:", inLiffBrowser);
+          setIsInLiffBrowser(inLiffBrowser);
         } catch (e) {
-          // If LIFF is not initialized, this will fail, but that's ok
-          console.log("LIFF not initialized in Home page, login button will handle it");
+          // If LIFF initialization fails, assume not in LIFF browser
+          console.log("LIFF initialization failed, assuming not in LIFF browser:", e);
+          setIsInLiffBrowser(false);
         }
         
+        // Now handle auto-login if in LIFF browser
         try {
-          // Now check if we're in LIFF browser (only if not already set)
-          if (!isInLiffBrowser) {
-            const isInLiffClient = liff.isInClient && liff.isInClient();
-            console.log("Detected LIFF browser:", isInLiffClient);
-            setIsInLiffBrowser(isInLiffClient);
+          // Only proceed with auto-login if we're actually in LIFF browser
+          if (liff.isInClient()) {
+            console.log("In LIFF browser, checking auto-login state");
             
-            if (isInLiffClient) {
-              // If we're in LIFF browser and it's a reload/logout
-              if (isLogout || hasReloadParam) {
+            // If we're in LIFF browser and it's a reload/logout
+            if (isLogout || hasReloadParam) {
                 console.log("Handling reload/logout in LIFF browser");
                 
                 // Clear auto-login flags to get a fresh start
@@ -247,7 +266,7 @@ function HomeContent() {
                 } catch (e) {
                   console.error("Error cleaning up state:", e);
                 }
-              } else {
+            } else {
                 // We're in LIFF browser but not handling logout/reload
                 // This is crucial for auto-login in LIFF browser
                 console.log("In LIFF browser on normal page load");
@@ -297,7 +316,7 @@ function HomeContent() {
                           if (data.token) {
                             localStorage.setItem("authToken", data.token);
                             sessionStorage.setItem("authToken", data.token);
-                            document.cookie = `user_session=${data.token}; path=/; max-age=${60 * 60 * 24}`;
+                            // No longer setting cookies - using JWT in localStorage/sessionStorage
                           }
                           
                           // Store user data
@@ -311,10 +330,10 @@ function HomeContent() {
                           
                           // Redirect to dashboard with auth for LIFF browser
                           console.log("Auto-login successful, redirecting to dashboard");
-                          const redirectUrl = new URL('/api/auth/liff-redirect', window.location.origin);
+                          const redirectUrl = new URL('/dashboard', window.location.origin);
                           redirectUrl.searchParams.set('auth_token', data.token);
-                          redirectUrl.searchParams.set('destination', '/dashboard');
-                          console.log("[HomePage LIFF] Redirecting to LIFF redirect route:", redirectUrl.toString());
+                          redirectUrl.searchParams.set('liff_auth', 'true');
+                          console.log("[HomePage LIFF] Redirecting to dashboard with auth token");
                           window.location.replace(redirectUrl.toString());
                         } else if (!autoLoginInProgress) {
                           // If we're not already showing the auto-login state, update it
@@ -332,7 +351,6 @@ function HomeContent() {
                     setAutoLoginInProgress(false);
                   }
                 }
-              }
             }
           }
         } catch (e) {
@@ -386,8 +404,9 @@ function HomeContent() {
     );
   }
   
-  // For LINE LIFF browser (including needs_liff_auth redirect), show the auto-redirect component
-  if (isInLiffBrowser || needsLiffAuth) {
+  // For LINE LIFF browser only, show the auto-redirect component
+  // Don't auto-redirect just because needs_liff_auth is present - that causes loops on desktop
+  if (isInLiffBrowser) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-green-50 to-green-100">
         <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-lg">

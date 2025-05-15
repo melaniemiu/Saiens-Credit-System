@@ -163,10 +163,7 @@ export default function BindEmployeePage() {
       if (responseData && responseData.token) {
         setAuthToken(responseData.token)
       
-        // Set cookie directly as well (though response already includes it)
-        if (typeof document !== 'undefined') {
-          document.cookie = `user_session=${responseData.token}; path=/; max-age=${60 * 60 * 24}`;
-        }
+        // No need to set cookies - JWT token is already stored
         
         // Create user object if user data is available
         if (responseData.user) {

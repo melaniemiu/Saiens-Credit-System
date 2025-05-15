@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { liff } from "@line/liff"
 import { Loader2 } from "lucide-react"
+import { setAuthToken } from "@/lib/api"
+import { setCurrentUser } from "@/lib/auth"
 
 // The LIFF ID must be hardcoded to avoid problems with environment variables on mobile
 const LIFF_ID = "2007394904-dYXDv6o9"
@@ -65,13 +67,25 @@ export function LineAutoRedirect() {
           console.log("[AutoRedirect] Login successful")
           
           if (data.token) {
-            localStorage.setItem("authToken", data.token)
-            sessionStorage.setItem("authToken", data.token)
+            // Use the auth library functions
+            setAuthToken(data.token)
           }
           
           if (data.user) {
-            localStorage.setItem("user", JSON.stringify(data.user))
-            sessionStorage.setItem("user", JSON.stringify(data.user))
+            // Use the auth library functions  
+            const userData = {
+              id: data.user.id,
+              name: data.user.name,
+              email: data.user.email,
+              picture: data.user.profilePicture || data.user.picture,
+              role: data.user.role,
+              department: data.user.departmentName || data.user.Department?.name,
+              employeeId: data.user.employeeId,
+              creditsReceived: data.user.creditsReceived,
+              creditsGiven: data.user.creditsGiven,
+              remainingDailyCredits: data.user.remainingDailyCredits,
+            }
+            setCurrentUser(userData)
           }
           
           // Redirect to dashboard with auth token for LIFF browser
@@ -80,11 +94,11 @@ export function LineAutoRedirect() {
           
           // Short timeout to avoid any race conditions
           setTimeout(() => {
-            // Use the special redirect route to set cookies properly
-            const redirectUrl = new URL("/api/auth/liff-redirect", window.location.origin)
+            // Redirect directly to dashboard with auth token
+            const redirectUrl = new URL("/dashboard", window.location.origin)
             redirectUrl.searchParams.set("auth_token", data.token)
-            redirectUrl.searchParams.set("destination", "/dashboard")
-            console.log("[AutoRedirect] Redirecting to LIFF redirect route:", redirectUrl.toString())
+            redirectUrl.searchParams.set("liff_auth", "true")
+            console.log("[AutoRedirect] Redirecting to dashboard with auth token")
             window.location.href = redirectUrl.toString()
           }, 300)
         } else {

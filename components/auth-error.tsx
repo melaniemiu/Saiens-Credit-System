@@ -21,11 +21,11 @@ export function AuthError() {
       const user = sessionStorage.getItem('user') || localStorage.getItem('user')
       const lineProfile = sessionStorage.getItem('lineProfile') || localStorage.getItem('lineProfile')
 
-      // Check for cookies
-      const hasAuthCookie = document.cookie.includes('user_session=')
+      // Check for auth token in storage
+      const hasAuthToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken')
 
       setStorageInfo({
-        hasToken: !!authToken || hasAuthCookie,
+        hasToken: !!authToken || !!hasAuthToken,
         hasUser: !!user,
         hasLineProfile: !!lineProfile
       })
@@ -34,7 +34,7 @@ export function AuthError() {
       console.log("- Token in storage:", !!authToken);
       console.log("- User in storage:", !!user);
       console.log("- LINE Profile in storage:", !!lineProfile);
-      console.log("- Auth cookie present:", hasAuthCookie);
+      console.log("- Auth token present:", !!hasAuthToken);
     }
   }, [])
 

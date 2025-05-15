@@ -21,30 +21,7 @@ export async function GET(request: NextRequest) {
   console.log('[LIFF Redirect] Redirecting to:', redirectUrl.toString());
   const response = NextResponse.redirect(redirectUrl);
   
-  // Set the auth cookie
-  response.cookies.set('user_session', authToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24, // 1 day
-    path: '/',
-  });
-  
-  // Also get user data and set admin cookie if needed
-  try {
-    // Decode the JWT token to get user info
-    const payload = JSON.parse(Buffer.from(authToken.split('.')[1], 'base64').toString());
-    
-    if (payload.role === 'admin') {
-      response.cookies.set('admin_role', 'true', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 24, // 1 day
-        path: '/',
-      });
-    }
-  } catch (error) {
-    console.error('Error parsing token:', error);
-  }
+  // No cookies needed - the auth_token in query params will be handled by the client
   
   return response;
 }

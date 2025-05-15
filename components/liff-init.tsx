@@ -123,6 +123,11 @@ export function LiffInit() {
             return;
           }
 
+          // Special handling for OAuth callback
+          if (isRedirect) {
+            console.log("🟨 Processing OAuth callback...");
+          }
+
           // Now it's safe to check login state
           if (liff.isLoggedIn()) {
             console.log("🟢 User is logged in with LINE");
@@ -187,11 +192,11 @@ export function LiffInit() {
                             // Check if we need to redirect
                             if (typeof window !== 'undefined' && 
                                 !window.location.pathname.includes('/dashboard')) {
-                              // Use the special redirect route to set cookies properly
-                              const redirectUrl = new URL('/api/auth/liff-redirect', window.location.origin);
+                              // Redirect directly to dashboard with auth token
+                              const redirectUrl = new URL('/dashboard', window.location.origin);
                               redirectUrl.searchParams.set('auth_token', data.token);
-                              redirectUrl.searchParams.set('destination', '/dashboard');
-                              console.log('[LiffInit] Redirecting to LIFF redirect route:', redirectUrl.toString());
+                              redirectUrl.searchParams.set('liff_auth', 'true');
+                              console.log('[LiffInit] Redirecting to dashboard with auth token');
                               window.location.replace(redirectUrl.toString());
                             }
                           } else {
@@ -208,15 +213,16 @@ export function LiffInit() {
                               
                               // Use a small delay to allow toast to be visible (for non-LIFF browsers)
                               setTimeout(() => {
-                                if (isInLiffBrowser && data.token) {
-                                  // Use the special redirect route for LIFF browser
-                                  const redirectUrl = new URL('/api/auth/liff-redirect', window.location.origin);
+                                if (data.token) {
+                                  // Always redirect with auth token to avoid middleware issues
+                                  const redirectUrl = new URL('/dashboard', window.location.origin);
                                   redirectUrl.searchParams.set('auth_token', data.token);
-                                  redirectUrl.searchParams.set('destination', '/dashboard');
-                                  console.log('[LiffInit] LIFF browser redirecting to redirect route:', redirectUrl.toString());
+                                  redirectUrl.searchParams.set('liff_auth', 'true');
+                                  console.log('[LiffInit] Redirecting to dashboard with auth token');
                                   window.location.href = redirectUrl.toString();
                                 } else {
-                                  // Regular redirect for non-LIFF browsers
+                                  // Fallback redirect without token (should not happen in normal flow)
+                                  console.warn('[LiffInit] No token available for redirect');
                                   window.location.href = '/dashboard';
                                 }
                               }, 300);

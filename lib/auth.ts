@@ -111,6 +111,7 @@ export function clearAuthStorage() {
   sessionStorage.removeItem('authToken')
   sessionStorage.removeItem('auth_redirect')
   sessionStorage.removeItem('processed_code')
+  sessionStorage.removeItem('auto_login_processed')
 
   // Redirection tracking
   sessionStorage.removeItem('auth_redirect')
@@ -120,6 +121,7 @@ export function clearAuthStorage() {
   localStorage.removeItem('user')
   localStorage.removeItem('lineProfile')
   localStorage.removeItem('authToken')
+  localStorage.removeItem('auto_login_processed')
 
   // Additional items that might exist
   sessionStorage.removeItem('liff.state')
@@ -131,30 +133,12 @@ export function clearAuthStorage() {
   sessionStorage.removeItem('current_user_profile')
   localStorage.removeItem('current_user_profile')
 
-  // Clear all LIFF-related cookies (if possible)
-  try {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i];
-      const eqPos = cookie.indexOf('=');
-      const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-      
-      // Clear all cookies that might be related to auth
-      if (name.includes('line') || name.includes('liff') || 
-          name.includes('auth') || name.includes('user') || 
-          name.includes('session')) {
-        document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;';
-      }
-    }
-  } catch (e) {
-    console.error('Error clearing cookies:', e);
-  }
 
   console.log("All auth data cleared from storage")
 }
 
 /**
- * Debug helper - check all storage and cookies
+ * Debug helper - check all storage
  */
 export function debugAuthStorage() {
   if (typeof window === 'undefined') return {};
@@ -162,7 +146,6 @@ export function debugAuthStorage() {
   const output = {
     session: {},
     local: {},
-    cookies: document.cookie,
   };
   
   // Session storage

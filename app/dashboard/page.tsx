@@ -5,7 +5,7 @@ import { CreditStats } from "@/components/credit-stats"
 import { CreditHistory } from "@/components/credit-history"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useEffect, useState, Suspense } from "react"
-import { userApi } from "@/lib/api"
+import { userApi, setAuthToken } from "@/lib/api"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, Loader2 } from "lucide-react"
@@ -32,22 +32,20 @@ function DashboardContent() {
     if (authToken) {
       console.log("[Dashboard] Found auth token in URL, setting up authentication")
       
-      // Store the token in cookies and localStorage
-      document.cookie = `user_session=${authToken}; path=/; max-age=${60 * 60 * 24}`
+      // Store the token in localStorage and sessionStorage only
       localStorage.setItem('authToken', authToken)
       sessionStorage.setItem('authToken', authToken)
       
-      // Clean up the URL
+      // Also set it in the API client
+      setAuthToken(authToken)
+      
+      // Clean up the URL without reloading
       const url = new URL(window.location.href)
       url.searchParams.delete('auth_token')
       url.searchParams.delete('liff_auth')
       window.history.replaceState({}, document.title, url.toString())
       
-      // Reload the page to properly initialize with the token
-      setTimeout(() => {
-        console.log('[Dashboard] Reloading page to apply authentication');
-        window.location.reload()
-      }, 100)
+      console.log('[Dashboard] Auth token stored, auth should update automatically');
     }
   }, [searchParams])
 
@@ -95,9 +93,9 @@ function DashboardContent() {
   }, [])
 
   useEffect(() => {
-    // Check if we have cookies set by our API route
-    const hasAuthCookie = document.cookie.includes('user_session=');
-    console.log("Dashboard - Auth cookie check:", hasAuthCookie ? "Found" : "Not found");
+    // Check if we have auth token in storage
+    const hasAuthToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    console.log("Dashboard - Auth token check:", hasAuthToken ? "Found" : "Not found");
 
     // If we already have user data from auth context, use that
     if (user) {

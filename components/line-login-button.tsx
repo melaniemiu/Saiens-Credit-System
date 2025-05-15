@@ -129,10 +129,10 @@ export function LineLoginButton() {
                 console.log("Login successful, redirecting to dashboard");
                 
                 if (isInLiffBrowser && data.token) {
-                  // Use the special redirect route for LIFF browser
-                  const redirectUrl = new URL('/api/auth/liff-redirect', window.location.origin);
+                  // Redirect directly to dashboard with auth token
+                  const redirectUrl = new URL('/dashboard', window.location.origin);
                   redirectUrl.searchParams.set('auth_token', data.token);
-                  redirectUrl.searchParams.set('destination', '/dashboard');
+                  redirectUrl.searchParams.set('liff_auth', 'true');
                   window.location.href = redirectUrl.toString();
                 } else {
                   // Regular redirect for non-LIFF browsers

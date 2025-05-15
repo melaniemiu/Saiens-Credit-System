@@ -20,6 +20,28 @@ interface PaginatedResponse<T> {
   items: T[];
 }
 
+// Check if JWT token is expired
+function isTokenExpired(token: string): boolean {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return true;
+    }
+    
+    const payload = JSON.parse(atob(parts[1]));
+    
+    if (!payload.exp) {
+      return true;
+    }
+    
+    const currentTime = Math.floor(Date.now() / 1000);
+    return payload.exp < currentTime;
+  } catch (error) {
+    console.error('Error checking token expiry:', error);
+    return true;
+  }
+}
+
 // Create headers with auth token
 const createHeaders = (includeAuth: boolean = true): HeadersInit => {
   const headers: HeadersInit = {
@@ -29,7 +51,17 @@ const createHeaders = (includeAuth: boolean = true): HeadersInit => {
   if (includeAuth) {
     const token = getAuthToken();
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      // Check if token is expired before using it
+      if (isTokenExpired(token)) {
+        console.warn('Auth token is expired, not including in request');
+        // Clear expired token
+        removeAuthToken();
+        // Clear all auth storage
+        sessionStorage.clear();
+        localStorage.clear();
+      } else {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
     } else {
       console.warn('No auth token found in storage for API request');
     }
@@ -46,16 +78,14 @@ async function fetchApi<T>(
   try {
     const url = `${API_BASE_URL}${endpoint}`;
 
-    // Add CORS mode to options and ensure credentials are included
+    // Add CORS mode to options
     const fetchOptions: RequestInit = {
       ...options,
       mode: 'cors',
-      credentials: 'include', // Always include credentials (cookies)
     };
 
     console.log(`Fetching from URL: ${url}`);
     console.log(`Including auth header: ${options.headers && 'Authorization' in options.headers}`);
-    console.log(`With credentials: ${fetchOptions.credentials}`);
 
     const response = await fetch(url, fetchOptions);
     const status = response.status;
@@ -330,13 +360,15 @@ export const setAuthToken = (token: string) => {
   }
 };
 
-export const removeAuthToken = () => {
+const removeAuthToken = () => {
   if (typeof window !== 'undefined') {
     sessionStorage.removeItem('authToken');
     localStorage.removeItem('authToken');
     console.log("Auth token removed from storage");
   }
 };
+
+export { removeAuthToken };
 
 // Get auth token from storage (checking both types)
 export const getAuthToken = (): string | null => {

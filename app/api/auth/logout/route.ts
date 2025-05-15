@@ -10,18 +10,11 @@ export async function POST(request: NextRequest) {
     const url = new URL(request.url);
     const shouldRedirect = url.searchParams.has('redirect');
 
-    // Clear authentication cookies
-    const cookieOptions = {
-      path: '/',
-      maxAge: 0, // Expire immediately
-    };
-
     // Call backend to clear session if needed
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://5.unayung.cc/api';
     try {
       await fetch(`${backendUrl}/auth/logout`, {
         method: 'POST',
-        credentials: 'include', // Include cookies
       });
       console.log('Backend logout request completed');
     } catch (backendError) {
@@ -29,13 +22,12 @@ export async function POST(request: NextRequest) {
       console.error('Backend logout error (continuing with local logout):', backendError);
     }
 
-    // If redirect is requested, respond with HTML that will redirect and clear cookies in JavaScript
-    // This approach avoids middleware auth checks during redirection
+    // If redirect is requested, respond with HTML that will redirect and clear localStorage/sessionStorage
     if (shouldRedirect) {
       console.log('Performing immediate redirect after logout');
 
       // Create HTML response that will clear client storage and redirect
-      const htmlResponse = new NextResponse(
+      return new NextResponse(
         `<!DOCTYPE html>
         <html>
           <head>
@@ -90,25 +82,13 @@ export async function POST(request: NextRequest) {
           },
         }
       );
-
-      // Clear auth cookies
-      htmlResponse.cookies.delete('user_session', cookieOptions);
-      htmlResponse.cookies.delete('admin_role', cookieOptions);
-
-      return htmlResponse;
     } else {
       // Standard JSON response for API calls
-      const response = NextResponse.json({
+      console.log('Logout successful, returning JSON response');
+      return NextResponse.json({
         success: true,
         message: 'Logged out successfully'
       });
-
-      // Clear cookies
-      response.cookies.delete('user_session', cookieOptions);
-      response.cookies.delete('admin_role', cookieOptions);
-
-      console.log('Logout successful, returning response with cleared cookies');
-      return response;
     }
   } catch (error) {
     console.error('Error in logout route:', error);

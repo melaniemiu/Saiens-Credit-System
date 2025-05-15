@@ -39,10 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return isBindPath || hasBindFlag;
   };
 
-  // Initialize auth state
-  useEffect(() => {
-    async function initAuth() {
-      try {
+  // Define initAuth function outside of useEffect so it can be reused
+  const initAuth = async () => {
+    try {
         // Skip auth initialization on binding pages
         if (isOnBindingPage()) {
           console.log("On binding page, skipping auth context initialization");
@@ -123,10 +122,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } finally {
         setLoading(false)
       }
-    }
+  }
 
+  // Initialize auth state
+  useEffect(() => {
     initAuth()
   }, [])
+
+  // Watch for token changes in storage (specifically for LIFF browser case)
+  useEffect(() => {
+    // Only run this for LIFF browser redirect case
+    if (typeof window === 'undefined') return;
+    
+    // Function to check for token and update auth state
+    const checkForToken = () => {
+      if (!user && isAuthenticated()) {
+        console.log("Token detected in storage, refreshing auth state");
+        initAuth();
+      }
+    };
+
+    // Check once after a short delay (for LIFF browser case)
+    const timeout = setTimeout(checkForToken, 500);
+
+    // Clean up
+    return () => clearTimeout(timeout);
+  }, [user])
 
   const refreshUser = async () => {
     try {
@@ -309,27 +330,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             response.status === 401 ||
             response.error?.includes("expired")) {
 
+          console.log("Token expired - clearing auth state and letting middleware handle redirect");
+          
+          // Clear all auth state
+          clearAuthStorage();
+          setUser(null);
+          
           toast({
             title: "登入已過期",
             description: "請重新登入LINE",
             variant: "destructive",
           })
-
-          // Force logout and re-login after a short delay
-          try {
-            liff.logout();
-            setTimeout(() => {
-              toast({
-                title: "重新導向登入頁",
-                description: "即將重新登入",
-              });
-              setTimeout(() => liff.login(), 1000);
-            }, 1000);
-          } catch (e) {
-            console.error("Error during logout/login process:", e);
-          }
-
+          
           setLoading(false);
+          
+          // The middleware will handle the redirect to prevent loops
+          // Just return here without triggering any redirects
           return;
         }
 
@@ -440,7 +456,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: "將重新載入應用程式",
         })
 
-        // Call our API directly to clear cookies
+        // Call our API directly to handle logout
         try {
           await fetch('/api/auth/logout', {
             method: 'POST',
