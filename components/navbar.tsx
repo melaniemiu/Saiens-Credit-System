@@ -36,7 +36,7 @@ export function Navbar() {
   ]
 
   return (
-    <nav className="border-b bg-white shadow-sm">
+    <nav className="sticky top-0 z-50 border-b bg-white shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center">
           <Link href="/dashboard" className="flex items-center">

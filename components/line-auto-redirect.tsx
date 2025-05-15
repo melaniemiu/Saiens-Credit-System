@@ -135,7 +135,7 @@ export function LineAutoRedirect() {
   }, [])
   
   return (
-    <div className="flex flex-col items-center justify-center space-y-4 py-4">
+    <div className="flex flex-col items-center justify-center space-y-4 px-5 py-4">
       <Loader2 className="h-8 w-8 animate-spin text-green-600" />
       {!error ? (
         <p className="text-green-600 font-medium">{status}</p>
