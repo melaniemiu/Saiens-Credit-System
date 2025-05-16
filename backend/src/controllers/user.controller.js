@@ -1,4 +1,4 @@
-const { User, Department } = require('../models');
+const { User, Department, Credit } = require('../models');
 const { Op } = require('sequelize');
 
 // Get current user profile
@@ -242,6 +242,85 @@ exports.deleteUser = async (req, res, next) => {
     
     return res.status(200).json({
       message: 'User deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get daily credit statistics
+exports.getDailyStats = async (req, res, next) => {
+  try {
+    const userId = req.userId; // Set by auth middleware
+    
+    const user = await User.findByPk(userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Check and reset daily credits if needed
+    await user.checkAndResetDailyCredits();
+    
+    // Calculate date ranges
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const dayBeforeYesterday = new Date(today);
+    dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 2);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Get credits received for each day
+    const [todayCredits, yesterdayCredits, dayBeforeCredits] = await Promise.all([
+      // Today's credits
+      Credit.count({
+        where: {
+          receiverId: userId,
+          status: 'approved',
+          createdAt: {
+            [Op.gte]: today,
+            [Op.lt]: tomorrow
+          }
+        }
+      }),
+      // Yesterday's credits
+      Credit.count({
+        where: {
+          receiverId: userId,
+          status: 'approved',
+          createdAt: {
+            [Op.gte]: yesterday,
+            [Op.lt]: today
+          }
+        }
+      }),
+      // Day before yesterday's credits
+      Credit.count({
+        where: {
+          receiverId: userId,
+          status: 'approved',
+          createdAt: {
+            [Op.gte]: dayBeforeYesterday,
+            [Op.lt]: yesterday
+          }
+        }
+      })
+    ]);
+    
+    return res.status(200).json({
+      stats: {
+        totalReceived: user.creditsReceived,
+        todayReceived: todayCredits,
+        yesterdayReceived: yesterdayCredits,
+        dayBeforeReceived: dayBeforeCredits,
+        remainingDailyCredits: user.remainingDailyCredits,
+        dailyLimit: Number(process.env.DAILY_CREDIT_LIMIT || 5)
+      }
     });
   } catch (error) {
     next(error);

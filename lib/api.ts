@@ -274,6 +274,23 @@ export const userApi = {
       headers: createHeaders(),
     });
   },
+
+  // Get daily credit statistics
+  getDailyStats: async () => {
+    return fetchApi<{
+      stats: {
+        totalReceived: number;
+        todayReceived: number;
+        yesterdayReceived: number;
+        dayBeforeReceived: number;
+        remainingDailyCredits: number;
+        dailyLimit: number;
+      }
+    }>('/users/daily-stats', {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
 };
 
 // Credit API

@@ -6,7 +6,8 @@ const {
   getAllUsers,
   createUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  getDailyStats
 } = require('../controllers/user.controller');
 const { authenticate, isAdmin } = require('../middlewares/auth.middleware');
 
@@ -15,6 +16,9 @@ router.use(authenticate);
 
 // Get current user profile
 router.get('/me', getCurrentUser);
+
+// Get daily credit statistics
+router.get('/daily-stats', getDailyStats);
 
 // Get list of users (for giving credit)
 router.get('/list', getUsers);
