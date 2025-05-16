@@ -28,14 +28,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Helper function to check if on a binding page
   const isOnBindingPage = () => {
     if (typeof window === 'undefined') return false;
-    
+
     // Check URL path
-    const isBindPath = window.location.pathname === '/bind' || 
+    const isBindPath = window.location.pathname === '/bind' ||
                       window.location.pathname === '/bind-employee';
-                      
+
     // Check for binding page flag
     const hasBindFlag = sessionStorage.getItem('on_binding_page') === 'true';
-    
+
     return isBindPath || hasBindFlag;
   };
 
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
           return;
         }
-        
+
         setLoading(true)
 
         // Check if user is already authenticated
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 department: response.data.user.Department?.name,
                 employeeId: response.data.user.employeeId,
                 creditsReceived: response.data.user.creditsReceived,
-                creditsGiven: response.data.user.creditsGiven,
+                creditsSent: response.data.user.creditsSent,
                 remainingDailyCredits: response.data.user.remainingDailyCredits,
               }
 
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // We got LINE profile, but no backend validation yet
               // Check if auto-login has been processed before trying to login
               const autoLoginProcessed = sessionStorage.getItem('auto_login_processed') === 'true';
-              
+
               if (!autoLoginProcessed) {
                 console.log("LINE profile available but no user data. LiffInit should handle auto-login.");
                 // Let LiffInit handle the auto-login flow
@@ -102,11 +102,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Check for LIFF browser and auto-login flag
             const liffModule = await import('@line/liff');
             const liff = liffModule.default;
-            
+
             // Only proceed if LIFF is available and we're not on the binding page
             if (typeof liff !== 'undefined' && liff.isInClient() && !isOnBindingPage()) {
               const autoLoginProcessed = sessionStorage.getItem('auto_login_processed') === 'true';
-              
+
               if (!autoLoginProcessed) {
                 console.log("🔄 In LIFF browser but not authenticated. LiffInit should handle auto-login.");
                 // Let LiffInit handle the auto-login
@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Only run this for LIFF browser redirect case
     if (typeof window === 'undefined') return;
-    
+
     // Function to check for token and update auth state
     const checkForToken = () => {
       if (!user && isAuthenticated()) {
@@ -144,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Check once after a short delay (for LIFF browser case)
     const timeout = setTimeout(checkForToken, 500);
-    
+
     // Also handle storage events for cross-tab/window token updates
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'authToken' && e.newValue && !user) {
@@ -152,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         checkForToken();
       }
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
 
     // Clean up
@@ -179,7 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           department: response.data.user.Department?.name,
           employeeId: response.data.user.employeeId,
           creditsReceived: response.data.user.creditsReceived,
-          creditsGiven: response.data.user.creditsGiven,
+          creditsSent: response.data.user.creditsSent,
           remainingDailyCredits: response.data.user.remainingDailyCredits,
         }
 
@@ -206,18 +206,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("On binding page, skipping login process");
         return;
       }
-      
+
       // Check if auto-login was already processed
       const autoLoginProcessed = sessionStorage.getItem('auto_login_processed') === 'true';
       const isAlreadyAuthenticated = isAuthenticated();
-      
+
       // If already authenticated via auto-login, just redirect to dashboard
       if (autoLoginProcessed && isAlreadyAuthenticated) {
         console.log("User already authenticated via auto-login, redirecting to dashboard");
         window.location.href = '/dashboard';
         return;
       }
-      
+
       setLoading(true)
       setError(null)
 
@@ -270,14 +270,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.error || !response.data) {
         // Check if this is a binding case first, before showing any error message
-        const isBindingCase = 
-          response.status === 403 || 
+        const isBindingCase =
+          response.status === 403 ||
           (response.error && (
-            response.error === "User not registered in the system" || 
+            response.error === "User not registered in the system" ||
             response.error.includes("not registered") ||
             response.error.includes("User not registered")
           ));
-        
+
         // Only log as error if it's not a binding case
         if (!isBindingCase) {
           console.error("Backend auth error:", response.error);
@@ -287,32 +287,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Special handling for user not registered in system (needs employee ID binding)
         console.log("Checking for binding case:", response.error, response.status)
-        
+
         if (isBindingCase) {
-          
+
           console.log("✅ User needs to bind employee ID - redirecting to binding page")
           // Only show this toast once the user is on the binding page to avoid confusion
           // The message will be shown on the binding page itself
-          
+
           // Import debug and clear functions
           const { clearAuthStorage, debugAuthStorage } = await import('@/lib/auth')
-          
+
           // Debug current storage state
           console.log("Before handling binding case:")
           debugAuthStorage()
-          
+
           // Clean all auth storage to ensure a fresh start
           // This is important to prevent cached users causing issues
           clearAuthStorage()
-          
+
           // Get LINE user data from the response
           const lineData = response.lineData || {}
-          const lineParams = lineData.userId ? 
+          const lineParams = lineData.userId ?
             `?lineUserId=${encodeURIComponent(lineData.userId)}` +
             `&userName=${encodeURIComponent(lineData.name || '')}` +
             `&picture=${encodeURIComponent(lineData.picture || '')}`
             : ''
-          
+
           // Force clean any existing LIFF login session first
           try {
             liff.logout()
@@ -320,7 +320,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } catch (e) {
             console.error("Error logging out of LINE:", e)
           }
-          
+
           // Set a flag to prevent auto-login on binding page
           try {
             sessionStorage.setItem('on_binding_page', 'true');
@@ -329,11 +329,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } catch (e) {
             console.error("Failed to set sessionStorage flags:", e);
           }
-          
+
           // Redirect to dedicated binding page
           console.log("Redirecting to dedicated binding page at /bind");
           window.location.href = `/bind${lineParams}`;
-          
+
           setLoading(false);
           return;
         }
@@ -344,33 +344,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             response.error?.includes("expired")) {
 
           console.log("Token expired - clearing auth state and letting middleware handle redirect");
-          
+
           // Clear all auth state
           clearAuthStorage();
           setUser(null);
-          
+
           toast({
             title: "登入已過期",
             description: "請重新登入LINE",
             variant: "destructive",
           })
-          
+
           setLoading(false);
-          
+
           // The middleware will handle the redirect to prevent loops
           // Just return here without triggering any redirects
           return;
         }
 
         // Check if it's a binding case one more time (the previous check might have been modified)
-        const maybeBindingCase = 
-          response.status === 403 || 
+        const maybeBindingCase =
+          response.status === 403 ||
           (response.error && (
-            response.error === "User not registered in the system" || 
+            response.error === "User not registered in the system" ||
             response.error.includes("not registered") ||
             response.error.includes("User not registered")
           ));
-          
+
         if (!maybeBindingCase) {
           // Only show toast for non-binding errors
           toast({
@@ -407,14 +407,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         department: response.data.user.departmentName,
         employeeId: response.data.user.employeeId,
         creditsReceived: response.data.user.creditsReceived,
-        creditsGiven: response.data.user.creditsGiven,
+        creditsSent: response.data.user.creditsSent,
         remainingDailyCredits: response.data.user.remainingDailyCredits,
       }
 
       // Update user state
       setCurrentUser(backendUser)
       setUser(backendUser)
-      
+
       // Mark that we've processed login
       sessionStorage.setItem('auto_login_processed', 'true');
 
@@ -450,7 +450,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     console.log("AuthContext: Logout triggered");
-    
+
     try {
       // Show loading state
       setLoading(true)
@@ -467,7 +467,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearAuthStorage()
       removeAuthToken()
       authLogout()
-      
+
       // Additional storage clearing for complete cleanup
       try {
         // Clear all possible auth-related keys
@@ -483,7 +483,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         console.error("Error clearing storage:", e)
       }
-      
+
       // Clear API cache to prevent stale data
       const { apiCache } = await import('@/lib/cache')
       apiCache.clear()
@@ -504,7 +504,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (e) {
           console.error("Error calling logout API:", e)
         }
-        
+
         // For LIFF browser, reload the app instead of redirecting to login
         toast({
           title: "已清除資料",

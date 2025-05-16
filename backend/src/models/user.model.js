@@ -42,9 +42,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATE,
       allowNull: true
     },
-    DepartmentId: {
+    departmentId: {
       type: DataTypes.UUID,
-      allowNull: true,
+      allowNull: false,
+      field: 'departmentId',
       references: {
         model: 'departments',
         key: 'id'
@@ -54,7 +55,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       defaultValue: 0
     },
-    creditsGiven: {
+    creditsSent: {
       type: DataTypes.INTEGER,
       defaultValue: 0
     },

@@ -35,7 +35,7 @@ exports.getCurrentUser = async (req, res, next) => {
         departmentId: user.departmentId,
         Department: user.Department,
         creditsReceived: user.creditsReceived,
-        creditsGiven: user.creditsGiven,
+        creditsSent: user.creditsSent,
         remainingDailyCredits: user.remainingDailyCredits,
         dailyCreditLimit: user.dailyCreditLimit,
         dailyCreditResetDate: user.dailyCreditResetDate,

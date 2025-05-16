@@ -136,7 +136,7 @@ exports.lineLogin = async (req, res, next) => {
         departmentId: user.departmentId,
         remainingDailyCredits: user.remainingDailyCredits,
         creditsReceived: user.creditsReceived,
-        creditsGiven: user.creditsGiven,
+        creditsSent: user.creditsSent,
       },
     });
   } catch (error) {
@@ -299,7 +299,7 @@ exports.bindEmployeeId = async (req, res, next) => {
         departmentName: user.Department?.name,
         remainingDailyCredits: user.remainingDailyCredits,
         creditsReceived: user.creditsReceived,
-        creditsGiven: user.creditsGiven,
+        creditsSent: user.creditsSent,
       },
     });
   } catch (error) {

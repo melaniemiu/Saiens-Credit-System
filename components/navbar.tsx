@@ -5,13 +5,13 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { UserCircle, Home, Gift, Clock, LogOut, Menu } from "lucide-react"
+import { UserCircle, Home, Gift, Clock, LogOut, Menu, Shield } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 
 export function Navbar() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
 
   const isActive = (path: string) => {
     return pathname === path
@@ -25,7 +25,7 @@ export function Navbar() {
     },
     {
       href: "/dashboard/give-credit",
-      label: "給予 Credit",
+      label: "發送 Credit",
       icon: Gift,
     },
     {
@@ -34,6 +34,13 @@ export function Navbar() {
       icon: Clock,
     },
   ]
+
+  // Add admin link only for admin users
+  const adminItem = {
+    href: "/admin",
+    label: "管理面板",
+    icon: Shield,
+  }
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-white shadow-sm">
@@ -57,6 +64,17 @@ export function Navbar() {
               </Button>
             </Link>
           ))}
+          {user?.role === 'admin' && (
+            <Link href={adminItem.href}>
+              <Button
+                variant={isActive(adminItem.href) ? "default" : "ghost"}
+                className={`flex items-center gap-2 ${isActive(adminItem.href) ? 'bg-black text-white hover:bg-gray-800' : ''}`}
+              >
+                <adminItem.icon className="h-4 w-4" />
+                {adminItem.label}
+              </Button>
+            </Link>
+          )}
         </div>
 
         <div className="flex items-center space-x-4">
@@ -92,6 +110,17 @@ export function Navbar() {
                       </Button>
                     </Link>
                   ))}
+                  {user?.role === 'admin' && (
+                    <Link href={adminItem.href} onClick={() => setIsOpen(false)}>
+                      <Button
+                        variant={isActive(adminItem.href) ? "default" : "ghost"}
+                        className="w-full justify-start gap-2"
+                      >
+                        <adminItem.icon className="h-4 w-4" />
+                        {adminItem.label}
+                      </Button>
+                    </Link>
+                  )}
                   <div className="my-2 border-t" />
                   <Button
                     variant="ghost"

@@ -181,7 +181,7 @@ function DashboardContent() {
               department: response.data.user.Department?.name,
               employeeId: response.data.user.employeeId,
               creditsReceived: response.data.user.creditsReceived,
-              creditsGiven: response.data.user.creditsGiven,
+              creditsSent: response.data.user.creditsSent,
               remainingDailyCredits: response.data.user.remainingDailyCredits,
             };
 

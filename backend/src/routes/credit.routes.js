@@ -4,7 +4,7 @@ const {
   giveCredit,
   giveBulkCredit,
   getReceivedCredits,
-  getGivenCredits,
+  getSentCredits,
   getAllCredits
 } = require('../controllers/credit.controller');
 const { authenticate, isAdmin } = require('../middlewares/auth.middleware');
@@ -21,8 +21,8 @@ router.post('/bulk', giveBulkCredit);
 // Get credits received by current user
 router.get('/received', getReceivedCredits);
 
-// Get credits given by current user
-router.get('/given', getGivenCredits);
+// Get credits sent by current user
+router.get('/sent', getSentCredits);
 
 // Admin: Get all credits
 router.get('/all', isAdmin, getAllCredits);

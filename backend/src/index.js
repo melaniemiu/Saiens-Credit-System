@@ -9,6 +9,8 @@ const { sequelize } = require("./models");
 const authRoutes = require("./routes/auth.routes");
 const creditRoutes = require("./routes/credit.routes");
 const userRoutes = require("./routes/user.routes");
+const departmentRoutes = require("./routes/department.routes");
+const adminRoutes = require("./routes/admin.routes");
 
 // Initialize express app
 const app = express();
@@ -40,6 +42,8 @@ app.use(morgan("dev")); // Request logging
 app.use("/api/auth", authRoutes);
 app.use("/api/credits", creditRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/departments", departmentRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Health check route
 app.get("/health", (req, res) => {

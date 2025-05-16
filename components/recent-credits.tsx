@@ -51,7 +51,7 @@ export function RecentCredits() {
                     </>
                   ) : (
                     <>
-                      您給了 <span className="font-semibold">{credit.to}</span> Credit
+                      您發送了 Credit 給 <span className="font-semibold">{credit.to}</span>
                     </>
                   )}
                 </p>

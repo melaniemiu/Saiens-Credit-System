@@ -41,7 +41,6 @@ export function CreditHistory() {
     try {
       setIsLoadingReceived(true)
       const response = await creditApi.getReceivedCredits(page)
-
       if (response.data) {
         if (page === 1) {
           setReceivedCredits(response.data.credits)
@@ -61,7 +60,7 @@ export function CreditHistory() {
   const fetchGivenCredits = async (page = 1) => {
     try {
       setIsLoadingGiven(true)
-      const response = await creditApi.getGivenCredits(page)
+      const response = await creditApi.getSentCredits(page)
 
       if (response.data) {
         if (page === 1) {
@@ -126,8 +125,8 @@ export function CreditHistory() {
                   <div className="flex items-start sm:items-center flex-wrap sm:flex-nowrap gap-2">
                     <Badge className="bg-green-600 text-white hover:bg-green-700 shrink-0">收到</Badge>
                     <div className="flex items-baseline gap-1 flex-wrap">
-                      <span className="font-medium text-gray-900 whitespace-nowrap">{credit.sender?.name || "李大壯"}</span>
-                      <span className="text-xs text-gray-500 whitespace-nowrap">({credit.sender?.Department?.name || "業務部"})</span>
+                      <span className="font-medium text-gray-900 whitespace-nowrap">{credit.sender?.name || "已刪除使用者"}</span>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">({credit.sender?.Department?.name || "未知部門"})</span>
                     </div>
                   </div>
                   <span className="text-sm text-gray-500 whitespace-nowrap">{new Date(credit.createdAt || "2023/6/5").toLocaleString("zh-TW")}</span>
@@ -172,8 +171,8 @@ export function CreditHistory() {
                   <div className="flex items-start sm:items-center flex-wrap sm:flex-nowrap gap-2">
                     <Badge variant="outline" className="border-blue-600 text-blue-600 shrink-0">送出</Badge>
                     <div className="flex items-baseline gap-1 flex-wrap">
-                      <span className="font-medium text-gray-900 whitespace-nowrap">{credit.receiver?.name || "張素芬"}</span>
-                      <span className="text-xs text-gray-500 whitespace-nowrap">({credit.receiver?.Department?.name || "人資部"})</span>
+                      <span className="font-medium text-gray-900 whitespace-nowrap">{credit.receiver?.name || "已刪除使用者"}</span>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">({credit.receiver?.Department?.name || "未知部門"})</span>
                     </div>
                   </div>
                   <span className="text-sm text-gray-500 whitespace-nowrap">{new Date(credit.createdAt || "2023/6/14").toLocaleString("zh-TW")}</span>

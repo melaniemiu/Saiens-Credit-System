@@ -29,23 +29,23 @@ export default function BindEmployeePage() {
       try {
         // Import the debug function
         const { debugAuthStorage } = await import('@/lib/auth')
-        
+
         // Debug current storage
         console.log("Binding page - initial state:")
         debugAuthStorage()
-        
+
         // Show welcome toast when the page loads
         toast({
           title: "連結帳號",
           description: "請輸入您的員工編號以連結帳號",
         })
-        
+
         // Check URL for lineUserId parameter (in case we were redirected with this info)
         const params = new URLSearchParams(window.location.search)
         const urlLineUserId = params.get('lineUserId')
         const urlUserName = params.get('userName')
         const urlPicture = params.get('picture')
-        
+
         if (urlLineUserId) {
           console.log("Using LINE user ID from URL parameters:", urlLineUserId)
           setLineUserId(urlLineUserId)
@@ -54,12 +54,12 @@ export default function BindEmployeePage() {
           setLoading(false)
           return
         }
-        
+
         // Otherwise get data from LIFF
         console.log("No LINE parameters in URL, using LIFF API")
         const liffModule = await import('@line/liff')
         const liff = liffModule.default
-        
+
         // Check if user is logged in with LIFF
         if (!liff.isLoggedIn()) {
           console.log("User not logged in with LINE, redirecting to login...")
@@ -67,7 +67,7 @@ export default function BindEmployeePage() {
             title: "請先登入LINE",
             description: "將導向至登入頁面",
           })
-          
+
           setTimeout(() => {
             router.push('/')
           }, 1000)
@@ -79,21 +79,21 @@ export default function BindEmployeePage() {
         setLineUserId(profile.userId)
         setUserName(profile.displayName)
         setPicture(profile.pictureUrl || null)
-        
+
         console.log("Successfully retrieved LINE profile for binding page:", profile.userId)
         setLoading(false)
       } catch (err) {
         console.error('Failed to initialize LIFF:', err)
         setError('Failed to get LINE profile. Please try again.')
         setLoading(false)
-        
+
         // Redirect back to home if we can't get the LINE profile
         toast({
           title: "無法取得LINE資料",
           description: "請重新登入",
           variant: "destructive",
         })
-        
+
         setTimeout(() => {
           router.push('/')
         }, 2000)
@@ -105,7 +105,7 @@ export default function BindEmployeePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!employeeId.trim()) {
       toast({
         title: "請輸入員工編號",
@@ -129,7 +129,7 @@ export default function BindEmployeePage() {
 
     try {
       let responseData;
-      
+
       try {
         const response = await authApi.bindEmployeeId(employeeId, lineUserId, picture)
 
@@ -144,7 +144,7 @@ export default function BindEmployeePage() {
           setSubmitting(false)
           return
         }
-        
+
         // Store response data
         responseData = response.data;
       } catch (apiError) {
@@ -162,18 +162,18 @@ export default function BindEmployeePage() {
       // Success - save token and user data comprehensively
       if (responseData && responseData.token) {
         console.log("Employee binding successful, saving auth data");
-        
+
         // Save the JWT token immediately
         setAuthToken(responseData.token)
-        
+
         // Also store it manually to ensure it's available
         localStorage.setItem('authToken', responseData.token);
         sessionStorage.setItem('authToken', responseData.token);
-        
+
         // Mark as authenticated
         localStorage.setItem('authenticated', 'true');
         sessionStorage.setItem('authenticated', 'true');
-        
+
         // Create user object if user data is available
         if (responseData.user) {
           const backendUser = {
@@ -185,19 +185,19 @@ export default function BindEmployeePage() {
             department: responseData.user.departmentName || responseData.user.Department?.name,
             employeeId: responseData.user.employeeId,
             creditsReceived: responseData.user.creditsReceived,
-            creditsGiven: responseData.user.creditsGiven,
+            creditsSent: responseData.user.creditsSent,
             remainingDailyCredits: responseData.user.remainingDailyCredits,
           };
 
           // Save user data
           setCurrentUser(backendUser);
-          
+
           // If admin, set admin flags
           if (backendUser.role === 'admin') {
             sessionStorage.setItem('is_admin', 'true');
             localStorage.setItem('is_admin', 'true');
           }
-        
+
           // Remove any binding page flags
           try {
             sessionStorage.removeItem('on_binding_page');
@@ -299,9 +299,9 @@ export default function BindEmployeePage() {
             </div>
 
             <div className="mt-6">
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={submitting}
               >
                 {submitting ? (

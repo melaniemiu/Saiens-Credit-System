@@ -336,15 +336,25 @@ export const creditApi = {
 
   // Get credits received by current user
   getReceivedCredits: async (page = 1, limit = 10) => {
-    return fetchApi<PaginatedResponse<any>>(`/credits/received?page=${page}&limit=${limit}`, {
+    return fetchApi<{
+      totalItems: number;
+      totalPages: number;
+      currentPage: number;
+      credits: any[];
+    }>(`/credits/received?page=${page}&limit=${limit}`, {
       method: 'GET',
       headers: createHeaders(),
     });
   },
 
-  // Get credits given by current user
-  getGivenCredits: async (page = 1, limit = 10) => {
-    return fetchApi<PaginatedResponse<any>>(`/credits/given?page=${page}&limit=${limit}`, {
+  // Get credits sent by current user
+  getSentCredits: async (page = 1, limit = 10) => {
+    return fetchApi<{
+      totalItems: number;
+      totalPages: number;
+      currentPage: number;
+      credits: any[];
+    }>(`/credits/sent?page=${page}&limit=${limit}`, {
       method: 'GET',
       headers: createHeaders(),
     });
@@ -366,6 +376,108 @@ export const creditApi = {
     if (searchTerm) query += `&searchTerm=${encodeURIComponent(searchTerm)}`;
 
     return fetchApi<PaginatedResponse<any>>(`/credits/all?${query}`, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+};
+
+// Admin API
+export const adminApi = {
+  // Get all users (admin only)
+  getUsers: async (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    departmentId?: string;
+    role?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page.toString());
+    if (params.limit) query.append('limit', params.limit.toString());
+    if (params.search) query.append('search', params.search);
+    if (params.departmentId) query.append('departmentId', params.departmentId);
+    if (params.role) query.append('role', params.role);
+
+    return fetchApi<{
+      users: any[];
+      totalPages: number;
+      currentPage: number;
+      totalCount: number;
+    }>(`/admin/users?${query.toString()}`, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Create user (admin only)
+  createUser: async (userData: any) => {
+    return fetchApi<{ message: string; user: any }>('/admin/users', {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify(userData),
+    });
+  },
+
+  // Update user (admin only)
+  updateUser: async (userId: string, userData: any) => {
+    return fetchApi<{ message: string; user: any }>(`/admin/users/${userId}`, {
+      method: 'PUT',
+      headers: createHeaders(),
+      body: JSON.stringify(userData),
+    });
+  },
+
+  // Delete user (admin only)
+  deleteUser: async (userId: string) => {
+    return fetchApi<{ message: string }>(`/admin/users/${userId}`, {
+      method: 'DELETE',
+      headers: createHeaders(),
+    });
+  },
+
+  // Get all credits (admin only)
+  getCredits: async (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    departmentId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page.toString());
+    if (params.limit) query.append('limit', params.limit.toString());
+    if (params.search) query.append('search', params.search);
+    if (params.departmentId) query.append('departmentId', params.departmentId);
+    if (params.startDate) query.append('startDate', params.startDate);
+    if (params.endDate) query.append('endDate', params.endDate);
+
+    return fetchApi<{
+      credits: any[];
+      totalPages: number;
+      currentPage: number;
+      totalCount: number;
+    }>(`/admin/credits?${query.toString()}`, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Export credits to CSV (admin only)
+  exportCredits: async (params: {
+    search?: string;
+    departmentId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params.search) query.append('search', params.search);
+    if (params.departmentId) query.append('departmentId', params.departmentId);
+    if (params.startDate) query.append('startDate', params.startDate);
+    if (params.endDate) query.append('endDate', params.endDate);
+
+    return fetchApi<string>(`/admin/credits/export?${query.toString()}`, {
       method: 'GET',
       headers: createHeaders(),
     });

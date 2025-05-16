@@ -30,9 +30,9 @@ db.User = require('./user.model')(sequelize, Sequelize);
 db.Credit = require('./credit.model')(sequelize, Sequelize);
 db.Department = require('./department.model')(sequelize, Sequelize);
 
-// Define associations using Sequelize's default naming convention
-db.User.belongsTo(db.Department); // Will use DepartmentId as foreign key
-db.Department.hasMany(db.User);  // Will use DepartmentId in User model
+// Define associations using explicit foreign key
+db.User.belongsTo(db.Department, { foreignKey: 'departmentId' });
+db.Department.hasMany(db.User, { foreignKey: 'departmentId' });
 
 db.Credit.belongsTo(db.User, { as: 'sender', foreignKey: 'senderId' });
 db.Credit.belongsTo(db.User, { as: 'receiver', foreignKey: 'receiverId' });

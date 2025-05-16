@@ -164,8 +164,8 @@ export function GiveCreditForm() {
         .join("、");
 
       toast({
-        title: "Credit 已送出",
-        description: `您已成功給予 ${selectedEmployeeNames} Credit`,
+        title: "Credit 已發送",
+        description: `您已成功發送 Credit 給 ${selectedEmployeeNames}`,
       })
 
       // Update remaining credits from the response
@@ -295,11 +295,11 @@ export function GiveCreditForm() {
         className="w-full"
         disabled={isSubmitting || remainingCredits <= 0}
       >
-        {isSubmitting ? "處理中..." : `送出 Credit 給 ${selectedEmployeeIds.length > 0 ? selectedEmployeeIds.length + ' 位同事' : ''}`}
+        {isSubmitting ? "處理中..." : `發送 Credit 給 ${selectedEmployeeIds.length > 0 ? selectedEmployeeIds.length + ' 位同事' : ''}`}
       </Button>
 
       <p className="text-center text-sm text-gray-500">
-        您今日還可以給予 {remainingCredits} 次 Credit
+        您今日還可以發送 {remainingCredits} 次 Credit
         {selectedEmployeeIds.length > 0 && (
           <span className="block">
             目前已選擇 {selectedEmployeeIds.length} 位同事（只計算 1 次額度）

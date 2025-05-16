@@ -108,126 +108,126 @@ async function seed() {
       name: "王小明",
       email: "xiaoming.wang@example.com",
       lineUserId: "Uee2c366a945ff70af0323c51f509fb0e",
-      DepartmentId: engineeringDept ? engineeringDept.id : null,
+      departmentId: engineeringDept ? engineeringDept.id : null,
       role: "admin",
       remainingDailyCredits: 10,
       dailyCreditLimit: 10, // Admin gets more credits
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 1 created with DepartmentId:", user1.DepartmentId);
+    console.log("User 1 created with departmentId:", user1.departmentId);
 
     // User 2 - Marketing
     const user2 = await User.create({
       employeeId: "EMP002",
       name: "李大華",
       email: "dahua.lee@example.com",
-      DepartmentId: marketingDept ? marketingDept.id : null,
+      departmentId: marketingDept ? marketingDept.id : null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditLimit: 5, // Standard user limit
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 2 created with DepartmentId:", user2.DepartmentId);
+    console.log("User 2 created with departmentId:", user2.departmentId);
 
     // User 3 - HR
     const user3 = await User.create({
       employeeId: "EMP003",
       name: "張美玲",
       email: "meiling.zhang@example.com",
-      DepartmentId: hrDept ? hrDept.id : null,
+      departmentId: hrDept ? hrDept.id : null,
       role: "user",
       remainingDailyCredits: 7,
       dailyCreditLimit: 7, // HR gets slightly more
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 3 created with DepartmentId:", user3.DepartmentId);
+    console.log("User 3 created with departmentId:", user3.departmentId);
 
     // User 4 - Finance
     const user4 = await User.create({
       employeeId: "EMP004",
       name: "陳志明",
       email: "zhiming.chen@example.com",
-      DepartmentId: financeDept ? financeDept.id : null,
+      departmentId: financeDept ? financeDept.id : null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditLimit: 5, // Standard user limit
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 4 created with DepartmentId:", user4.DepartmentId);
+    console.log("User 4 created with departmentId:", user4.departmentId);
 
     // User 5 - Customer Service
     const user5 = await User.create({
       employeeId: "EMP005",
       name: "林小芳",
       email: "xiaofang.lin@example.com",
-      DepartmentId: customerDept ? customerDept.id : null,
+      departmentId: customerDept ? customerDept.id : null,
       role: "user",
       remainingDailyCredits: 8,
       dailyCreditLimit: 8, // Customer service gets more for client appreciations
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 5 created with DepartmentId:", user5.DepartmentId);
+    console.log("User 5 created with departmentId:", user5.departmentId);
 
     // User 6 - Engineering
     const user6 = await User.create({
       employeeId: "EMP006",
       name: "黃建國",
       email: "jianguo.huang@example.com",
-      DepartmentId: engineeringDept ? engineeringDept.id : null,
+      departmentId: engineeringDept ? engineeringDept.id : null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditLimit: 5, // Standard user limit
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 6 created with DepartmentId:", user6.DepartmentId);
+    console.log("User 6 created with departmentId:", user6.departmentId);
 
     // User 7 - Design
     const user7 = await User.create({
       employeeId: "EMP007",
       name: "吳雅婷",
       email: "yating.wu@example.com",
-      DepartmentId: designDept ? designDept.id : null,
+      departmentId: designDept ? designDept.id : null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 7 created with DepartmentId:", user7.DepartmentId);
+    console.log("User 7 created with departmentId:", user7.departmentId);
 
     // User 8 - Engineering
     const user8 = await User.create({
       employeeId: "EMP008",
       name: "劉俊宏",
       email: "junhong.liu@example.com",
-      DepartmentId: engineeringDept ? engineeringDept.id : null,
+      departmentId: engineeringDept ? engineeringDept.id : null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 8 created with DepartmentId:", user8.DepartmentId);
+    console.log("User 8 created with departmentId:", user8.departmentId);
 
     // User 9 - Marketing
     const user9 = await User.create({
       employeeId: "EMP009",
       name: "鄭美珠",
       email: "meizhu.zheng@example.com",
-      DepartmentId: marketingDept ? marketingDept.id : null,
+      departmentId: marketingDept ? marketingDept.id : null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 9 created with DepartmentId:", user9.DepartmentId);
+    console.log("User 9 created with departmentId:", user9.departmentId);
 
     // User 10 - Finance
     const user10 = await User.create({
       employeeId: "EMP010",
       name: "謝志豪",
       email: "zhihao.xie@example.com",
-      DepartmentId: financeDept ? financeDept.id : null,
+      departmentId: financeDept ? financeDept.id : null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 10 created with DepartmentId:", user10.DepartmentId);
+    console.log("User 10 created with departmentId:", user10.departmentId);
 
     // Collect all users
     users = [

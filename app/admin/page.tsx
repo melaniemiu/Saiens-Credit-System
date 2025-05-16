@@ -1,20 +1,886 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { AdminCreditList } from "@/components/admin-credit-list"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { toast } from "@/hooks/use-toast"
+import { adminApi, departmentApi } from "@/lib/api"
+import { DateRange } from "react-day-picker"
+import { Users, CreditCard, CalendarIcon, Download, Search, UserPlus, Edit, Trash2, User } from "lucide-react"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
+
+interface User {
+  id: string
+  employeeId: string
+  name: string
+  email: string
+  profilePicture: string | null
+  role: 'user' | 'admin'
+  department: {
+    id: string
+    name: string
+  }
+  totalCreditsReceived: number
+  totalCreditsSent: number
+  remainingDailyCredits: number
+  createdAt: string
+  lastLogin: string | null
+}
+
+interface Credit {
+  id: string
+  reason: string
+  createdAt: string
+  sender: {
+    id: string
+    name: string
+    employeeId: string
+    department: {
+      name: string
+    }
+  }
+  receiver: {
+    id: string
+    name: string
+    employeeId: string
+    department: {
+      name: string
+    }
+  }
+}
+
+interface Department {
+  id: string
+  name: string
+}
+
+interface UserFormData {
+  name: string
+  email: string
+  employeeId: string
+  role: 'user' | 'admin'
+  departmentId: string
+}
 
 export default function AdminPage() {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-6 text-3xl font-bold">管理員後台</h1>
+  // Sidebar state
+  const [activeSection, setActiveSection] = useState<'users' | 'credits'>('users')
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Credit 活動記錄</CardTitle>
-          <CardDescription>所有員工的 Credit 收發記錄</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AdminCreditList />
-        </CardContent>
-      </Card>
+  // Users state
+  const [users, setUsers] = useState<User[]>([])
+  const [userSearchTerm, setUserSearchTerm] = useState("")
+  const [userDepartmentFilter, setUserDepartmentFilter] = useState<string>("all")
+  const [userRoleFilter, setUserRoleFilter] = useState<string>("all")
+  const [userPage, setUserPage] = useState(1)
+  const [userTotalPages, setUserTotalPages] = useState(1)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  
+  // Form states for create user
+  const [createUserForm, setCreateUserForm] = useState<UserFormData>({
+    name: '',
+    email: '',
+    employeeId: '',
+    role: 'user',
+    departmentId: ''
+  })
+
+  // Credits state
+  const [credits, setCredits] = useState<Credit[]>([])
+  const [creditSearchTerm, setCreditSearchTerm] = useState("")
+  const [creditDepartmentFilter, setCreditDepartmentFilter] = useState<string>("all")
+  const [creditDateRange, setCreditDateRange] = useState<DateRange>({ from: undefined, to: undefined })
+  const [creditPage, setCreditPage] = useState(1)
+  const [creditTotalPages, setCreditTotalPages] = useState(1)
+
+  // Common state
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [loading, setLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  // Ensure client-side hydration
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Fetch departments on mount
+  useEffect(() => {
+    fetchDepartments()
+  }, [])
+
+  // Fetch data based on active section
+  useEffect(() => {
+    if (activeSection === 'users') {
+      fetchUsers()
+    } else {
+      fetchCredits()
+    }
+  }, [activeSection, userPage, userSearchTerm, userDepartmentFilter, userRoleFilter, creditPage, creditSearchTerm, creditDepartmentFilter, creditDateRange])
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await departmentApi.getDepartments()
+      if (response.data?.departments) {
+        setDepartments(response.data.departments)
+      }
+    } catch (error) {
+      console.error("Failed to fetch departments:", error)
+      toast({
+        title: "錯誤",
+        description: "無法載入部門資料",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const fetchUsers = async () => {
+    setLoading(true)
+    try {
+      const params: any = {
+        page: userPage,
+        limit: 10,
+      }
+      if (userSearchTerm) params.search = userSearchTerm
+      if (userDepartmentFilter && userDepartmentFilter !== "all") params.departmentId = userDepartmentFilter
+      if (userRoleFilter && userRoleFilter !== "all") params.role = userRoleFilter
+
+      const response = await adminApi.getUsers(params)
+      if (response.data) {
+        setUsers(response.data.users)
+        setUserTotalPages(response.data.totalPages)
+      }
+    } catch (error) {
+      console.error("Failed to fetch users:", error)
+      toast({
+        title: "錯誤",
+        description: "無法載入使用者資料",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchCredits = async () => {
+    setLoading(true)
+    try {
+      const params: any = {
+        page: creditPage,
+        limit: 10,
+      }
+      if (creditSearchTerm) params.search = creditSearchTerm
+      if (creditDepartmentFilter && creditDepartmentFilter !== "all") params.departmentId = creditDepartmentFilter
+      if (creditDateRange.from) params.startDate = format(creditDateRange.from, 'yyyy-MM-dd')
+      if (creditDateRange.to) params.endDate = format(creditDateRange.to, 'yyyy-MM-dd')
+
+      const response = await adminApi.getCredits(params)
+      if (response.data) {
+        setCredits(response.data.credits)
+        setCreditTotalPages(response.data.totalPages)
+      }
+    } catch (error) {
+      console.error("Failed to fetch credits:", error)
+      toast({
+        title: "錯誤",
+        description: "無法載入 Credit 資料",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCreateUser = async (data: UserFormData) => {
+    try {
+      await adminApi.createUser(data)
+      toast({
+        title: "成功",
+        description: "使用者已建立",
+      })
+      setIsCreateDialogOpen(false)
+      // Reset form
+      setCreateUserForm({
+        name: '',
+        email: '',
+        employeeId: '',
+        role: 'user',
+        departmentId: ''
+      })
+      fetchUsers()
+    } catch (error) {
+      console.error("Failed to create user:", error)
+      toast({
+        title: "錯誤",
+        description: "無法建立使用者",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleUpdateUser = async (data: UserFormData) => {
+    if (!selectedUser) return
+    try {
+      await adminApi.updateUser(selectedUser.id, data)
+      toast({
+        title: "成功",
+        description: "使用者已更新",
+      })
+      setIsEditDialogOpen(false)
+      fetchUsers()
+    } catch (error) {
+      console.error("Failed to update user:", error)
+      toast({
+        title: "錯誤",
+        description: "無法更新使用者",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return
+    try {
+      await adminApi.deleteUser(selectedUser.id)
+      toast({
+        title: "成功",
+        description: "使用者已刪除",
+      })
+      setIsDeleteDialogOpen(false)
+      fetchUsers()
+    } catch (error) {
+      console.error("Failed to delete user:", error)
+      toast({
+        title: "錯誤",
+        description: "無法刪除使用者",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const exportCredits = async () => {
+    try {
+      const params: any = {}
+      if (creditSearchTerm) params.search = creditSearchTerm
+      if (creditDepartmentFilter && creditDepartmentFilter !== "all") params.departmentId = creditDepartmentFilter
+      if (creditDateRange.from) params.startDate = format(creditDateRange.from, 'yyyy-MM-dd')
+      if (creditDateRange.to) params.endDate = format(creditDateRange.to, 'yyyy-MM-dd')
+
+      const response = await adminApi.exportCredits(params)
+      
+      // Create a blob with BOM for proper Chinese encoding
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF])
+      const blob = new Blob([bom, response.data], { type: 'text/csv;charset=utf-8' })
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `credits_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+
+      toast({
+        title: "成功",
+        description: "Credit 資料已匯出",
+      })
+    } catch (error) {
+      console.error("Failed to export credits:", error)
+      toast({
+        title: "錯誤",
+        description: "無法匯出 Credit 資料",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const sidebarMenuItems = [
+    {
+      id: 'users',
+      title: '使用者管理',
+      icon: Users,
+    },
+    {
+      id: 'credits',
+      title: 'Credit 管理',
+      icon: CreditCard,
+    },
+  ]
+
+  if (!mounted) {
+    return null
+  }
+
+  return (
+    <div suppressHydrationWarning>
+      <SidebarProvider defaultOpen={true}>
+        <Sidebar className="border-r">
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel>管理面板</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {sidebarMenuItems.map((item) => (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      onClick={() => setActiveSection(item.id as 'users' | 'credits')}
+                      isActive={activeSection === item.id}
+                      className="w-full"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      </Sidebar>
+
+      <SidebarInset>
+        <div className="flex min-h-screen">
+          <main className="flex-1 p-8">
+            {activeSection === 'users' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>使用者管理</CardTitle>
+                  <CardDescription>管理系統中的所有使用者</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* 搜尋和篩選 */}
+                    <div className="flex flex-wrap gap-4">
+                      <div className="flex-1 min-w-[200px]">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                          <Input
+                            placeholder="搜尋使用者..."
+                            value={userSearchTerm}
+                            onChange={(e) => setUserSearchTerm(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
+                      <Select value={userDepartmentFilter} onValueChange={setUserDepartmentFilter}>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="選擇部門" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">所有部門</SelectItem>
+                          {departments.map((dept) => (
+                            <SelectItem key={dept.id} value={dept.id}>
+                              {dept.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
+                        <SelectTrigger className="w-[150px]">
+                          <SelectValue placeholder="選擇角色" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">所有角色</SelectItem>
+                          <SelectItem value="user">一般使用者</SelectItem>
+                          <SelectItem value="admin">管理員</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={() => setIsCreateDialogOpen(true)}>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        新增使用者
+                      </Button>
+                    </div>
+
+                    {/* 使用者列表 */}
+                    <div className="border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>使用者</TableHead>
+                            <TableHead>員工編號</TableHead>
+                            <TableHead>部門</TableHead>
+                            <TableHead>角色</TableHead>
+                            <TableHead>Credits 發送/收到</TableHead>
+                            <TableHead>剩餘每日 Credits</TableHead>
+                            <TableHead>最後登入</TableHead>
+                            <TableHead>操作</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {loading ? (
+                            Array(5).fill(0).map((_, index) => (
+                              <TableRow key={index}>
+                                <TableCell colSpan={8}>
+                                  <Skeleton className="h-12 w-full" />
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : users.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={8} className="text-center text-muted-foreground">
+                                沒有找到使用者
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            users.map((user) => (
+                              <TableRow key={user.id}>
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    <Avatar className="h-10 w-10">
+                                      <AvatarImage src={user.profilePicture || ''} alt={user.name} />
+                                      <AvatarFallback className="bg-gradient-to-r from-green-600 to-green-700 text-white">
+                                        <User className="h-4 w-4" />
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <div className="font-medium">{user.name}</div>
+                                      <div className="text-sm text-muted-foreground">{user.email}</div>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{user.employeeId}</TableCell>
+                                <TableCell>{user.department.name}</TableCell>
+                                <TableCell>
+                                  <span className={cn(
+                                    "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                                    user.role === 'admin' 
+                                      ? "bg-blue-100 text-blue-800" 
+                                      : "bg-gray-100 text-gray-800"
+                                  )}>
+                                    {user.role === 'admin' ? '管理員' : '一般使用者'}
+                                  </span>
+                                </TableCell>
+                                <TableCell>{user.totalCreditsSent} / {user.totalCreditsReceived}</TableCell>
+                                <TableCell>{user.remainingDailyCredits}</TableCell>
+                                <TableCell>{user.lastLogin ? format(new Date(user.lastLogin), 'yyyy-MM-dd HH:mm') : '從未登入'}</TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedUser(user)
+                                        setIsEditDialogOpen(true)
+                                      }}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedUser(user)
+                                        setIsDeleteDialogOpen(true)
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* 分頁 */}
+                    {userTotalPages > 1 && (
+                      <div className="flex justify-center mt-4">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setUserPage(userPage - 1)}
+                            disabled={userPage === 1}
+                          >
+                            上一頁
+                          </Button>
+                          <span className="flex items-center px-4 text-sm">
+                            第 {userPage} 頁，共 {userTotalPages} 頁
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setUserPage(userPage + 1)}
+                            disabled={userPage === userTotalPages}
+                          >
+                            下一頁
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeSection === 'credits' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Credit 管理</CardTitle>
+                  <CardDescription>查看和管理所有 Credit 交易記錄</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* 搜尋和篩選 */}
+                    <div className="flex flex-wrap gap-4">
+                      <div className="flex-1 min-w-[200px]">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                          <Input
+                            placeholder="搜尋交易..."
+                            value={creditSearchTerm}
+                            onChange={(e) => setCreditSearchTerm(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
+                      <Select value={creditDepartmentFilter} onValueChange={setCreditDepartmentFilter}>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="選擇部門" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">所有部門</SelectItem>
+                          {departments.map((dept) => (
+                            <SelectItem key={dept.id} value={dept.id}>
+                              {dept.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "justify-start text-left font-normal",
+                              !creditDateRange && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {creditDateRange?.from ? (
+                              creditDateRange.to ? (
+                                <>
+                                  {format(creditDateRange.from, "PPP")} -{" "}
+                                  {format(creditDateRange.to, "PPP")}
+                                </>
+                              ) : (
+                                format(creditDateRange.from, "PPP")
+                              )
+                            ) : (
+                              <span>選擇日期範圍</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            initialFocus
+                            mode="range"
+                            defaultMonth={creditDateRange?.from}
+                            selected={creditDateRange}
+                            onSelect={(range) => setCreditDateRange(range || { from: undefined, to: undefined })}
+                            numberOfMonths={2}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <Button onClick={exportCredits}>
+                        <Download className="mr-2 h-4 w-4" />
+                        匯出 CSV
+                      </Button>
+                    </div>
+
+                    {/* Credit 列表 */}
+                    <div className="border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>時間</TableHead>
+                            <TableHead>發送者</TableHead>
+                            <TableHead>接收者</TableHead>
+                            <TableHead>原因</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {loading ? (
+                            Array(5).fill(0).map((_, index) => (
+                              <TableRow key={index}>
+                                <TableCell colSpan={4}>
+                                  <Skeleton className="h-12 w-full" />
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : credits.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center text-muted-foreground">
+                                沒有找到交易記錄
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            credits.map((credit) => (
+                              <TableRow key={credit.id}>
+                                <TableCell>{format(new Date(credit.createdAt), 'yyyy-MM-dd HH:mm')}</TableCell>
+                                <TableCell>
+                                  <div className="font-medium">{credit.sender?.name || '已刪除使用者'}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {credit.sender?.department?.name || '未知部門'}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="font-medium">{credit.receiver?.name || '已刪除使用者'}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {credit.receiver?.department?.name || '未知部門'}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="max-w-xs">{credit.reason}</TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* 分頁 */}
+                    {creditTotalPages > 1 && (
+                      <div className="flex justify-center">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCreditPage(creditPage - 1)}
+                            disabled={creditPage === 1}
+                          >
+                            上一頁
+                          </Button>
+                          <span className="flex items-center px-4">
+                            第 {creditPage} 頁，共 {creditTotalPages} 頁
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCreditPage(creditPage + 1)}
+                            disabled={creditPage === creditTotalPages}
+                          >
+                            下一頁
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </main>
+        </div>
+      </SidebarInset>
+
+      {/* 新增使用者對話框 */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>新增使用者</DialogTitle>
+            <DialogDescription>
+              建立新的使用者帳號
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault()
+            handleCreateUser(createUserForm)
+          }}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="create-name">姓名</Label>
+                <Input 
+                  id="create-name" 
+                  name="name" 
+                  value={createUserForm.name}
+                  onChange={(e) => setCreateUserForm({ ...createUserForm, name: e.target.value })}
+                  required 
+                />
+              </div>
+              <div>
+                <Label htmlFor="create-email">Email</Label>
+                <Input 
+                  id="create-email" 
+                  name="email" 
+                  type="email"
+                  value={createUserForm.email}
+                  onChange={(e) => setCreateUserForm({ ...createUserForm, email: e.target.value })}
+                  required 
+                />
+              </div>
+              <div>
+                <Label htmlFor="create-employeeId">員工編號</Label>
+                <Input 
+                  id="create-employeeId" 
+                  name="employeeId"
+                  value={createUserForm.employeeId}
+                  onChange={(e) => setCreateUserForm({ ...createUserForm, employeeId: e.target.value })}
+                  required 
+                />
+              </div>
+              <div>
+                <Label htmlFor="create-role">角色</Label>
+                <Select 
+                  value={createUserForm.role}
+                  onValueChange={(value) => setCreateUserForm({ ...createUserForm, role: value as 'user' | 'admin' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">一般使用者</SelectItem>
+                    <SelectItem value="admin">管理員</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="create-department">部門</Label>
+                <Select 
+                  value={createUserForm.departmentId}
+                  onValueChange={(value) => setCreateUserForm({ ...createUserForm, departmentId: value })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="選擇部門" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => {
+                setIsCreateDialogOpen(false)
+                // Reset form
+                setCreateUserForm({
+                  name: '',
+                  email: '',
+                  employeeId: '',
+                  role: 'user',
+                  departmentId: ''
+                })
+              }}>
+                取消
+              </Button>
+              <Button type="submit">建立</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* 編輯使用者對話框 */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>編輯使用者</DialogTitle>
+            <DialogDescription>
+              更新使用者資訊
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              const formData = new FormData(e.currentTarget)
+              handleUpdateUser({
+                name: formData.get('name') as string,
+                email: formData.get('email') as string,
+                employeeId: formData.get('employeeId') as string,
+                role: formData.get('role') as 'user' | 'admin',
+                departmentId: formData.get('departmentId') as string,
+              })
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-name">姓名</Label>
+                  <Input id="edit-name" name="name" defaultValue={selectedUser.name} required />
+                </div>
+                <div>
+                  <Label htmlFor="edit-email">Email</Label>
+                  <Input id="edit-email" name="email" type="email" defaultValue={selectedUser.email} required />
+                </div>
+                <div>
+                  <Label htmlFor="edit-employeeId">員工編號</Label>
+                  <Input id="edit-employeeId" name="employeeId" defaultValue={selectedUser.employeeId} required />
+                </div>
+                <div>
+                  <Label htmlFor="edit-role">角色</Label>
+                  <Select name="role" defaultValue={selectedUser.role}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">一般使用者</SelectItem>
+                      <SelectItem value="admin">管理員</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-department">部門</Label>
+                  <Select name="departmentId" defaultValue={selectedUser.department.id}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter className="mt-6">
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  取消
+                </Button>
+                <Button type="submit">更新</Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 刪除確認對話框 */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>確認刪除</DialogTitle>
+            <DialogDescription>
+              確定要刪除使用者 {selectedUser?.name} 嗎？此操作無法復原。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              取消
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteUser}>
+              確認刪除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </SidebarProvider>
     </div>
   )
 }

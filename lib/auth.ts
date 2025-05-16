@@ -15,7 +15,7 @@ export interface AuthUser {
   department?: string
   employeeId?: string
   creditsReceived?: number
-  creditsGiven?: number
+  creditsSent?: number
   remainingDailyCredits?: number
 }
 
