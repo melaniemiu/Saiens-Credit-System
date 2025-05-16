@@ -4,11 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CreditStats } from "@/components/credit-stats"
 import { CreditHistory } from "@/components/credit-history"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useEffect, useState, Suspense } from "react"
 import { userApi, setAuthToken } from "@/lib/api"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Loader2 } from "lucide-react"
+import { RefreshCw, Loader2, User } from "lucide-react"
 import { AuthError } from "@/components/auth-error"
 import { GiveCreditButton } from "@/components/give-credit-button"
 import { useSearchParams } from "next/navigation"
@@ -16,7 +17,10 @@ import { useSearchParams } from "next/navigation"
 function DashboardContent() {
   const { user, loading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(!user)
-  const [userData, setUserData] = useState(user || null)
+  const [userData, setUserData] = useState(user ? {
+    ...user,
+    profilePicture: user.picture // Map picture to profilePicture
+  } : null)
   const searchParams = useSearchParams()
 
   // Handle auth token from URL (for LIFF browser redirect and binding process)
@@ -120,7 +124,10 @@ function DashboardContent() {
     // If we already have user data from auth context, use that
     if (user) {
       console.log("Dashboard - Using user data from auth context");
-      setUserData(user);
+      setUserData({
+        ...user,
+        profilePicture: user.picture // Map picture to profilePicture
+      });
       setIsLoading(false);
       return;
     }
@@ -154,6 +161,7 @@ function DashboardContent() {
             email: response.data.user.email,
             id: response.data.user.id,
             role: response.data.user.role,
+            profilePicture: response.data.user.profilePicture,
           };
 
           setUserData(fetchedUser);
@@ -172,6 +180,9 @@ function DashboardContent() {
               role: response.data.user.role,
               department: response.data.user.Department?.name,
               employeeId: response.data.user.employeeId,
+              creditsReceived: response.data.user.creditsReceived,
+              creditsGiven: response.data.user.creditsGiven,
+              remainingDailyCredits: response.data.user.remainingDailyCredits,
             };
 
             // Import dynamically to avoid circular dependencies
@@ -231,9 +242,21 @@ function DashboardContent() {
           <div className="flex flex-col space-y-4 md:flex-row md:space-x-4 md:space-y-0">
             <Card className="flex-1 border-none shadow-lg bg-white/95 backdrop-blur-sm hover:shadow-xl transition-all duration-300 overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <CardHeader className="relative z-10 pb-3">
-                <CardTitle className="text-base font-semibold text-gray-800">個人資料</CardTitle>
-                <CardDescription className="text-xs text-gray-600">您的基本資訊</CardDescription>
+              <CardHeader className="relative z-10 pb-3 flex flex-row items-start justify-between space-x-3">
+                <div className="flex-1">
+                  <CardTitle className="text-base font-semibold text-gray-800">個人資料</CardTitle>
+                  <CardDescription className="text-xs text-gray-600">您的基本資訊</CardDescription>
+                </div>
+                {isLoading ? (
+                  <Skeleton className="h-12 w-12 sm:h-16 sm:w-16 rounded-full" />
+                ) : (
+                  <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-white shadow-md hover:shadow-lg transition-shadow duration-200">
+                    <AvatarImage src={userData?.profilePicture || ''} alt={userData?.name || ''} />
+                    <AvatarFallback className="bg-gradient-to-r from-green-600 to-green-700 text-white">
+                      <User className="h-6 w-6 sm:h-8 sm:w-8" />
+                    </AvatarFallback>
+                  </Avatar>
+                )}
               </CardHeader>
               <CardContent className="relative z-10">
                 {isLoading ? (

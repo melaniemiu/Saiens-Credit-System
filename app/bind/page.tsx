@@ -157,7 +157,7 @@ export default function BindPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ employeeId, lineUserId }),
+        body: JSON.stringify({ employeeId, lineUserId, profilePicture: picture }),
       })
 
       // Safely parse JSON response

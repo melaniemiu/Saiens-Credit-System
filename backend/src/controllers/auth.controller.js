@@ -103,7 +103,8 @@ exports.lineLogin = async (req, res, next) => {
       await user.save();
     }
 
-    // Update last login time
+    // Update profile picture and last login time
+    user.profilePicture = lineUserData.picture || user.profilePicture;
     user.lastLogin = new Date();
     await user.save();
 
@@ -229,7 +230,7 @@ exports.logout = async (req, res) => {
 // Bind employee ID to LINE user ID
 exports.bindEmployeeId = async (req, res, next) => {
   try {
-    const { employeeId, lineUserId } = req.body;
+    const { employeeId, lineUserId, profilePicture } = req.body;
 
     if (!employeeId || !lineUserId) {
       return res.status(400).json({ 
@@ -261,8 +262,11 @@ exports.bindEmployeeId = async (req, res, next) => {
       });
     }
 
-    // Update user with LINE user ID
+    // Update user with LINE user ID and profile picture
     user.lineUserId = lineUserId;
+    if (profilePicture) {
+      user.profilePicture = profilePicture;
+    }
     user.lastLogin = new Date();
     await user.save();
 

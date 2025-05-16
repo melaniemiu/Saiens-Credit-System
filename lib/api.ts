@@ -147,11 +147,11 @@ export const authApi = {
   },
   
   // Bind employee ID to LINE user
-  bindEmployeeId: async (employeeId: string, lineUserId: string) => {
+  bindEmployeeId: async (employeeId: string, lineUserId: string, profilePicture?: string | null) => {
     return fetchApi<{ token: string; user: any }>('/auth/bind-employee', {
       method: 'POST',
       headers: createHeaders(false),
-      body: JSON.stringify({ employeeId, lineUserId }),
+      body: JSON.stringify({ employeeId, lineUserId, profilePicture }),
     });
   },
 };

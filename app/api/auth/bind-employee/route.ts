@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the employee ID and LINE user ID from the request body
-    const { employeeId, lineUserId } = await request.json();
+    // Get the employee ID, LINE user ID, and profile picture from the request body
+    const { employeeId, lineUserId, profilePicture } = await request.json();
 
     if (!employeeId || !lineUserId) {
       return NextResponse.json(
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ employeeId, lineUserId }),
+      body: JSON.stringify({ employeeId, lineUserId, profilePicture }),
     });
 
     // Get the response data

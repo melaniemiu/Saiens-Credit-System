@@ -131,7 +131,7 @@ export default function BindEmployeePage() {
       let responseData;
       
       try {
-        const response = await authApi.bindEmployeeId(employeeId, lineUserId)
+        const response = await authApi.bindEmployeeId(employeeId, lineUserId, picture)
 
         if (response.error || !response.data) {
           console.error("Employee ID binding error:", response.error)
