@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       console.log('Performing immediate redirect after logout');
 
       // Create HTML response that will clear client storage and redirect
-      return new NextResponse(
+      const response = new NextResponse(
         `<!DOCTYPE html>
         <html>
           <head>
@@ -99,13 +99,35 @@ export async function POST(request: NextRequest) {
           },
         }
       );
+      
+      // Clear the auth cookie
+      response.cookies.set('auth-token', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 0, // Immediately expire
+        path: '/'
+      });
+      
+      return response;
     } else {
       // Standard JSON response for API calls
       console.log('Logout successful, returning JSON response');
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         message: 'Logged out successfully'
       });
+      
+      // Clear the auth cookie
+      response.cookies.set('auth-token', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 0, // Immediately expire
+        path: '/'
+      });
+      
+      return response;
     }
   } catch (error) {
     console.error('Error in logout route:', error);

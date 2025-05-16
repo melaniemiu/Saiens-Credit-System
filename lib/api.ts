@@ -54,11 +54,7 @@ const createHeaders = (includeAuth: boolean = true): HeadersInit => {
       // Check if token is expired before using it
       if (isTokenExpired(token)) {
         console.warn('Auth token is expired, not including in request');
-        // Clear expired token
-        removeAuthToken();
-        // Clear all auth storage
-        sessionStorage.clear();
-        localStorage.clear();
+        // Don't clear storage here - let the response handler deal with it
       } else {
         headers['Authorization'] = `Bearer ${token}`;
       }
@@ -98,6 +94,28 @@ async function fetchApi<T>(
 
     if (!response.ok) {
       console.error(`API error (${status}):`, data);
+      
+      // Handle 401 Unauthorized - token expired or invalid
+      if (status === 401) {
+        // Only handle token cleanup once to prevent loops
+        const cleanupKey = 'token_cleanup_in_progress';
+        
+        if (!sessionStorage.getItem(cleanupKey)) {
+          sessionStorage.setItem(cleanupKey, 'true');
+          
+          console.warn('Received 401 - clearing auth and redirecting to login');
+          // Clear all auth data
+          removeAuthToken();
+          sessionStorage.clear();
+          localStorage.clear();
+          
+          // Redirect to login page after a small delay
+          setTimeout(() => {
+            window.location.href = '/?error=session_expired';
+          }, 100);
+        }
+      }
+      
       return {
         error: data.message || 'Something went wrong',
         status,

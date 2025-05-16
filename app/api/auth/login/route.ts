@@ -43,11 +43,23 @@ export async function POST(request: NextRequest) {
 
     // Create response with user data and token
     console.log('Login successful, returning user data and token');
-    return NextResponse.json({
+    const jsonResponse = NextResponse.json({
       success: true,
       user: data.user,
       token: data.token // Send token back to client for storage in localStorage/sessionStorage
     });
+
+    // Also set httpOnly cookie for navigation
+    jsonResponse.cookies.set('auth-token', data.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: '/'
+    });
+
+    console.log('Set auth cookie for navigation');
+    return jsonResponse;
   } catch (error) {
     console.error('Error in login route:', error);
     return NextResponse.json(

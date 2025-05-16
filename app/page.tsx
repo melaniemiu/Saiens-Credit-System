@@ -85,10 +85,10 @@ function HomeContent() {
       window.history.replaceState({}, document.title, newUrl.href);
     }
 
-    // Check if token expired (from middleware redirect)
-    const tokenExpired = searchParams?.has('token_expired');
-    if (tokenExpired) {
-      console.log("Token expired - clearing all storage");
+    // Check if session expired (from middleware or API redirect)
+    const sessionExpired = searchParams?.has('error') && searchParams.get('error') === 'session_expired';
+    if (sessionExpired) {
+      console.log("Session expired - clearing all storage");
       // Clear all auth storage
       sessionStorage.clear();
       localStorage.clear();
@@ -96,9 +96,9 @@ function HomeContent() {
       // Update message
       setAutoLoginMessage("登入已過期，請重新登入");
 
-      // Remove the token_expired parameter to prevent loops
+      // Remove the error parameter to prevent loops
       const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete('token_expired');
+      newUrl.searchParams.delete('error');
       window.history.replaceState({}, document.title, newUrl.href);
     }
 
