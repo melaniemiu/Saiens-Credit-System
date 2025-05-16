@@ -64,10 +64,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - View all credit transactions across the organization
    - Filter credits by department
    - Date range filtering
+   - Search in credit reasons
+   - Pagination support
 
 2. **System Administration**
    - User account management (CRUD operations)
+   - User search and filtering (by name, email, employee ID)
+   - Filter users by department and role
+   - View user profile pictures in admin interface
+   - Create, edit, and delete users
    - Department management
+   - Sidebar navigation for admin sections
 
 ### UI/UX Features
 1. **Responsive Design**
@@ -76,9 +83,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 2. **Dashboard**
    - Personal user information card with profile picture display
-   - Credit statistics visualization
+   - Credit statistics visualization (creditsReceived, creditsSent)
    - Recent credit activity summary
    - Large, prominent "給予 Credit" action button
+   - URL parameter handling for LIFF authentication flow
 
 3. **Form Components**
    - User selection with search capability
@@ -87,9 +95,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 4. **Enhanced User Experience**
    - Profile pictures displayed in personal information panel
-   - Automatic profile picture synchronization with LINE
+   - Automatic profile picture synchronization with LINE on login
    - Responsive avatar components with fallback icons
    - Hover effects and smooth transitions
+   - Card hover animations with gradient effects
 
 ## Development Commands
 
@@ -157,8 +166,18 @@ The backend uses PostgreSQL with Sequelize ORM. Database connection is configure
 
 Important models:
 - `User`: Employee records with department association
+  - `creditsSent` (renamed from `creditsGiven`)
+  - `creditsReceived`
+  - `remainingDailyCredits`
+  - `profilePicture`
 - `Credit`: Records of credits given between users
 - `Department`: Company departments
+
+Database migrations:
+- `rename-credits-given-to-sent.js`: Renamed `creditsGiven` to `creditsSent` for clarity
+- `rename-department-id-column.js`: Standardized column naming from `DepartmentId` to `departmentId`
+- `update-profile-pictures.js`: Added profile picture support
+- `add-daily-credit-limit.js`: Added daily credit limit tracking
 
 ## Authentication Flow
 
@@ -186,15 +205,25 @@ Important models:
 - `/api/auth/bind-employee`: Bind employee ID to LINE account (with profile picture)
 - `/api/auth/logout`: Logout endpoint
 - `/api/credits`: Credit management routes
+  - GET `/api/credits/received`: Get received credits with pagination
+  - GET `/api/credits/given`: Get given credits with pagination  
+  - GET `/api/credits/all`: Admin-only endpoint for all credits
+  - POST `/api/credits`: Give credit to a user
+  - POST `/api/credits/bulk`: Give credit to multiple users
 - `/api/users`: User management routes
+  - GET `/api/users/me`: Get current user with credit statistics
+- `/api/admin/users`: Admin user management routes with CRUD operations
+- `/api/departments`: Department management routes
 
 ### Frontend API Routes
 - `/api/auth/login`: LINE Login handler that talks to backend
 - `/api/auth/bind-employee`: Employee ID binding handler with profile picture
 - `/api/auth/logout`: Logout handler that clears cookies and storage
+- `/api/auth/liff-redirect`: LIFF browser authentication redirect handler
 
 ## Key Files
 
+### Frontend Files
 - `context/auth-context.tsx`: Central authentication state management
 - `middleware.ts`: Route protection and auth verification
 - `lib/auth.ts`: Authentication utilities and token storage
@@ -203,17 +232,54 @@ Important models:
 - `components/line-login-button.tsx`: Regular browser login button
 - `components/line-auto-redirect.tsx`: Auto-login for LINE LIFF browser
 - `components/give-credit-button.tsx`: Primary action button component
-- `lib/direct-liff.ts`: Simplified LIFF integration for mobile
+- `components/credit-stats.tsx`: Credit statistics visualization component
+- `components/credit-history.tsx`: Credit transaction history component
+- `components/admin-credit-list.tsx`: Admin credit listing component
 - `app/page.tsx`: Conditional rendering based on browser environment
 - `app/dashboard/page.tsx`: Main dashboard with profile picture display
+- `app/admin/page.tsx`: Admin interface with sidebar navigation
+- `app/admin/layout.tsx`: Admin layout with role-based access control
 - `app/bind/page.tsx`: Employee binding page with profile picture support
 - `app/bind-employee/page.tsx`: Alternative binding page
 - `app/api/auth/login/route.ts`: LINE authentication handler
 - `app/api/auth/bind-employee/route.ts`: Employee binding API route
 - `app/api/auth/logout/route.ts`: Logout handler that clears tokens
+
+### Backend Files
 - `backend/src/index.js`: Main backend entry point
-- `backend/src/controllers`: Business logic handlers
 - `backend/src/controllers/auth.controller.js`: Authentication logic with profile updates
 - `backend/src/controllers/user.controller.js`: User data management
+- `backend/src/controllers/admin.controller.js`: Admin functionality
+- `backend/src/controllers/credit.controller.js`: Credit transaction management
+- `backend/src/models/user.model.js`: User model with creditsSent field
+- `backend/src/models/credit.model.js`: Credit transaction model
+- `backend/src/migrations/*`: Database migrations for schema changes
+
+### Configuration Files
 - `components/navbar.tsx`: Main navigation including logout button
 - `ecosystem.config.js`: PM2 configuration for concurrent development
+
+## Recent Updates
+
+### Profile Picture Integration (Latest)
+- Profile pictures now automatically sync from LINE on every login
+- Pictures are displayed in dashboard personal information panel
+- Admin interface shows user profile pictures
+- Fallback avatars with user icon for missing pictures
+
+### Database Schema Changes
+- Renamed `creditsGiven` to `creditsSent` for clarity
+- Standardized column naming (e.g., `DepartmentId` to `departmentId`)
+- Added profile picture support to user model
+
+### Admin Interface Enhancement
+- New sidebar navigation for admin sections
+- Improved user management with search and filtering
+- Credit activity monitoring with advanced filters
+- User CRUD operations with profile picture display
+
+### UI/UX Improvements
+- Enhanced card hover animations with gradient effects
+- Improved dashboard layout with better visual hierarchy
+- URL parameter handling for smooth LIFF authentication flow
+- Better loading states and error handling

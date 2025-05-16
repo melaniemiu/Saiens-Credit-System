@@ -391,6 +391,8 @@ export const adminApi = {
     search?: string;
     departmentId?: string;
     role?: string;
+    sortField?: string;
+    sortOrder?: string;
   }) => {
     const query = new URLSearchParams();
     if (params.page) query.append('page', params.page.toString());
@@ -398,6 +400,8 @@ export const adminApi = {
     if (params.search) query.append('search', params.search);
     if (params.departmentId) query.append('departmentId', params.departmentId);
     if (params.role) query.append('role', params.role);
+    if (params.sortField) query.append('sortField', params.sortField);
+    if (params.sortOrder) query.append('sortOrder', params.sortOrder);
 
     return fetchApi<{
       users: any[];
@@ -444,6 +448,8 @@ export const adminApi = {
     departmentId?: string;
     startDate?: string;
     endDate?: string;
+    sortField?: string;
+    sortOrder?: string;
   }) => {
     const query = new URLSearchParams();
     if (params.page) query.append('page', params.page.toString());
@@ -452,6 +458,8 @@ export const adminApi = {
     if (params.departmentId) query.append('departmentId', params.departmentId);
     if (params.startDate) query.append('startDate', params.startDate);
     if (params.endDate) query.append('endDate', params.endDate);
+    if (params.sortField) query.append('sortField', params.sortField);
+    if (params.sortOrder) query.append('sortOrder', params.sortOrder);
 
     return fetchApi<{
       credits: any[];

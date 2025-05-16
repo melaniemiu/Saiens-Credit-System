@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "@/hooks/use-toast"
 import { adminApi, departmentApi } from "@/lib/api"
 import { DateRange } from "react-day-picker"
-import { Users, CreditCard, CalendarIcon, Download, Search, UserPlus, Edit, Trash2, User } from "lucide-react"
+import { Users, CreditCard, CalendarIcon, Download, Search, UserPlus, Edit, Trash2, User, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -73,6 +73,45 @@ interface UserFormData {
   departmentId: string
 }
 
+// Helper component for sortable table headers
+function SortableTableHead({
+  children,
+  sortField,
+  currentSortField,
+  currentSortOrder,
+  onSort,
+  className
+}: {
+  children: React.ReactNode
+  sortField: string
+  currentSortField: string
+  currentSortOrder: 'ASC' | 'DESC'
+  onSort: (field: string) => void
+  className?: string
+}) {
+  const isActive = currentSortField === sortField
+
+  return (
+    <TableHead
+      className={cn("cursor-pointer hover:bg-muted/50 transition-colors", className)}
+      onClick={() => onSort(sortField)}
+    >
+      <div className="flex items-center gap-1">
+        {children}
+        {isActive ? (
+          currentSortOrder === 'ASC' ? (
+            <ArrowUp className="h-4 w-4" />
+          ) : (
+            <ArrowDown className="h-4 w-4" />
+          )
+        ) : (
+          <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+        )}
+      </div>
+    </TableHead>
+  )
+}
+
 export default function AdminPage() {
   // Sidebar state
   const [activeSection, setActiveSection] = useState<'users' | 'credits'>('users')
@@ -88,7 +127,11 @@ export default function AdminPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  
+
+  // Sorting state for users
+  const [userSortField, setUserSortField] = useState<string>('createdAt')
+  const [userSortOrder, setUserSortOrder] = useState<'ASC' | 'DESC'>('DESC')
+
   // Form states for create user
   const [createUserForm, setCreateUserForm] = useState<UserFormData>({
     name: '',
@@ -105,6 +148,10 @@ export default function AdminPage() {
   const [creditDateRange, setCreditDateRange] = useState<DateRange>({ from: undefined, to: undefined })
   const [creditPage, setCreditPage] = useState(1)
   const [creditTotalPages, setCreditTotalPages] = useState(1)
+
+  // Sorting state for credits
+  const [creditSortField, setCreditSortField] = useState<string>('createdAt')
+  const [creditSortOrder, setCreditSortOrder] = useState<'ASC' | 'DESC'>('DESC')
 
   // Common state
   const [departments, setDepartments] = useState<Department[]>([])
@@ -128,7 +175,8 @@ export default function AdminPage() {
     } else {
       fetchCredits()
     }
-  }, [activeSection, userPage, userSearchTerm, userDepartmentFilter, userRoleFilter, creditPage, creditSearchTerm, creditDepartmentFilter, creditDateRange])
+  }, [activeSection, userPage, userSearchTerm, userDepartmentFilter, userRoleFilter, userSortField, userSortOrder,
+      creditPage, creditSearchTerm, creditDepartmentFilter, creditDateRange, creditSortField, creditSortOrder])
 
   const fetchDepartments = async () => {
     try {
@@ -152,6 +200,8 @@ export default function AdminPage() {
       const params: any = {
         page: userPage,
         limit: 10,
+        sortField: userSortField,
+        sortOrder: userSortOrder,
       }
       if (userSearchTerm) params.search = userSearchTerm
       if (userDepartmentFilter && userDepartmentFilter !== "all") params.departmentId = userDepartmentFilter
@@ -180,6 +230,8 @@ export default function AdminPage() {
       const params: any = {
         page: creditPage,
         limit: 10,
+        sortField: creditSortField,
+        sortOrder: creditSortOrder,
       }
       if (creditSearchTerm) params.search = creditSearchTerm
       if (creditDepartmentFilter && creditDepartmentFilter !== "all") params.departmentId = creditDepartmentFilter
@@ -270,6 +322,27 @@ export default function AdminPage() {
     }
   }
 
+  // Helper function to handle sorting
+  const handleUserSort = (field: string) => {
+    if (userSortField === field) {
+      setUserSortOrder(userSortOrder === 'ASC' ? 'DESC' : 'ASC')
+    } else {
+      setUserSortField(field)
+      setUserSortOrder('ASC')
+    }
+    setUserPage(1) // Reset to first page when sorting changes
+  }
+
+  const handleCreditSort = (field: string) => {
+    if (creditSortField === field) {
+      setCreditSortOrder(creditSortOrder === 'ASC' ? 'DESC' : 'ASC')
+    } else {
+      setCreditSortField(field)
+      setCreditSortOrder('ASC')
+    }
+    setCreditPage(1) // Reset to first page when sorting changes
+  }
+
   const exportCredits = async () => {
     try {
       const params: any = {}
@@ -279,11 +352,11 @@ export default function AdminPage() {
       if (creditDateRange.to) params.endDate = format(creditDateRange.to, 'yyyy-MM-dd')
 
       const response = await adminApi.exportCredits(params)
-      
+
       // Create a blob with BOM for proper Chinese encoding
       const bom = new Uint8Array([0xEF, 0xBB, 0xBF])
       const blob = new Blob([bom, response.data], { type: 'text/csv;charset=utf-8' })
-      
+
       // Create download link
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -410,13 +483,62 @@ export default function AdminPage() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>使用者</TableHead>
-                            <TableHead>員工編號</TableHead>
-                            <TableHead>部門</TableHead>
-                            <TableHead>角色</TableHead>
-                            <TableHead>Credits 發送/收到</TableHead>
-                            <TableHead>剩餘每日 Credits</TableHead>
-                            <TableHead>最後登入</TableHead>
+                            <SortableTableHead
+                              sortField="name"
+                              currentSortField={userSortField}
+                              currentSortOrder={userSortOrder}
+                              onSort={handleUserSort}
+                            >
+                              使用者
+                            </SortableTableHead>
+                            <SortableTableHead
+                              sortField="employeeId"
+                              currentSortField={userSortField}
+                              currentSortOrder={userSortOrder}
+                              onSort={handleUserSort}
+                            >
+                              員工編號
+                            </SortableTableHead>
+                            <SortableTableHead
+                              sortField="department"
+                              currentSortField={userSortField}
+                              currentSortOrder={userSortOrder}
+                              onSort={handleUserSort}
+                            >
+                              部門
+                            </SortableTableHead>
+                            <SortableTableHead
+                              sortField="role"
+                              currentSortField={userSortField}
+                              currentSortOrder={userSortOrder}
+                              onSort={handleUserSort}
+                            >
+                              角色
+                            </SortableTableHead>
+                            <SortableTableHead
+                              sortField="creditsSent"
+                              currentSortField={userSortField}
+                              currentSortOrder={userSortOrder}
+                              onSort={handleUserSort}
+                            >
+                              Credits 發送/收到
+                            </SortableTableHead>
+                            <SortableTableHead
+                              sortField="remainingDailyCredits"
+                              currentSortField={userSortField}
+                              currentSortOrder={userSortOrder}
+                              onSort={handleUserSort}
+                            >
+                              剩餘每日 Credits
+                            </SortableTableHead>
+                            <SortableTableHead
+                              sortField="lastLogin"
+                              currentSortField={userSortField}
+                              currentSortOrder={userSortOrder}
+                              onSort={handleUserSort}
+                            >
+                              最後登入
+                            </SortableTableHead>
                             <TableHead>操作</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -457,8 +579,8 @@ export default function AdminPage() {
                                 <TableCell>
                                   <span className={cn(
                                     "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                                    user.role === 'admin' 
-                                      ? "bg-blue-100 text-blue-800" 
+                                    user.role === 'admin'
+                                      ? "bg-blue-100 text-blue-800"
                                       : "bg-gray-100 text-gray-800"
                                   )}>
                                     {user.role === 'admin' ? '管理員' : '一般使用者'}
@@ -609,9 +731,30 @@ export default function AdminPage() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>時間</TableHead>
-                            <TableHead>發送者</TableHead>
-                            <TableHead>接收者</TableHead>
+                            <SortableTableHead
+                              sortField="createdAt"
+                              currentSortField={creditSortField}
+                              currentSortOrder={creditSortOrder}
+                              onSort={handleCreditSort}
+                            >
+                              時間
+                            </SortableTableHead>
+                            <SortableTableHead
+                              sortField="sender"
+                              currentSortField={creditSortField}
+                              currentSortOrder={creditSortOrder}
+                              onSort={handleCreditSort}
+                            >
+                              發送者
+                            </SortableTableHead>
+                            <SortableTableHead
+                              sortField="receiver"
+                              currentSortField={creditSortField}
+                              currentSortOrder={creditSortOrder}
+                              onSort={handleCreditSort}
+                            >
+                              接收者
+                            </SortableTableHead>
                             <TableHead>原因</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -704,38 +847,38 @@ export default function AdminPage() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="create-name">姓名</Label>
-                <Input 
-                  id="create-name" 
-                  name="name" 
+                <Input
+                  id="create-name"
+                  name="name"
                   value={createUserForm.name}
                   onChange={(e) => setCreateUserForm({ ...createUserForm, name: e.target.value })}
-                  required 
+                  required
                 />
               </div>
               <div>
                 <Label htmlFor="create-email">Email</Label>
-                <Input 
-                  id="create-email" 
-                  name="email" 
+                <Input
+                  id="create-email"
+                  name="email"
                   type="email"
                   value={createUserForm.email}
                   onChange={(e) => setCreateUserForm({ ...createUserForm, email: e.target.value })}
-                  required 
+                  required
                 />
               </div>
               <div>
                 <Label htmlFor="create-employeeId">員工編號</Label>
-                <Input 
-                  id="create-employeeId" 
+                <Input
+                  id="create-employeeId"
                   name="employeeId"
                   value={createUserForm.employeeId}
                   onChange={(e) => setCreateUserForm({ ...createUserForm, employeeId: e.target.value })}
-                  required 
+                  required
                 />
               </div>
               <div>
                 <Label htmlFor="create-role">角色</Label>
-                <Select 
+                <Select
                   value={createUserForm.role}
                   onValueChange={(value) => setCreateUserForm({ ...createUserForm, role: value as 'user' | 'admin' })}
                 >
@@ -750,7 +893,7 @@ export default function AdminPage() {
               </div>
               <div>
                 <Label htmlFor="create-department">部門</Label>
-                <Select 
+                <Select
                   value={createUserForm.departmentId}
                   onValueChange={(value) => setCreateUserForm({ ...createUserForm, departmentId: value })}
                   required

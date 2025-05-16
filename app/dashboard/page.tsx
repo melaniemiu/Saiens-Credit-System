@@ -28,46 +28,46 @@ function DashboardContent() {
     const authToken = searchParams?.get('auth_token')
     const liffAuth = searchParams?.get('liff_auth')
     const authBypass = searchParams?.get('auth_bypass')
-    
+
     console.log('[Dashboard] URL params:', {
       authToken: authToken ? 'present' : 'missing',
       liffAuth: liffAuth,
       authBypass: authBypass
     });
-    
+
     if (authToken) {
       console.log("[Dashboard] Found auth token in URL, setting up authentication")
-      
+
       // Store the token in localStorage and sessionStorage only
       localStorage.setItem('authToken', authToken)
       sessionStorage.setItem('authToken', authToken)
-      
+
       // Also set it in the API client
       setAuthToken(authToken)
-      
+
       // Clean up the URL without reloading
       const url = new URL(window.location.href)
       url.searchParams.delete('auth_token')
       url.searchParams.delete('liff_auth')
       url.searchParams.delete('auth_bypass')
       window.history.replaceState({}, document.title, url.toString())
-      
+
       console.log('[Dashboard] Auth token stored, auth should update automatically');
     } else if (authBypass) {
       console.log("[Dashboard] Auth bypass detected from binding process")
-      
+
       // Token should already be in storage from the binding process
       const existingToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken')
       if (existingToken) {
         console.log('[Dashboard] Using existing token from storage')
         setAuthToken(existingToken)
       }
-      
+
       // Clean up the URL
       const url = new URL(window.location.href)
       url.searchParams.delete('auth_bypass')
       window.history.replaceState({}, document.title, url.toString())
-      
+
       // Force a refresh of user data
       setIsLoading(true)
     }
@@ -86,23 +86,23 @@ function DashboardContent() {
           user ? "User authenticated" : "No user",
           "Loading:", authLoading
         )
-        
+
         // Check for direct dashboard access flag from binding
-        const hasDashboardDirectFlag = 
-          sessionStorage.getItem('dashboard_direct') === 'true' || 
+        const hasDashboardDirectFlag =
+          sessionStorage.getItem('dashboard_direct') === 'true' ||
           localStorage.getItem('dashboard_direct') === 'true';
-        
+
         if (hasDashboardDirectFlag) {
           console.log("Dashboard direct access flag detected - cleaning up");
-          
+
           // Clear the flag to prevent issues with future visits
           try {
             sessionStorage.removeItem('dashboard_direct');
             localStorage.removeItem('dashboard_direct');
-            
+
             // Also ensure auto-login processed flag is set
             sessionStorage.setItem('auto_login_processed', 'true');
-            
+
             // Remove URL parameters to clean up the URL
             if (window.location.search) {
               const cleanUrl = window.location.pathname;
@@ -131,7 +131,7 @@ function DashboardContent() {
       setIsLoading(false);
       return;
     }
-    
+
     // Check for auth bypass - this means we just completed employee binding
     const authBypass = searchParams?.get('auth_bypass')
     if (authBypass && hasAuthToken) {

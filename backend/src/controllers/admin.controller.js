@@ -5,8 +5,18 @@ const bcrypt = require("bcryptjs");
 // Get all users with filtering and pagination
 exports.getUsers = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10, search, departmentId, role } = req.query;
+    const { 
+      page = 1, 
+      limit = 10, 
+      search, 
+      departmentId, 
+      role,
+      sortField = 'createdAt',
+      sortOrder = 'DESC' 
+    } = req.query;
     const offset = (page - 1) * limit;
+    
+    console.log('Sorting params:', { sortField, sortOrder });  // Debug log
 
     const where = {};
 
@@ -25,6 +35,32 @@ exports.getUsers = async (req, res, next) => {
     if (role && role !== "all") {
       where.role = role;
     }
+
+    // Map frontend sort fields to database fields
+    const sortFieldMap = {
+      'department': 'Department.name',
+      'creditsSent': 'creditsSent',
+      'creditsReceived': 'creditsReceived',
+      'name': 'name',
+      'employeeId': 'employeeId',
+      'role': 'role',
+      'remainingDailyCredits': 'remainingDailyCredits',
+      'lastLogin': 'lastLogin',
+      'createdAt': 'createdAt'
+    };
+
+    // Build the order clause
+    let orderClause;
+    
+    // Special handling for department sorting
+    if (sortField === 'department') {
+      orderClause = [[{ model: Department }, 'name', sortOrder]];
+    } else {
+      const mappedField = sortFieldMap[sortField] || 'createdAt';
+      orderClause = [[mappedField, sortOrder]];
+    }
+    
+    console.log('Order clause:', JSON.stringify(orderClause));  // Debug log
 
     const { count, rows: users } = await User.findAndCountAll({
       where,
@@ -47,7 +83,7 @@ exports.getUsers = async (req, res, next) => {
         "createdAt",
         "lastLogin",
       ],
-      order: [["createdAt", "DESC"]],
+      order: orderClause,
       limit: parseInt(limit),
       offset: parseInt(offset),
     });
@@ -232,6 +268,8 @@ exports.getCredits = async (req, res, next) => {
       departmentId,
       startDate,
       endDate,
+      sortField = 'createdAt',
+      sortOrder = 'DESC'
     } = req.query;
     const offset = (page - 1) * limit;
 
@@ -298,11 +336,27 @@ exports.getCredits = async (req, res, next) => {
       where,
     });
 
+    // Map frontend sort fields to database fields for credits
+    const creditSortFieldMap = {
+      'createdAt': 'createdAt',
+      'sender': ['sender', 'name'],
+      'receiver': ['receiver', 'name']
+    };
+
+    let orderClause = [[creditSortFieldMap[sortField] || 'createdAt', sortOrder]];
+    
+    // Special handling for sender and receiver sorting
+    if (sortField === 'sender') {
+      orderClause = [[{ model: User, as: 'sender' }, 'name', sortOrder]];
+    } else if (sortField === 'receiver') {
+      orderClause = [[{ model: User, as: 'receiver' }, 'name', sortOrder]];
+    }
+
     // Then find with includes
     const credits = await Credit.findAll({
       where,
       include,
-      order: [["createdAt", "DESC"]],
+      order: orderClause,
       limit: parseInt(limit),
       offset: parseInt(offset),
     });
