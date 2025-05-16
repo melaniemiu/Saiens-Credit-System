@@ -9,7 +9,12 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  allowedDevOrigins: ["dev.example.com", "3.unayung.cc", "5.unayung.cc"],
+  allowedDevOrigins: [
+    "dev.example.com",
+    "3.unayung.cc",
+    "4.unayung.cc",
+    "5.unayung.cc",
+  ],
 };
 
 export default nextConfig;

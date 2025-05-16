@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
   title: "Saiens Credit System",
-  description: "山恩實業員工互動表彰系統",
+  description: "山恩互動表彰系統",
   generator: 'v0.dev'
 }
 

@@ -468,7 +468,7 @@ function HomeContent() {
         <div className="w-full max-w-md space-y-8 rounded-xl bg-white px-5 py-8 shadow-lg">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-green-600">山恩實業</h1>
-            <h2 className="text-2xl font-bold text-green-600 mt-2">員工互動表彰系統</h2>
+            <h2 className="text-2xl font-bold text-green-600 mt-2">山恩互動表彰系統</h2>
             <p className="mt-2 text-gray-600">自動登入中，請稍候...</p>
           </div>
 
@@ -486,7 +486,7 @@ function HomeContent() {
       <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-lg">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-green-600">山恩實業</h1>
-          <h2 className="text-2xl font-bold text-green-600 mt-2">員工互動表彰系統</h2>
+          <h2 className="text-2xl font-bold text-green-600 mt-2">山恩互動表彰系統</h2>
           <p className="mt-2 text-gray-600">使用 LINE 帳號登入以開始使用</p>
         </div>
 

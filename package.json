@@ -3,7 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack -p 4000",
+    "dev:all": "pm2 start ecosystem.config.js",
+    "dev:stop": "pm2 stop all",
+    "dev:restart": "pm2 restart all",
+    "dev:logs": "pm2 logs",
+    "dev:delete": "pm2 delete all",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
