@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Saiens Credit System is an employee recognition system with LINE login integration that allows employees to give credits to each other.
+山恩互動表彰系統 (Saiens Interactive Recognition System) is an employee recognition system with LINE login integration that allows employees to give credits to each other.
 
 ## Architecture
 
@@ -30,6 +30,7 @@ Saiens Credit System is an employee recognition system with LINE login integrati
    - Optimized mobile authentication flow
    - Browser detection for LINE LIFF environment
    - Secure logout process
+   - Automatic profile picture updates on login
 
 3. **Role-based Access Control**
    - User and Admin role separation
@@ -74,16 +75,45 @@ Saiens Credit System is an employee recognition system with LINE login integrati
    - Mobile navigation menu
 
 2. **Dashboard**
-   - Personal user information card
+   - Personal user information card with profile picture display
    - Credit statistics visualization
    - Recent credit activity summary
+   - Large, prominent "給予 Credit" action button
 
 3. **Form Components**
    - User selection with search capability
    - Form validation
    - Success/error notifications via toast messages
 
+4. **Enhanced User Experience**
+   - Profile pictures displayed in personal information panel
+   - Automatic profile picture synchronization with LINE
+   - Responsive avatar components with fallback icons
+   - Hover effects and smooth transitions
+
 ## Development Commands
+
+### PM2 Development (Run Both Frontend & Backend)
+
+```bash
+# Install PM2 globally (if not already installed)
+npm install -g pm2
+
+# Run both frontend and backend concurrently
+npm run dev:all
+
+# Stop all services
+npm run dev:stop
+
+# Restart all services
+npm run dev:restart
+
+# View logs
+npm run dev:logs
+
+# Delete all PM2 processes
+npm run dev:delete
+```
 
 ### Frontend Commands
 
@@ -91,7 +121,7 @@ Saiens Credit System is an employee recognition system with LINE login integrati
 # Install dependencies
 npm install
 
-# Run development server
+# Run development server (standalone)
 npm run dev
 
 # Build for production
@@ -108,7 +138,7 @@ cd backend
 # Install dependencies
 npm install
 
-# Run development server with auto-reload
+# Run development server with auto-reload (standalone)
 npm run dev
 
 # Run production server
@@ -152,13 +182,15 @@ Important models:
 ## API Routes
 
 ### Backend API Endpoints
-- `/api/auth/line`: LINE Login authentication
+- `/api/auth/line`: LINE Login authentication (updates profile picture on login)
+- `/api/auth/bind-employee`: Bind employee ID to LINE account (with profile picture)
 - `/api/auth/logout`: Logout endpoint
 - `/api/credits`: Credit management routes
 - `/api/users`: User management routes
 
 ### Frontend API Routes
 - `/api/auth/login`: LINE Login handler that talks to backend
+- `/api/auth/bind-employee`: Employee ID binding handler with profile picture
 - `/api/auth/logout`: Logout handler that clears cookies and storage
 
 ## Key Files
@@ -170,11 +202,18 @@ Important models:
 - `components/liff-init.tsx`: LIFF SDK initialization with error handling
 - `components/line-login-button.tsx`: Regular browser login button
 - `components/line-auto-redirect.tsx`: Auto-login for LINE LIFF browser
+- `components/give-credit-button.tsx`: Primary action button component
 - `lib/direct-liff.ts`: Simplified LIFF integration for mobile
 - `app/page.tsx`: Conditional rendering based on browser environment
+- `app/dashboard/page.tsx`: Main dashboard with profile picture display
+- `app/bind/page.tsx`: Employee binding page with profile picture support
+- `app/bind-employee/page.tsx`: Alternative binding page
 - `app/api/auth/login/route.ts`: LINE authentication handler
+- `app/api/auth/bind-employee/route.ts`: Employee binding API route
 - `app/api/auth/logout/route.ts`: Logout handler that clears tokens
 - `backend/src/index.js`: Main backend entry point
 - `backend/src/controllers`: Business logic handlers
-- `backend/src/controllers/auth.controller.js`: Authentication logic
+- `backend/src/controllers/auth.controller.js`: Authentication logic with profile updates
+- `backend/src/controllers/user.controller.js`: User data management
 - `components/navbar.tsx`: Main navigation including logout button
+- `ecosystem.config.js`: PM2 configuration for concurrent development
