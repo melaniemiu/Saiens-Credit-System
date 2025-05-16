@@ -62,6 +62,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       defaultValue: 5 // Default daily credit limit
     },
+    dailyCreditLimit: {
+      type: DataTypes.INTEGER,
+      defaultValue: 5, // Default daily credit limit per user
+      allowNull: false
+    },
     dailyCreditResetDate: {
       type: DataTypes.DATE,
       allowNull: true
@@ -75,7 +80,8 @@ module.exports = (sequelize, DataTypes) => {
 
   // Instance methods
   User.prototype.resetDailyCredits = function() {
-    this.remainingDailyCredits = process.env.DAILY_CREDIT_LIMIT || 5;
+    // Use user's personal dailyCreditLimit instead of global env variable
+    this.remainingDailyCredits = this.dailyCreditLimit;
     this.dailyCreditResetDate = new Date();
     return this.save();
   };

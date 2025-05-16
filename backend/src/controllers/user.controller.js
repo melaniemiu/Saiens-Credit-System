@@ -37,6 +37,7 @@ exports.getCurrentUser = async (req, res, next) => {
         creditsReceived: user.creditsReceived,
         creditsGiven: user.creditsGiven,
         remainingDailyCredits: user.remainingDailyCredits,
+        dailyCreditLimit: user.dailyCreditLimit,
         dailyCreditResetDate: user.dailyCreditResetDate,
         isActive: user.isActive,
         lastLogin: user.lastLogin,
@@ -181,7 +182,8 @@ exports.createUser = async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        departmentId: user.departmentId
+        departmentId: user.departmentId,
+        dailyCreditLimit: user.dailyCreditLimit
       }
     });
   } catch (error) {
@@ -219,6 +221,7 @@ exports.updateUser = async (req, res, next) => {
         email: user.email,
         role: user.role,
         departmentId: user.departmentId,
+        dailyCreditLimit: user.dailyCreditLimit,
         isActive: user.isActive
       }
     });
@@ -319,7 +322,7 @@ exports.getDailyStats = async (req, res, next) => {
         yesterdayReceived: yesterdayCredits,
         dayBeforeReceived: dayBeforeCredits,
         remainingDailyCredits: user.remainingDailyCredits,
-        dailyLimit: Number(process.env.DAILY_CREDIT_LIMIT || 5)
+        dailyLimit: user.dailyCreditLimit
       }
     });
   } catch (error) {

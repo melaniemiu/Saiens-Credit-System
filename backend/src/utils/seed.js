@@ -102,7 +102,7 @@ async function seed() {
     }
 
     // Create users one by one to ensure proper department assignment
-    // User 1 - Admin - Engineering
+    // User 1 - Admin - Engineering (higher daily limit)
     const user1 = await User.create({
       employeeId: "EMP001",
       name: "王小明",
@@ -110,7 +110,8 @@ async function seed() {
       lineUserId: "Uee2c366a945ff70af0323c51f509fb0e",
       DepartmentId: engineeringDept ? engineeringDept.id : null,
       role: "admin",
-      remainingDailyCredits: 5,
+      remainingDailyCredits: 10,
+      dailyCreditLimit: 10, // Admin gets more credits
       dailyCreditResetDate: new Date(),
     });
     console.log("User 1 created with DepartmentId:", user1.DepartmentId);
@@ -123,6 +124,7 @@ async function seed() {
       DepartmentId: marketingDept ? marketingDept.id : null,
       role: "user",
       remainingDailyCredits: 5,
+      dailyCreditLimit: 5, // Standard user limit
       dailyCreditResetDate: new Date(),
     });
     console.log("User 2 created with DepartmentId:", user2.DepartmentId);
@@ -134,7 +136,8 @@ async function seed() {
       email: "meiling.zhang@example.com",
       DepartmentId: hrDept ? hrDept.id : null,
       role: "user",
-      remainingDailyCredits: 5,
+      remainingDailyCredits: 7,
+      dailyCreditLimit: 7, // HR gets slightly more
       dailyCreditResetDate: new Date(),
     });
     console.log("User 3 created with DepartmentId:", user3.DepartmentId);
@@ -147,6 +150,7 @@ async function seed() {
       DepartmentId: financeDept ? financeDept.id : null,
       role: "user",
       remainingDailyCredits: 5,
+      dailyCreditLimit: 5, // Standard user limit
       dailyCreditResetDate: new Date(),
     });
     console.log("User 4 created with DepartmentId:", user4.DepartmentId);
@@ -158,7 +162,8 @@ async function seed() {
       email: "xiaofang.lin@example.com",
       DepartmentId: customerDept ? customerDept.id : null,
       role: "user",
-      remainingDailyCredits: 5,
+      remainingDailyCredits: 8,
+      dailyCreditLimit: 8, // Customer service gets more for client appreciations
       dailyCreditResetDate: new Date(),
     });
     console.log("User 5 created with DepartmentId:", user5.DepartmentId);
@@ -171,6 +176,7 @@ async function seed() {
       DepartmentId: engineeringDept ? engineeringDept.id : null,
       role: "user",
       remainingDailyCredits: 5,
+      dailyCreditLimit: 5, // Standard user limit
       dailyCreditResetDate: new Date(),
     });
     console.log("User 6 created with DepartmentId:", user6.DepartmentId);
