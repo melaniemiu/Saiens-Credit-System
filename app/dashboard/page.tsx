@@ -305,31 +305,25 @@ function DashboardContent() {
               <div className="grid grid-cols-2 gap-6">
                 {/* Credits Received Card */}
                 <div className="col-span-1">
-                  <SoftCard className="h-full">
+                  <SoftCard className="h-full relative">
+                    <SoftCardIcon gradient="bg-gradient-success" className="absolute top-4 right-4">
+                      <TrendingUp className="h-6 w-6" />
+                    </SoftCardIcon>
                     <SoftCardHeader>
-                      <div className="flex flex-row -mx-3">
-                        <div className="flex-none w-2/3 max-w-full px-3">
-                          <div>
-                            <SoftCardDescription>收到的 Credits</SoftCardDescription>
-                            <SoftCardTitle className="text-2xl">
-                              {isLoading ? (
-                                <Skeleton className="h-8 w-20" />
-                              ) : (
-                                <>
-                                  {user?.creditsReceived || 0}
-                                  <span className="leading-normal text-size-sm font-weight-bolder text-green-600 ml-2">
-                                    +{user?.creditsReceived || 0}%
-                                  </span>
-                                </>
-                              )}
-                            </SoftCardTitle>
-                          </div>
-                        </div>
-                        <div className="px-3 text-right basis-1/3">
-                          <SoftCardIcon gradient="bg-gradient-success">
-                            <TrendingUp className="h-6 w-6" />
-                          </SoftCardIcon>
-                        </div>
+                      <div className="pr-16">
+                        <SoftCardDescription>收到的 Credits</SoftCardDescription>
+                        <SoftCardTitle className="text-2xl">
+                          {isLoading ? (
+                            <Skeleton className="h-8 w-20" />
+                          ) : (
+                            <>
+                              {user?.creditsReceived || 0}
+                              <span className="leading-normal text-size-sm font-weight-bolder text-green-600 ml-2">
+                                +{user?.creditsReceived || 0}%
+                              </span>
+                            </>
+                          )}
+                        </SoftCardTitle>
                       </div>
                     </SoftCardHeader>
                   </SoftCard>
@@ -337,31 +331,25 @@ function DashboardContent() {
 
                 {/* Credits Sent Card */}
                 <div className="col-span-1">
-                  <SoftCard className="h-full">
+                  <SoftCard className="h-full relative">
+                    <SoftCardIcon gradient="bg-gradient-info" className="absolute top-4 right-4">
+                      <CreditCard className="h-6 w-6" />
+                    </SoftCardIcon>
                     <SoftCardHeader>
-                      <div className="flex flex-row -mx-3">
-                        <div className="flex-none w-2/3 max-w-full px-3">
-                          <div>
-                            <SoftCardDescription>給出的 Credits</SoftCardDescription>
-                            <SoftCardTitle className="text-2xl">
-                              {isLoading ? (
-                                <Skeleton className="h-8 w-20" />
-                              ) : (
-                                <>
-                                  {user?.creditsSent || 0}
-                                  <span className="leading-normal text-size-sm font-weight-bolder text-blue-600 ml-2">
-                                    +{user?.creditsSent || 0}%
-                                  </span>
-                                </>
-                              )}
-                            </SoftCardTitle>
-                          </div>
-                        </div>
-                        <div className="px-3 text-right basis-1/3">
-                          <SoftCardIcon gradient="bg-gradient-info">
-                            <CreditCard className="h-6 w-6" />
-                          </SoftCardIcon>
-                        </div>
+                      <div className="pr-16">
+                        <SoftCardDescription>給出的 Credits</SoftCardDescription>
+                        <SoftCardTitle className="text-2xl">
+                          {isLoading ? (
+                            <Skeleton className="h-8 w-20" />
+                          ) : (
+                            <>
+                              {user?.creditsSent || 0}
+                              <span className="leading-normal text-size-sm font-weight-bolder text-blue-600 ml-2">
+                                +{user?.creditsSent || 0}%
+                              </span>
+                            </>
+                          )}
+                        </SoftCardTitle>
                       </div>
                     </SoftCardHeader>
                   </SoftCard>
@@ -369,31 +357,25 @@ function DashboardContent() {
 
                 {/* Daily Credits Card - Below Credits Received */}
                 <div className="col-span-2">
-                  <SoftCard>
+                  <SoftCard className="relative">
+                    <SoftCardIcon gradient="bg-gradient-secondary" className="absolute top-4 right-4">
+                      <Wallet className="h-6 w-6" />
+                    </SoftCardIcon>
                     <SoftCardHeader>
-                      <div className="flex flex-row -mx-3">
-                        <div className="flex-none w-2/3 max-w-full px-3">
-                          <div>
-                            <SoftCardDescription>今日剩餘 Credits</SoftCardDescription>
-                            <SoftCardTitle className="text-2xl">
-                              {isLoading ? (
-                                <Skeleton className="h-8 w-20" />
-                              ) : (
-                                <>
-                                  {user?.remainingDailyCredits || 0}
-                                  <span className="leading-normal text-size-sm text-slate-400 ml-2">
-                                    / 5
-                                  </span>
-                                </>
-                              )}
-                            </SoftCardTitle>
-                          </div>
-                        </div>
-                        <div className="px-3 text-right basis-1/3">
-                          <SoftCardIcon gradient="bg-gradient-secondary">
-                            <Wallet className="h-6 w-6" />
-                          </SoftCardIcon>
-                        </div>
+                      <div className="pr-16">
+                        <SoftCardDescription>今日剩餘 Credits</SoftCardDescription>
+                        <SoftCardTitle className="text-2xl">
+                          {isLoading ? (
+                            <Skeleton className="h-8 w-20" />
+                          ) : (
+                            <>
+                              {user?.remainingDailyCredits || 0}
+                              <span className="leading-normal text-size-sm text-slate-400 ml-2">
+                                / 5
+                              </span>
+                            </>
+                          )}
+                        </SoftCardTitle>
                       </div>
                     </SoftCardHeader>
                     <SoftCardContent>
