@@ -23,7 +23,7 @@ export function GiveCreditButton() {
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-lg p-0 overflow-hidden border-0 shadow-soft-2xl">
+        <DialogContent className="max-w-lg p-0 overflow-hidden border-0 shadow-soft-2xl rounded-lg">
           <GiveCreditForm />
         </DialogContent>
       </Dialog>

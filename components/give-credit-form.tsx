@@ -185,13 +185,13 @@ export function GiveCreditForm() {
   });
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="max-h-[90vh] overflow-y-auto">
       <SoftCard>
-        <SoftCardHeader>
+        <SoftCardHeader className="px-6 pt-6 pb-4">
           <SoftCardTitle>給予 Credit</SoftCardTitle>
           <SoftCardDescription>選擇同事並說明給予 Credit 的理由</SoftCardDescription>
         </SoftCardHeader>
-        <SoftCardContent className="space-y-6">
+        <SoftCardContent className="space-y-6 px-6 pb-6">
           <div className="space-y-2">
             <Label htmlFor="employee" className="text-slate-700 font-semibold">選擇同事（可多選）</Label>
             <Popover open={open} onOpenChange={setOpen}>

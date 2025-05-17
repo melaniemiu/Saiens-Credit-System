@@ -44,20 +44,23 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 bg-white shadow-soft-xl rounded-2xl mx-4 mt-4">
-      <div className="container mx-auto flex h-16 items-center justify-between px-6">
-        <div className="flex items-center">
+      <div className="container mx-auto flex h-16 items-center px-6">
+        <div className="flex-1 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center">
             <h1 className="text-xl font-bold gradient-text">山恩互動表彰系統</h1>
           </Link>
-        </div>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex md:items-center md:space-x-4">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex md:items-center md:space-x-4 absolute left-1/2 transform -translate-x-1/2">
           {navItems.map((item) => (
             <Link key={item.href} href={item.href}>
               <Button
                 variant={isActive(item.href) ? "default" : "ghost"}
-                className={`flex items-center gap-2 ${isActive(item.href) ? 'bg-black text-white hover:bg-gray-800' : ''}`}
+                className={`flex items-center gap-2 transition-all duration-300 ${
+                  isActive(item.href)
+                    ? 'bg-gradient-primary text-white shadow-soft-xl hover:shadow-soft-2xl'
+                    : 'hover:bg-gray-50'
+                }`}
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
@@ -75,74 +78,83 @@ export function Navbar() {
               </Button>
             </Link>
           )}
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <Link href="/dashboard/profile">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <UserCircle className="h-5 w-5" />
-              <span className="sr-only">個人資料</span>
-            </Button>
-          </Link>
-
-          {/* Mobile Navigation */}
-          <div className="md:hidden">
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">選單</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[250px] sm:w-[300px]">
-                <SheetHeader>
-                  <SheetTitle>選單</SheetTitle>
-                </SheetHeader>
-                <div className="mt-6 flex flex-col space-y-3">
-                  {navItems.map((item) => (
-                    <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)}>
-                      <Button
-                        variant={isActive(item.href) ? "default" : "ghost"}
-                        className="w-full justify-start gap-2"
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {item.label}
-                      </Button>
-                    </Link>
-                  ))}
-                  {user?.role === 'admin' && (
-                    <Link href={adminItem.href} onClick={() => setIsOpen(false)}>
-                      <Button
-                        variant={isActive(adminItem.href) ? "default" : "ghost"}
-                        className="w-full justify-start gap-2"
-                      >
-                        <adminItem.icon className="h-4 w-4" />
-                        {adminItem.label}
-                      </Button>
-                    </Link>
-                  )}
-                  <div className="my-2 border-t" />
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => {
-                      setIsOpen(false)
-                      logout()
-                    }}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    登出
-                  </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
           </div>
 
-          <div className="hidden md:block">
-            <Button onClick={logout} variant="outline" size="sm" className="text-red-600 hover:text-red-700 border-red-600 hover:bg-red-50">
-              <LogOut className="h-4 w-4 mr-2" />
-              登出
-            </Button>
+          <div className="flex items-center space-x-4">
+            <Link href="/dashboard/profile">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <UserCircle className="h-5 w-5" />
+                <span className="sr-only">個人資料</span>
+              </Button>
+            </Link>
+
+            {/* Mobile Navigation */}
+            <div className="md:hidden">
+              <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">選單</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[250px] sm:w-[300px]">
+                  <SheetHeader>
+                    <SheetTitle>選單</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6 flex flex-col space-y-3">
+                    {navItems.map((item) => (
+                      <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)}>
+                        <Button
+                          variant={isActive(item.href) ? "default" : "ghost"}
+                          className={`w-full justify-start gap-2 transition-all duration-300 ${
+                            isActive(item.href)
+                              ? 'bg-gradient-primary text-white shadow-soft-xl'
+                              : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <item.icon className="h-4 w-4" />
+                          {item.label}
+                        </Button>
+                      </Link>
+                    ))}
+                    {user?.role === 'admin' && (
+                      <Link href={adminItem.href} onClick={() => setIsOpen(false)}>
+                        <Button
+                          variant={isActive(adminItem.href) ? "default" : "ghost"}
+                          className={`w-full justify-start gap-2 transition-all duration-300 ${
+                            isActive(adminItem.href)
+                              ? 'bg-gradient-primary text-white shadow-soft-xl'
+                              : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <adminItem.icon className="h-4 w-4" />
+                          {adminItem.label}
+                        </Button>
+                      </Link>
+                    )}
+                    <div className="my-2 border-t" />
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => {
+                        setIsOpen(false)
+                        logout()
+                      }}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      登出
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            <div className="hidden md:block">
+              <Button onClick={logout} variant="outline" size="sm" className="text-red-600 hover:text-red-700 border-red-600 hover:bg-red-50">
+                <LogOut className="h-4 w-4 mr-2" />
+                登出
+              </Button>
+            </div>
           </div>
         </div>
       </div>
