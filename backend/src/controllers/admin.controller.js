@@ -120,6 +120,21 @@ exports.createUser = async (req, res, next) => {
       departmentId,
     });
 
+    // Validate required fields
+    if (!name || !email || !employeeId || !departmentId) {
+      return res.status(400).json({
+        message: "All required fields must be provided (name, email, employeeId, departmentId)",
+      });
+    }
+
+    // Check if department exists
+    const department = await Department.findByPk(departmentId);
+    if (!department) {
+      return res.status(400).json({
+        message: "Invalid department selected",
+      });
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({
       where: {

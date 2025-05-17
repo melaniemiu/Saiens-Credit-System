@@ -142,6 +142,7 @@ export default function AdminPage() {
     role: 'user',
     departmentId: ''
   })
+  const [createUserErrors, setCreateUserErrors] = useState<Partial<UserFormData>>({})
 
   // Credits state
   const [credits, setCredits] = useState<Credit[]>([])
@@ -266,7 +267,7 @@ export default function AdminPage() {
         description: "使用者已建立",
       })
       setIsCreateDialogOpen(false)
-      // Reset form
+      // Reset form and errors
       setCreateUserForm({
         name: '',
         email: '',
@@ -274,14 +275,35 @@ export default function AdminPage() {
         role: 'user',
         departmentId: ''
       })
+      setCreateUserErrors({})
       fetchUsers()
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create user:", error)
-      toast({
-        title: "錯誤",
-        description: "無法建立使用者",
-        variant: "destructive",
-      })
+      
+      // Show specific error message if available
+      if (error.response?.data?.message) {
+        const message = error.response.data.message
+        // Map backend errors to form fields
+        if (message.includes("Email already exists")) {
+          setCreateUserErrors({ email: "此 Email 已被使用" })
+        } else if (message.includes("Employee ID already exists")) {
+          setCreateUserErrors({ employeeId: "此員工編號已被使用" })
+        } else if (message.includes("Invalid department")) {
+          setCreateUserErrors({ departmentId: "請選擇有效的部門" })
+        } else {
+          toast({
+            title: "錯誤",
+            description: message,
+            variant: "destructive",
+          })
+        }
+      } else {
+        toast({
+          title: "錯誤",
+          description: "無法建立使用者",
+          variant: "destructive",
+        })
+      }
     }
   }
 
@@ -975,8 +997,8 @@ export default function AdminPage() {
       </SidebarInset>
 
       {/* 新增使用者對話框 */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} modal={true}>
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto" style={{ zIndex: 9999 }}>
           <DialogHeader>
             <DialogTitle>新增使用者</DialogTitle>
             <DialogDescription>
@@ -985,42 +1007,87 @@ export default function AdminPage() {
           </DialogHeader>
           <form onSubmit={(e) => {
             e.preventDefault()
+            // Reset errors
+            setCreateUserErrors({})
+            
+            // Validate form
+            const errors: Partial<UserFormData> = {}
+            if (!createUserForm.name) errors.name = "請輸入姓名"
+            if (!createUserForm.email) errors.email = "請輸入 Email"
+            if (!createUserForm.employeeId) errors.employeeId = "請輸入員工編號"
+            if (!createUserForm.departmentId) errors.departmentId = "請選擇部門"
+            
+            // Email format validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            if (createUserForm.email && !emailRegex.test(createUserForm.email)) {
+              errors.email = "請輸入有效的 Email 格式"
+            }
+            
+            if (Object.keys(errors).length > 0) {
+              setCreateUserErrors(errors)
+              return
+            }
+            
             handleCreateUser(createUserForm)
           }}>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="create-name">姓名</Label>
+                <Label htmlFor="create-name">姓名 *</Label>
                 <Input
                   id="create-name"
                   name="name"
                   value={createUserForm.name}
-                  onChange={(e) => setCreateUserForm({ ...createUserForm, name: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setCreateUserForm({ ...createUserForm, name: e.target.value })
+                    if (createUserErrors.name) {
+                      setCreateUserErrors({ ...createUserErrors, name: '' })
+                    }
+                  }}
+                  className={createUserErrors.name ? "border-red-500" : ""}
                 />
+                {createUserErrors.name && (
+                  <p className="text-sm text-red-500 mt-1">{createUserErrors.name}</p>
+                )}
               </div>
               <div>
-                <Label htmlFor="create-email">Email</Label>
+                <Label htmlFor="create-email">Email *</Label>
                 <Input
                   id="create-email"
                   name="email"
                   type="email"
                   value={createUserForm.email}
-                  onChange={(e) => setCreateUserForm({ ...createUserForm, email: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setCreateUserForm({ ...createUserForm, email: e.target.value })
+                    if (createUserErrors.email) {
+                      setCreateUserErrors({ ...createUserErrors, email: '' })
+                    }
+                  }}
+                  className={createUserErrors.email ? "border-red-500" : ""}
                 />
+                {createUserErrors.email && (
+                  <p className="text-sm text-red-500 mt-1">{createUserErrors.email}</p>
+                )}
               </div>
               <div>
-                <Label htmlFor="create-employeeId">員工編號</Label>
+                <Label htmlFor="create-employeeId">員工編號 *</Label>
                 <Input
                   id="create-employeeId"
                   name="employeeId"
                   value={createUserForm.employeeId}
-                  onChange={(e) => setCreateUserForm({ ...createUserForm, employeeId: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setCreateUserForm({ ...createUserForm, employeeId: e.target.value })
+                    if (createUserErrors.employeeId) {
+                      setCreateUserErrors({ ...createUserErrors, employeeId: '' })
+                    }
+                  }}
+                  className={createUserErrors.employeeId ? "border-red-500" : ""}
                 />
+                {createUserErrors.employeeId && (
+                  <p className="text-sm text-red-500 mt-1">{createUserErrors.employeeId}</p>
+                )}
               </div>
               <div>
-                <Label htmlFor="create-role">角色</Label>
+                <Label htmlFor="create-role">角色 *</Label>
                 <Select
                   value={createUserForm.role}
                   onValueChange={(value) => setCreateUserForm({ ...createUserForm, role: value as 'user' | 'admin' })}
@@ -1028,23 +1095,27 @@ export default function AdminPage() {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent style={{ zIndex: 10000 }}>
                     <SelectItem value="user">一般使用者</SelectItem>
                     <SelectItem value="admin">管理員</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="create-department">部門</Label>
+                <Label htmlFor="create-department">部門 *</Label>
                 <Select
                   value={createUserForm.departmentId}
-                  onValueChange={(value) => setCreateUserForm({ ...createUserForm, departmentId: value })}
-                  required
+                  onValueChange={(value) => {
+                    setCreateUserForm({ ...createUserForm, departmentId: value })
+                    if (createUserErrors.departmentId) {
+                      setCreateUserErrors({ ...createUserErrors, departmentId: '' })
+                    }
+                  }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="create-department" className={createUserErrors.departmentId ? "border-red-500" : ""}>
                     <SelectValue placeholder="選擇部門" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent style={{ zIndex: 10000 }}>
                     {departments.map((dept) => (
                       <SelectItem key={dept.id} value={dept.id}>
                         {dept.name}
@@ -1052,12 +1123,15 @@ export default function AdminPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {createUserErrors.departmentId && (
+                  <p className="text-sm text-red-500 mt-1">{createUserErrors.departmentId}</p>
+                )}
               </div>
             </div>
             <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={() => {
                 setIsCreateDialogOpen(false)
-                // Reset form
+                // Reset form and errors
                 setCreateUserForm({
                   name: '',
                   email: '',
@@ -1065,6 +1139,7 @@ export default function AdminPage() {
                   role: 'user',
                   departmentId: ''
                 })
+                setCreateUserErrors({})
               }}>
                 取消
               </Button>
@@ -1075,8 +1150,8 @@ export default function AdminPage() {
       </Dialog>
 
       {/* 編輯使用者對話框 */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} modal={true}>
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto" style={{ zIndex: 9999 }}>
           <DialogHeader>
             <DialogTitle>編輯使用者</DialogTitle>
             <DialogDescription>
@@ -1114,7 +1189,7 @@ export default function AdminPage() {
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent style={{ zIndex: 10000 }}>
                       <SelectItem value="user">一般使用者</SelectItem>
                       <SelectItem value="admin">管理員</SelectItem>
                     </SelectContent>
@@ -1126,7 +1201,7 @@ export default function AdminPage() {
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent style={{ zIndex: 10000 }}>
                       {departments.map((dept) => (
                         <SelectItem key={dept.id} value={dept.id}>
                           {dept.name}
@@ -1148,8 +1223,8 @@ export default function AdminPage() {
       </Dialog>
 
       {/* 刪除確認對話框 */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} modal={true}>
+        <DialogContent className="sm:max-w-[425px]" style={{ zIndex: 9999 }}>
           <DialogHeader>
             <DialogTitle>確認刪除</DialogTitle>
             <DialogDescription>
