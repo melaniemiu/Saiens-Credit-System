@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { Check, ChevronsUpDown, X } from "lucide-react"
+import { Check, ChevronsUpDown, X, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { userApi, creditApi } from "@/lib/api"
 import { useAuth } from "@/context/auth-context"
 
@@ -29,6 +29,7 @@ export function GiveCreditForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [remainingCredits, setRemainingCredits] = useState(0)
+  const [searchQuery, setSearchQuery] = useState("")
   const { toast } = useToast()
   const { user, refreshUser } = useAuth()
 
@@ -108,11 +109,9 @@ export function GiveCreditForm() {
 
   const handleToggleEmployee = (employeeId: string) => {
     setSelectedEmployeeIds(prev => {
-      const isSelected = prev.includes(employeeId);
-      if (isSelected) {
+      if (prev.includes(employeeId)) {
         return prev.filter(id => id !== employeeId);
       } else {
-        // No need to check against remaining credits since bulk operation only uses 1 credit
         return [...prev, employeeId];
       }
     });
@@ -124,25 +123,26 @@ export function GiveCreditForm() {
     if (selectedEmployeeIds.length === 0) {
       toast({
         title: "請選擇同事",
-        description: "您需要選擇至少一位同事來給予 Credit",
+        description: "請至少選擇一位同事",
         variant: "destructive",
       })
       return
     }
 
-    if (!reason.trim()) {
+    if (!reason || reason.length < 10) {
       toast({
-        title: "請填寫表彰原因",
-        description: "您需要填寫給予 Credit 的原因",
+        title: "請輸入理由",
+        description: "理由至少需要 10 個字",
         variant: "destructive",
       })
       return
     }
 
-    if (remainingCredits <= 0) {
+    // Check if user has remaining credits
+    if (selectedEmployeeIds.length > remainingCredits) {
       toast({
-        title: "超過每日限制",
-        description: `您今日已無剩餘的 Credit 額度`,
+        title: "Credit 不足",
+        description: `您今日剩餘 ${remainingCredits} 個 Credit，但選擇了 ${selectedEmployeeIds.length} 位同事`,
         variant: "destructive",
       })
       return
@@ -151,22 +151,23 @@ export function GiveCreditForm() {
     setIsSubmitting(true)
 
     try {
-      // Use the new bulk API to send credits to all selected employees
-      const response = await creditApi.giveBulkCredit(selectedEmployeeIds, reason);
-
-      if (response.error) {
-        throw new Error(response.error);
+      if (selectedEmployeeIds.length === 1) {
+        // Single credit
+        await creditApi.giveCredit(selectedEmployeeIds[0], reason)
+        toast({
+          title: "Credit 送出成功",
+          description: "您已成功給予同事 Credit",
+        })
+      } else {
+        // Bulk credits
+        await creditApi.giveBulkCredits(selectedEmployeeIds, reason)
+        toast({
+          title: "Credit 送出成功",
+          description: `您已成功給予 ${selectedEmployeeIds.length} 位同事 Credit`,
+        })
       }
 
-      const selectedEmployeeNames = selectedEmployeeIds
-        .map(id => employees.find(emp => emp.id === id)?.name)
-        .filter(Boolean)
-        .join("、");
-
-      toast({
-        title: "Credit 已發送",
-        description: `您已成功發送 Credit 給 ${selectedEmployeeNames}`,
-      })
+      const response = await userApi.getCurrentUser();
 
       // Update remaining credits from the response
       if (response.data?.remainingCredits !== undefined) {
@@ -176,6 +177,7 @@ export function GiveCreditForm() {
       // Reset form
       setSelectedEmployeeIds([])
       setReason("")
+      setSearchQuery("")
 
       // Refresh user data
       refreshUser()
@@ -189,6 +191,14 @@ export function GiveCreditForm() {
       setIsSubmitting(false)
     }
   }
+
+  // Filter employees based on search query
+  const filteredEmployees = employees.filter(emp => {
+    if (emp.id === user?.id) return false; // Filter out current user
+    const query = searchQuery.toLowerCase();
+    return emp.name.toLowerCase().includes(query) || 
+           emp.department.toLowerCase().includes(query);
+  });
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -211,20 +221,33 @@ export function GiveCreditForm() {
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-full p-0">
-            <Command>
-              <CommandInput placeholder="搜尋同事..." />
-              <CommandList>
-                <CommandEmpty>找不到符合的同事</CommandEmpty>
-                <CommandGroup>
-                  {employees
-                    .filter(emp => emp.id !== user?.id) // Filter out current user
-                    .map((employee) => (
-                    <CommandItem
+            <div className="p-2 border-b">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="搜尋同事..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+            <div className="max-h-[300px] overflow-y-auto">
+              {filteredEmployees.length === 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  找不到符合的同事
+                </div>
+              ) : (
+                <div className="p-2">
+                  {filteredEmployees.map((employee) => (
+                    <button
                       key={employee.id}
-                      value={`${employee.name} ${employee.department}`}
-                      onSelect={() => {
-                        handleToggleEmployee(employee.id);
-                      }}
+                      type="button"
+                      onClick={() => handleToggleEmployee(employee.id)}
+                      className={cn(
+                        "flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                        selectedEmployeeIds.includes(employee.id) && "bg-accent"
+                      )}
                     >
                       <Check
                         className={cn(
@@ -236,11 +259,11 @@ export function GiveCreditForm() {
                       {employee.department && (
                         <span className="ml-2 text-xs text-gray-500">({employee.department})</span>
                       )}
-                    </CommandItem>
+                    </button>
                   ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
+                </div>
+              )}
+            </div>
           </PopoverContent>
         </Popover>
 
@@ -269,43 +292,29 @@ export function GiveCreditForm() {
             })}
           </div>
         )}
-        
-        {/* 顯示剩餘積分提示 */}
-        {selectedEmployeeIds.length > 0 && remainingCredits > 0 && (
-          <p className="text-sm text-blue-500 mt-2">
-            提示：選擇了 {selectedEmployeeIds.length} 位同事，將使用 1 次積分額度
-          </p>
-        )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="reason">表彰原因</Label>
+        <Label htmlFor="reason">給予理由</Label>
         <Textarea
           id="reason"
-          placeholder="請描述您想表彰的原因..."
+          placeholder="請描述給予 Credit 的理由（至少 10 個字）"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          rows={4}
+          required
+          minLength={10}
+          className="min-h-[100px]"
         />
-        <p className="text-xs text-gray-500">請具體描述同事的貢獻或幫助，這將有助於建立正向的工作文化</p>
       </div>
 
-      <Button
-        type="submit"
-        className="w-full"
-        disabled={isSubmitting || remainingCredits <= 0}
-      >
-        {isSubmitting ? "處理中..." : `發送 Credit 給 ${selectedEmployeeIds.length > 0 ? selectedEmployeeIds.length + ' 位同事' : ''}`}
-      </Button>
-
-      <p className="text-center text-sm text-gray-500">
-        您今日還可以發送 {remainingCredits} 次 Credit
-        {selectedEmployeeIds.length > 0 && (
-          <span className="block">
-            目前已選擇 {selectedEmployeeIds.length} 位同事（只計算 1 次額度）
-          </span>
-        )}
-      </p>
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-gray-500">
+          剩餘 Credit: {remainingCredits}
+        </div>
+        <Button type="submit" disabled={isSubmitting || selectedEmployeeIds.length === 0}>
+          {isSubmitting ? "送出中..." : "送出 Credit"}
+        </Button>
+      </div>
     </form>
   )
 }
