@@ -147,7 +147,7 @@ export function GiveCreditForm() {
           description: "您已成功給予同事 Credit",
         })
       } else {
-        await creditApi.giveBulkCredits(selectedEmployeeIds, reason)
+        await creditApi.giveBulkCredit(selectedEmployeeIds, reason)
         toast({
           title: "Credit 送出成功",
           description: `您已成功給予 ${selectedEmployeeIds.length} 位同事 Credit`,
