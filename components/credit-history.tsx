@@ -109,7 +109,7 @@ export function CreditHistory() {
           <AvatarImage src={person?.profilePicture} alt={person?.name} />
           <AvatarFallback className={cn(
             "text-white",
-            type === 'received' ? "bg-gradient-lime" : "bg-gradient-cyan"
+            type === 'received' ? "bg-gradient-success" : "bg-gradient-info"
           )}>
             <User className="h-5 w-5" />
           </AvatarFallback>
@@ -147,8 +147,8 @@ export function CreditHistory() {
               className={cn(
                 "flex items-center gap-1 text-xs border-0 shadow-soft-xl",
                 type === 'received' 
-                  ? "bg-gradient-lime text-white" 
-                  : "bg-gradient-cyan text-white"
+                  ? "bg-gradient-success text-white" 
+                  : "bg-gradient-info text-white"
               )}
             >
               {icon && React.createElement(icon, { className: "h-3 w-3" })}
@@ -165,13 +165,13 @@ export function CreditHistory() {
       <TabsList className="grid w-full grid-cols-2 shadow-soft-xl mb-4">
         <TabsTrigger 
           value="received" 
-          className="data-[state=active]:bg-gradient-lime data-[state=active]:text-white data-[state=active]:shadow-soft-xl"
+          className="data-[state=active]:bg-gradient-success data-[state=active]:text-white data-[state=active]:shadow-soft-xl"
         >
           收到的 Credit
         </TabsTrigger>
         <TabsTrigger 
           value="given" 
-          className="data-[state=active]:bg-gradient-cyan data-[state=active]:text-white data-[state=active]:shadow-soft-xl"
+          className="data-[state=active]:bg-gradient-info data-[state=active]:text-white data-[state=active]:shadow-soft-xl"
         >
           送出的 Credit
         </TabsTrigger>
@@ -180,7 +180,7 @@ export function CreditHistory() {
       <TabsContent value="received" className="mt-4">
         {isLoadingReceived && receivedCredits.length === 0 ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-lime-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-green-600" />
           </div>
         ) : receivedCredits.length === 0 ? (
           <div className="text-center py-8">
@@ -223,7 +223,7 @@ export function CreditHistory() {
       <TabsContent value="given" className="mt-4">
         {isLoadingGiven && givenCredits.length === 0 ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-cyan-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           </div>
         ) : givenCredits.length === 0 ? (
           <div className="text-center py-8">

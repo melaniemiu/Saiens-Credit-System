@@ -261,7 +261,7 @@ function DashboardContent() {
                     ) : (
                       <Avatar className="h-16 w-16 border-2 border-white shadow-md">
                         <AvatarImage src={userData?.profilePicture || ''} alt={userData?.name || ''} />
-                        <AvatarFallback className="bg-gradient-fuchsia text-white">
+                        <AvatarFallback className="bg-gradient-primary text-white">
                           <User className="h-8 w-8" />
                         </AvatarFallback>
                       </Avatar>
@@ -313,7 +313,7 @@ function DashboardContent() {
                           ) : (
                             <>
                               {user?.creditsReceived || 0}
-                              <span className="leading-normal text-size-sm font-weight-bolder text-lime-500 ml-2">
+                              <span className="leading-normal text-size-sm font-weight-bolder text-green-600 ml-2">
                                 +{user?.creditsReceived || 0}%
                               </span>
                             </>
@@ -322,7 +322,7 @@ function DashboardContent() {
                       </div>
                     </div>
                     <div className="px-3 text-right basis-1/3">
-                      <SoftCardIcon gradient="bg-gradient-lime">
+                      <SoftCardIcon gradient="bg-gradient-success">
                         <TrendingUp className="h-6 w-6" />
                       </SoftCardIcon>
                     </div>
@@ -345,7 +345,7 @@ function DashboardContent() {
                           ) : (
                             <>
                               {user?.creditsSent || 0}
-                              <span className="leading-normal text-size-sm font-weight-bolder text-cyan-500 ml-2">
+                              <span className="leading-normal text-size-sm font-weight-bolder text-blue-600 ml-2">
                                 +{user?.creditsSent || 0}%
                               </span>
                             </>
@@ -354,7 +354,7 @@ function DashboardContent() {
                       </div>
                     </div>
                     <div className="px-3 text-right basis-1/3">
-                      <SoftCardIcon gradient="bg-gradient-cyan">
+                      <SoftCardIcon gradient="bg-gradient-info">
                         <CreditCard className="h-6 w-6" />
                       </SoftCardIcon>
                     </div>
@@ -388,7 +388,7 @@ function DashboardContent() {
                       </div>
                     </div>
                     <div className="px-3 text-right basis-1/3">
-                      <SoftCardIcon gradient="bg-gradient-fuchsia">
+                      <SoftCardIcon gradient="bg-gradient-secondary">
                         <Wallet className="h-6 w-6" />
                       </SoftCardIcon>
                     </div>
@@ -398,7 +398,7 @@ function DashboardContent() {
                   <div className="w-full">
                     <div className="text-size-xs h-0.75 w-full m-0 flex overflow-visible rounded-lg bg-gray-200">
                       <div 
-                        className="duration-600 ease-soft bg-gradient-fuchsia -mt-0.38 -ml-px flex h-1.5 flex-col justify-center overflow-hidden whitespace-nowrap rounded bg-fuchsia-500 text-center text-white transition-all" 
+                        className="duration-600 ease-soft bg-gradient-secondary -mt-0.38 -ml-px flex h-1.5 flex-col justify-center overflow-hidden whitespace-nowrap rounded text-center text-white transition-all" 
                         role="progressbar" 
                         aria-valuenow={(user?.remainingDailyCredits || 0) * 20} 
                         aria-valuemin="0" 
@@ -444,7 +444,7 @@ export default function Dashboard() {
   return (
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-fuchsia-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
       </div>
     }>
       <DashboardContent />

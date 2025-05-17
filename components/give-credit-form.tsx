@@ -241,7 +241,7 @@ export function GiveCreditForm() {
                           <div className={cn(
                             "flex h-4 w-4 items-center justify-center rounded border mr-3 transition-colors duration-200",
                             selectedEmployeeIds.includes(employee.id) 
-                              ? "bg-fuchsia-500 border-fuchsia-500" 
+                              ? "bg-blue-600 border-blue-600" 
                               : "border-gray-300"
                           )}>
                             {selectedEmployeeIds.includes(employee.id) && (
@@ -270,7 +270,7 @@ export function GiveCreditForm() {
                     <Badge 
                       key={employee.id} 
                       variant="secondary" 
-                      className="flex items-center gap-1 bg-gradient-fuchsia text-white border-0 pr-1 shadow-soft-xl"
+                      className="flex items-center gap-1 bg-gradient-primary text-white border-0 pr-1 shadow-soft-xl"
                     >
                       {employee.name}
                       <button
@@ -304,12 +304,12 @@ export function GiveCreditForm() {
           <div className="flex items-center justify-between pt-4">
             <div className="flex items-center gap-2">
               <span className="text-sm text-slate-400">剩餘 Credit:</span>
-              <span className="text-lg font-bold text-fuchsia-500">{remainingCredits}</span>
+              <span className="text-lg font-bold text-blue-600">{remainingCredits}</span>
             </div>
             <Button 
               type="submit" 
               disabled={isSubmitting || selectedEmployeeIds.length === 0}
-              className="bg-gradient-fuchsia text-white border-0 shadow-soft-xl hover:shadow-soft-2xl hover:scale-[1.02] transition-all duration-300 flex items-center gap-2 px-6"
+              className="bg-gradient-primary text-white border-0 shadow-soft-xl hover:shadow-soft-2xl hover:scale-[1.02] transition-all duration-300 flex items-center gap-2 px-6"
             >
               {isSubmitting ? (
                 <>

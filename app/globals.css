@@ -83,12 +83,12 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     
-    /* Soft UI Specific */
-    --soft-primary: 310deg, #cb0c9f, #7928ca;
-    --soft-info: 310deg, #627594, #17c1e8;
-    --soft-success: 310deg, #82d616, #a3e635;
-    --soft-warning: 310deg, #fb6340, #f56036;
-    --soft-danger: 310deg, #ea0606, #ff667c;
+    /* Professional Soft UI Gradients */
+    --soft-primary: 135deg, #3b82f6, #2563eb;
+    --soft-info: 135deg, #06b6d4, #0891b2;
+    --soft-success: 135deg, #22c55e, #16a34a;
+    --soft-warning: 135deg, #f59e0b, #d97706;
+    --soft-danger: 135deg, #ef4444, #dc2626;
   }
   
   .dark {
@@ -184,12 +184,12 @@
 
 /* Background utilities */
 .bg-gradient-horizontal-dark {
-  background-image: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.4), transparent);
+  background-image: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
 }
 
 /* Text utilities */
 .gradient-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -256,12 +256,12 @@
   max-height: 100vh;
 }
 
-/* Gradient text */
+/* Professional gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #82d616 0%, #17c1e8 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 /* Soft UI specific margins and paddings */
