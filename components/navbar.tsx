@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { UserCircle, Home, Gift, Clock, LogOut, Menu, Shield } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export function Navbar() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const { logout, user } = useAuth()
+  const isMobile = useIsMobile()
 
   const isActive = (path: string) => {
     return pathname === path
@@ -132,29 +134,19 @@ export function Navbar() {
                         </Button>
                       </Link>
                     )}
-                    <div className="my-2 border-t" />
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => {
-                        setIsOpen(false)
-                        logout()
-                      }}
-                    >
-                      <LogOut className="h-4 w-4" />
-                      登出
-                    </Button>
                   </div>
                 </SheetContent>
               </Sheet>
             </div>
 
-            <div className="hidden md:block">
-              <Button onClick={logout} variant="outline" size="sm" className="text-red-600 hover:text-red-700 border-red-600 hover:bg-red-50">
-                <LogOut className="h-4 w-4 mr-2" />
-                登出
-              </Button>
-            </div>
+            {!isMobile && (
+              <div className="hidden md:block">
+                <Button onClick={logout} variant="outline" size="sm" className="text-red-600 hover:text-red-700 border-red-600 hover:bg-red-50">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  登出
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
