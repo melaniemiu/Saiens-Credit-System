@@ -1,4 +1,4 @@
-const { User, Department, Credit } = require('../models');
+const { User, Department, Credit, Job } = require('../models');
 const { Op } = require('sequelize');
 
 // Get current user profile
@@ -10,10 +10,23 @@ exports.getCurrentUser = async (req, res, next) => {
       attributes: { 
         exclude: ['deletedAt'] 
       },
-      include: [{
-        model: Department,
-        attributes: ['id', 'name']
-      }]
+      include: [
+        {
+          model: Department,
+          attributes: ['id', 'name']
+        },
+        {
+          model: Job,
+          attributes: ['id', 'name']
+        }
+      ]
+    });
+    
+    // Debug logging
+    console.log("Current user query result:", {
+      id: user?.id,
+      jobId: user?.jobId,
+      Job: user?.Job
     });
     
     if (!user) {
@@ -33,7 +46,15 @@ exports.getCurrentUser = async (req, res, next) => {
         role: user.role,
         profilePicture: user.profilePicture,
         departmentId: user.departmentId,
-        Department: user.Department,
+        Department: user.Department ? {
+          id: user.Department.id,
+          name: user.Department.name
+        } : null,
+        jobId: user.jobId,
+        Job: user.Job ? {
+          id: user.Job.id,
+          name: user.Job.name
+        } : null,
         creditsReceived: user.creditsReceived,
         creditsSent: user.creditsSent,
         remainingDailyCredits: user.remainingDailyCredits,

@@ -162,7 +162,7 @@ export function CreditHistory() {
 
   return (
     <Tabs defaultValue="received" onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-2 shadow-soft-xl mb-4">
+      <TabsList className="grid w-full grid-cols-2 shadow-soft-xl mb-2">
         <TabsTrigger 
           value="received" 
           className="data-[state=active]:bg-gradient-success data-[state=active]:text-white data-[state=active]:shadow-soft-xl"
@@ -177,13 +177,13 @@ export function CreditHistory() {
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="received" className="mt-4">
+      <TabsContent value="received" className="mt-2">
         {isLoadingReceived && receivedCredits.length === 0 ? (
-          <div className="flex justify-center py-8">
+          <div className="flex justify-center py-4">
             <Loader2 className="h-8 w-8 animate-spin text-green-600" />
           </div>
         ) : receivedCredits.length === 0 ? (
-          <div className="text-center py-8">
+          <div className="text-center py-4">
             <p className="text-gray-500">您尚未收到任何 Credit</p>
           </div>
         ) : (
@@ -220,13 +220,13 @@ export function CreditHistory() {
         )}
       </TabsContent>
 
-      <TabsContent value="given" className="mt-4">
+      <TabsContent value="given" className="mt-2">
         {isLoadingGiven && givenCredits.length === 0 ? (
-          <div className="flex justify-center py-8">
+          <div className="flex justify-center py-4">
             <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           </div>
         ) : givenCredits.length === 0 ? (
-          <div className="text-center py-8">
+          <div className="text-center py-4">
             <p className="text-gray-500">您尚未送出任何 Credit</p>
           </div>
         ) : (

@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
-const { User, Department } = require("../models");
+const { User, Department, Job } = require("../models");
 
 // LINE API endpoints
 const LINE_VERIFY_TOKEN_URL = "https://api.line.me/oauth2/v2.1/verify";
@@ -58,11 +58,55 @@ exports.lineLogin = async (req, res, next) => {
     console.log("=======================================================\n\n");
 
     // Find or create user based on LINE user ID
-    let user = await User.findOne({ where: { lineUserId: lineUserData.sub } });
+    let user = await User.findOne({ 
+      where: { lineUserId: lineUserData.sub },
+      include: [
+        {
+          model: Department,
+          attributes: ['id', 'name']
+        },
+        {
+          model: Job,
+          attributes: ['id', 'name']
+        }
+      ]
+    });
+    
+    // Log user query result for debugging
+    if (user) {
+      console.log("Found user in database:", {
+        id: user.id,
+        name: user.name,
+        jobId: user.jobId,
+        Job: user.Job
+      });
+    }
     if (!user) {
       // This is a new user - look them up by email if available
       if (lineUserData.email) {
-        user = await User.findOne({ where: { email: lineUserData.email } });
+        user = await User.findOne({ 
+          where: { email: lineUserData.email },
+          include: [
+            {
+              model: Department,
+              attributes: ['id', 'name']
+            },
+            {
+              model: Job,
+              attributes: ['id', 'name']
+            }
+          ]
+        });
+        
+        // Log user query result for debugging
+        if (user) {
+          console.log("Found user by email in database:", {
+            id: user.id,
+            name: user.name,
+            jobId: user.jobId,
+            Job: user.Job
+          });
+        }
       }
 
       // If still no user, we need to notify that this is an unregistered user
@@ -134,6 +178,15 @@ exports.lineLogin = async (req, res, next) => {
         role: user.role,
         profilePicture: user.profilePicture,
         departmentId: user.departmentId,
+        Department: user.Department ? {
+          id: user.Department.id,
+          name: user.Department.name
+        } : null,
+        jobId: user.jobId,
+        Job: user.Job ? {
+          id: user.Job.id,
+          name: user.Job.name
+        } : null,
         remainingDailyCredits: user.remainingDailyCredits,
         creditsReceived: user.creditsReceived,
         creditsSent: user.creditsSent,

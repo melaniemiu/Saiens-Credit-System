@@ -19,7 +19,8 @@ function DashboardContent() {
   const [isLoading, setIsLoading] = useState(!user)
   const [userData, setUserData] = useState(user ? {
     ...user,
-    profilePicture: user.picture // Map picture to profilePicture
+    profilePicture: user.picture, // Map picture to profilePicture
+    Job: user.Job
   } : null)
   const searchParams = useSearchParams()
 
@@ -124,9 +125,11 @@ function DashboardContent() {
     // If we already have user data from auth context, use that
     if (user) {
       console.log("Dashboard - Using user data from auth context");
+      console.log("User Job from auth context:", user.Job);
       setUserData({
         ...user,
-        profilePicture: user.picture // Map picture to profilePicture
+        profilePicture: user.picture, // Map picture to profilePicture
+        Job: user.Job
       });
       setIsLoading(false);
       return;
@@ -154,6 +157,7 @@ function DashboardContent() {
 
         if (response.data?.user) {
           console.log("Dashboard - User data fetched successfully");
+          console.log("Job data from API:", response.data.user.Job);
           const fetchedUser = {
             name: response.data.user.name,
             employeeId: response.data.user.employeeId,
@@ -162,6 +166,7 @@ function DashboardContent() {
             id: response.data.user.id,
             role: response.data.user.role,
             profilePicture: response.data.user.profilePicture,
+            Job: response.data.user.Job,
           };
 
           setUserData(fetchedUser);
@@ -183,6 +188,7 @@ function DashboardContent() {
               creditsReceived: response.data.user.creditsReceived,
               creditsSent: response.data.user.creditsSent,
               remainingDailyCredits: response.data.user.remainingDailyCredits,
+              Job: response.data.user.Job,
             };
 
             // Import dynamically to avoid circular dependencies
@@ -286,6 +292,12 @@ function DashboardContent() {
                         <span className="text-slate-400">部門</span>
                         <span className="font-semibold text-slate-700">{userData.department || "工程部"}</span>
                       </div>
+                      {userData.Job?.name && (
+                        <div className="flex justify-between items-center text-size-sm">
+                          <span className="text-slate-400">職位</span>
+                          <span className="font-semibold text-slate-700">{userData.Job.name}</span>
+                        </div>
+                      )}
                       {userData.email && (
                         <div className="flex justify-between items-center text-size-sm">
                           <span className="text-slate-400">Email</span>
@@ -381,11 +393,11 @@ function DashboardContent() {
                     <SoftCardContent>
                       <div className="w-full">
                         <div className="text-size-xs h-0.75 w-full m-0 flex overflow-visible rounded-lg bg-gray-200">
-                          <div 
-                            className="duration-600 ease-soft bg-gradient-secondary -mt-0.38 -ml-px flex h-1.5 flex-col justify-center overflow-hidden whitespace-nowrap rounded text-center text-white transition-all" 
-                            role="progressbar" 
-                            aria-valuenow={(user?.remainingDailyCredits || 0) * 20} 
-                            aria-valuemin="0" 
+                          <div
+                            className="duration-600 ease-soft bg-gradient-secondary -mt-0.38 -ml-px flex h-1.5 flex-col justify-center overflow-hidden whitespace-nowrap rounded text-center text-white transition-all"
+                            role="progressbar"
+                            aria-valuenow={(user?.remainingDailyCredits || 0) * 20}
+                            aria-valuemin="0"
                             aria-valuemax="100"
                             style={{ width: `${(user?.remainingDailyCredits || 0) * 20}%` }}
                           />
@@ -399,25 +411,23 @@ function DashboardContent() {
           </div>
 
           {/* Row 2 - Recent Activity and Skills */}
-          <div className="flex flex-wrap mt-6 -mx-3">
+          <div className="flex flex-wrap mt-6 -mx-3 items-stretch">
             {/* Recent Activity Card */}
-            <div className="w-full max-w-full px-3 mb-6 lg:mb-0 lg:w-1/2 lg:flex-none">
-              <SoftCard>
+            <div className="w-full max-w-full px-3 mb-6 lg:mb-0 lg:w-1/2 lg:flex-none flex">
+              <SoftCard className="flex-1 flex flex-col">
                 <SoftCardHeader>
                   <SoftCardTitle>最近的 Credit 活動</SoftCardTitle>
                   <SoftCardDescription>查看您最近收到和給出的 Credits</SoftCardDescription>
-                </SoftCardHeader>
-                <SoftCardContent>
                   <CreditHistory />
-                </SoftCardContent>
+                </SoftCardHeader>
               </SoftCard>
             </div>
 
             {/* Skills Section */}
-            <div className="w-full max-w-full px-3 lg:w-1/2 lg:flex-none">
-              <div className="grid grid-cols-1 gap-6">
+            <div className="w-full max-w-full px-3 lg:w-1/2 lg:flex-none flex">
+              <div className="flex flex-col gap-6 w-full">
                 {/* Acquired Skills Card */}
-                <SoftCard>
+                <SoftCard className="flex-1">
                   <SoftCardHeader>
                     <SoftCardTitle>習得技能</SoftCardTitle>
                     <SoftCardDescription>您已掌握的技能</SoftCardDescription>
@@ -441,7 +451,7 @@ function DashboardContent() {
                 </SoftCard>
 
                 {/* Suggested Skills Card */}
-                <SoftCard>
+                <SoftCard className="flex-1">
                   <SoftCardHeader>
                     <SoftCardTitle>建議學習技能</SoftCardTitle>
                     <SoftCardDescription>推薦您學習的技能</SoftCardDescription>

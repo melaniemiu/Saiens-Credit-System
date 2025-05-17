@@ -181,6 +181,11 @@ export const userApi = {
         headers: createHeaders(),
       });
       
+      // Debug log the user data
+      if (response.data?.user) {
+        console.log("User profile from API - Job field:", response.data.user.Job);
+      }
+      
       // Cache the response for 30 seconds if it's successful and not bypassing cache
       if (response.data && !response.error && !bypassCache) {
         apiCache.set(cacheKey, response, 30000);

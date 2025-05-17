@@ -51,6 +51,15 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id'
       }
     },
+    jobId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'jobId',
+      references: {
+        model: 'jobs',
+        key: 'id'
+      }
+    },
     creditsReceived: {
       type: DataTypes.INTEGER,
       defaultValue: 0

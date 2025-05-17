@@ -73,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 creditsReceived: response.data.user.creditsReceived,
                 creditsSent: response.data.user.creditsSent,
                 remainingDailyCredits: response.data.user.remainingDailyCredits,
+                Job: response.data.user.Job,
               }
 
               setCurrentUser(backendUser)
@@ -181,6 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           creditsReceived: response.data.user.creditsReceived,
           creditsSent: response.data.user.creditsSent,
           remainingDailyCredits: response.data.user.remainingDailyCredits,
+          Job: response.data.user.Job,
         }
 
         // Set React state without saving to storage to prevent recursive loop
@@ -409,6 +411,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         creditsReceived: response.data.user.creditsReceived,
         creditsSent: response.data.user.creditsSent,
         remainingDailyCredits: response.data.user.remainingDailyCredits,
+        Job: response.data.user.Job,
       }
 
       // Update user state

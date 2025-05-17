@@ -1,6 +1,6 @@
 const dotenv = require("dotenv");
 dotenv.config();
-const { sequelize, Department, User } = require("../models");
+const { sequelize, Department, User, Job } = require("../models");
 // Seeds the database with initial data
 async function seed() {
   try {
@@ -51,6 +51,43 @@ async function seed() {
 
     // Debug: Print the department map
     console.log("Department Map:", deptMap);
+
+    // Create jobs for each department
+    const existingJobCount = await Job.count();
+    let jobs = [];
+    let jobMap = {};
+
+    if (existingJobCount > 0 && !forceDrop) {
+      console.log(
+        `Found ${existingJobCount} existing jobs, skipping job creation`
+      );
+      // Get existing jobs
+      jobs = await Job.findAll();
+    } else {
+      // Create jobs for each department with 3 variants: 初心者、玩家、大師
+      const jobSuffixes = ["初心者", "玩家", "大師"];
+      
+      for (const dept of departments) {
+        const deptNameBase = dept.name.replace("部", "");
+        
+        for (const suffix of jobSuffixes) {
+          const jobName = `${deptNameBase}${suffix}`;
+          const job = await Job.create({ name: jobName });
+          jobs.push(job);
+          jobMap[jobName] = job.id;
+          console.log(`Created job: ${jobName}, ID: ${job.id}`);
+        }
+      }
+
+      console.log(`Created ${jobs.length} jobs`);
+    }
+
+    // If we loaded existing jobs, build the jobMap
+    if (existingJobCount > 0 && !forceDrop) {
+      jobs.forEach((job) => {
+        jobMap[job.name] = job.id;
+      });
+    }
 
     // Let's try a direct approach to department assignment
     // First, find departments by their names
@@ -109,12 +146,13 @@ async function seed() {
       email: "xiaoming.wang@example.com",
       lineUserId: "Uee2c366a945ff70af0323c51f509fb0e",
       departmentId: engineeringDept ? engineeringDept.id : null,
+      jobId: jobMap["工程大師"] || null, // Admin gets master level
       role: "admin",
       remainingDailyCredits: 10,
       dailyCreditLimit: 10, // Admin gets more credits
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 1 created with departmentId:", user1.departmentId);
+    console.log("User 1 created with departmentId:", user1.departmentId, "jobId:", user1.jobId);
 
     // User 2 - Marketing
     const user2 = await User.create({
@@ -122,12 +160,13 @@ async function seed() {
       name: "李大華",
       email: "dahua.lee@example.com",
       departmentId: marketingDept ? marketingDept.id : null,
+      jobId: jobMap["行銷玩家"] || null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditLimit: 5, // Standard user limit
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 2 created with departmentId:", user2.departmentId);
+    console.log("User 2 created with departmentId:", user2.departmentId, "jobId:", user2.jobId);
 
     // User 3 - HR
     const user3 = await User.create({
@@ -135,12 +174,13 @@ async function seed() {
       name: "張美玲",
       email: "meiling.zhang@example.com",
       departmentId: hrDept ? hrDept.id : null,
+      jobId: jobMap["人資大師"] || null,
       role: "user",
       remainingDailyCredits: 7,
       dailyCreditLimit: 7, // HR gets slightly more
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 3 created with departmentId:", user3.departmentId);
+    console.log("User 3 created with departmentId:", user3.departmentId, "jobId:", user3.jobId);
 
     // User 4 - Finance
     const user4 = await User.create({
@@ -148,12 +188,13 @@ async function seed() {
       name: "陳志明",
       email: "zhiming.chen@example.com",
       departmentId: financeDept ? financeDept.id : null,
+      jobId: jobMap["財務玩家"] || null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditLimit: 5, // Standard user limit
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 4 created with departmentId:", user4.departmentId);
+    console.log("User 4 created with departmentId:", user4.departmentId, "jobId:", user4.jobId);
 
     // User 5 - Customer Service
     const user5 = await User.create({
@@ -161,12 +202,13 @@ async function seed() {
       name: "林小芳",
       email: "xiaofang.lin@example.com",
       departmentId: customerDept ? customerDept.id : null,
+      jobId: jobMap["客服大師"] || null,
       role: "user",
       remainingDailyCredits: 8,
       dailyCreditLimit: 8, // Customer service gets more for client appreciations
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 5 created with departmentId:", user5.departmentId);
+    console.log("User 5 created with departmentId:", user5.departmentId, "jobId:", user5.jobId);
 
     // User 6 - Engineering
     const user6 = await User.create({
@@ -174,12 +216,13 @@ async function seed() {
       name: "黃建國",
       email: "jianguo.huang@example.com",
       departmentId: engineeringDept ? engineeringDept.id : null,
+      jobId: jobMap["工程玩家"] || null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditLimit: 5, // Standard user limit
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 6 created with departmentId:", user6.departmentId);
+    console.log("User 6 created with departmentId:", user6.departmentId, "jobId:", user6.jobId);
 
     // User 7 - Design
     const user7 = await User.create({
@@ -187,11 +230,12 @@ async function seed() {
       name: "吳雅婷",
       email: "yating.wu@example.com",
       departmentId: designDept ? designDept.id : null,
+      jobId: jobMap["設計玩家"] || null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 7 created with departmentId:", user7.departmentId);
+    console.log("User 7 created with departmentId:", user7.departmentId, "jobId:", user7.jobId);
 
     // User 8 - Engineering
     const user8 = await User.create({
@@ -199,11 +243,12 @@ async function seed() {
       name: "劉俊宏",
       email: "junhong.liu@example.com",
       departmentId: engineeringDept ? engineeringDept.id : null,
+      jobId: jobMap["工程初心者"] || null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 8 created with departmentId:", user8.departmentId);
+    console.log("User 8 created with departmentId:", user8.departmentId, "jobId:", user8.jobId);
 
     // User 9 - Marketing
     const user9 = await User.create({
@@ -211,11 +256,12 @@ async function seed() {
       name: "鄭美珠",
       email: "meizhu.zheng@example.com",
       departmentId: marketingDept ? marketingDept.id : null,
+      jobId: jobMap["行銷初心者"] || null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 9 created with departmentId:", user9.departmentId);
+    console.log("User 9 created with departmentId:", user9.departmentId, "jobId:", user9.jobId);
 
     // User 10 - Finance
     const user10 = await User.create({
@@ -223,11 +269,12 @@ async function seed() {
       name: "謝志豪",
       email: "zhihao.xie@example.com",
       departmentId: financeDept ? financeDept.id : null,
+      jobId: jobMap["財務初心者"] || null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditResetDate: new Date(),
     });
-    console.log("User 10 created with departmentId:", user10.departmentId);
+    console.log("User 10 created with departmentId:", user10.departmentId, "jobId:", user10.jobId);
 
     // Collect all users
     users = [

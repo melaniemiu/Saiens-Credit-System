@@ -17,6 +17,10 @@ export interface AuthUser {
   creditsReceived?: number
   creditsSent?: number
   remainingDailyCredits?: number
+  Job?: {
+    id: string
+    name: string
+  }
 }
 
 /**
