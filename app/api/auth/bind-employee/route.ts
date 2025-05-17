@@ -31,8 +31,13 @@ export async function POST(request: NextRequest) {
     // If there's an error from the backend
     if (!response.ok) {
       console.error('Backend employee binding error:', data);
+      // Forward all error data from backend
       return NextResponse.json(
-        { error: data.message || 'Employee ID binding failed' },
+        { 
+          error: data.error || data.message || 'Employee ID binding failed',
+          message: data.message || data.error || 'Employee ID binding failed',
+          detail: data.detail || data.message || data.error
+        },
         { status: response.status }
       );
     }

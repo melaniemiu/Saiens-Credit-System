@@ -252,6 +252,22 @@ exports.bindEmployeeId = async (req, res, next) => {
       });
     }
 
+    // Check if this employee already has a LINE account linked
+    if (user.lineUserId) {
+      if (user.lineUserId === lineUserId) {
+        // Same LINE account, this is already bound properly
+        console.log("✔️ Employee already linked to this LINE account:", user.employeeId);
+        // Still return success since it's the same account
+      } else {
+        // Different LINE account
+        console.log("❌ Employee already has a different LINE account linked:", user.employeeId);
+        return res.status(409).json({ 
+          message: "Employee already linked to another LINE account", 
+          detail: "此員工已連結至其他LINE帳號" 
+        });
+      }
+    }
+
     // Check if another user already has this LINE user ID
     const existingUser = await User.findOne({ where: { lineUserId } });
     if (existingUser && existingUser.id !== user.id) {

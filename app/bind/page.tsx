@@ -34,44 +34,44 @@ export default function BindPage() {
     } catch (e) {
       console.error("Failed to set sessionStorage flag:", e);
     }
-    
+
     async function initLiff() {
       try {
         console.log("Initializing LIFF in standalone bind page...")
-        
+
         // Clear any previous auth data
         clearAuthStorage()
-        
+
         // Directly get LINE profile from URL parameters if available
         const urlParams = new URLSearchParams(window.location.search);
         const urlLineUserId = urlParams.get('lineUserId');
         const urlUserName = urlParams.get('userName');
         const urlPicture = urlParams.get('picture');
-        
+
         if (urlLineUserId) {
           console.log("Using LINE user ID from URL parameters:", urlLineUserId);
           setLineUserId(urlLineUserId);
           setUserName(urlUserName || "LINE User");
           setPicture(urlPicture || null);
           setLoading(false);
-          
+
           // Show welcome toast with URL parameters
           toast({
             title: "連結帳號",
             description: "請輸入您的員工編號以連結帳號",
           });
-          
+
           return;
         }
-        
+
         // No URL parameters, use LIFF
         console.log("No URL parameters, initializing LIFF directly")
         await liff.init({ liffId: LIFF_ID })
         console.log("LIFF initialized successfully")
-        
+
         // Check if we're in LIFF browser - it's always logged in in this case
         const isInLiffBrowser = liff.isInClient();
-        
+
         // Check if user is logged in with LIFF
         if (!liff.isLoggedIn() && !isInLiffBrowser) {
           console.log("User not logged in with LINE, initiating login...")
@@ -92,19 +92,19 @@ export default function BindPage() {
         setLineUserId(profile.userId)
         setUserName(profile.displayName)
         setPicture(profile.pictureUrl || null)
-        
+
         // Show welcome toast
         toast({
           title: "連結帳號",
           description: "請輸入您的員工編號以連結帳號",
         })
-        
+
         setLoading(false)
       } catch (err) {
         console.error('Failed to initialize LIFF:', err)
         setError('LINE登入服務初始化失敗，請重新嘗試')
         setLoading(false)
-        
+
         toast({
           title: "LINE初始化失敗",
           description: "請重新嘗試或重新載入頁面",
@@ -114,7 +114,7 @@ export default function BindPage() {
     }
 
     initLiff()
-    
+
     // Cleanup on component unmount
     return () => {
       try {
@@ -129,7 +129,7 @@ export default function BindPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!employeeId.trim()) {
       toast({
         title: "請輸入員工編號",
@@ -152,37 +152,79 @@ export default function BindPage() {
     setError(null)
 
     try {
+      console.log("Submitting bind request with employeeId:", employeeId, "lineUserId:", lineUserId);
+
       const response = await fetch("/api/auth/bind-employee", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ employeeId, lineUserId }),
+        body: JSON.stringify({ employeeId, lineUserId, profilePicture: picture }),
       })
 
+      console.log("Response received, status:", response.status);
+
       // Safely parse JSON response
-      let data;
+      let data = {};
+      const text = await response.text();
+      console.log("Raw response text:", text);
+
       try {
-        const text = await response.text();
-        // Log the raw response for debugging
-        console.log("Raw API response:", text.substring(0, 200) + (text.length > 200 ? '...' : ''));
-        try {
+        if (text) {
           data = JSON.parse(text);
-        } catch (parseError) {
-          console.error("JSON parse error:", parseError);
-          throw new Error(`Invalid JSON response: ${text.substring(0, 100)}`);
+          console.log("Parsed response data:", data);
         }
-      } catch (error) {
-        console.error("Error reading response:", error);
-        throw error;
+      } catch (parseError) {
+        console.error("Failed to parse response as JSON:", parseError);
+        data = { error: text || "Invalid server response" };
       }
 
       if (!response.ok) {
-        console.error("Employee ID binding error:", data)
-        setError(data.error || "綁定失敗，請檢查員工編號是否正確")
+        console.error("Employee ID binding failed");
+        console.log("Response status:", response.status);
+        console.log("Response data:", data);
+
+        // Default error message
+        let errorMessage = "綁定失敗";
+        let errorDescription = "請檢查員工編號是否正確";
+
+        // Extract error details from response
+        if (data.detail) {
+          errorDescription = data.detail;
+        } else if (data.error) {
+          errorDescription = data.error;
+        } else if (data.message) {
+          errorDescription = data.message;
+        }
+
+        // Check for specific error cases based on response status
+        if (response.status === 409) {
+          errorMessage = "綁定失敗";
+          // Check the actual message content
+          const msgContent = data.message || data.error || "";
+          if (msgContent.includes("Employee already linked")) {
+            errorDescription = "此員工編號已連結至其他LINE帳號，請聯繫管理員";
+          } else if (msgContent.includes("LINE account already linked")) {
+            errorDescription = "此LINE帳號已連結至其他員工編號";
+          } else if (data.detail) {
+            // Use the detail field directly
+            errorDescription = data.detail;
+          }
+        } else if (response.status === 404) {
+          errorMessage = "員工編號錯誤";
+          if (data.detail) {
+            errorDescription = data.detail;
+          } else {
+            errorDescription = "系統中找不到此員工編號，請確認輸入是否正確";
+          }
+        }
+
+        console.log("Final error message:", errorMessage, "Description:", errorDescription);
+
+        setError(errorDescription)
         toast({
-          title: "綁定失敗",
-          description: data.error || "請檢查員工編號是否正確",
+          title: errorMessage,
+          description: errorDescription,
           variant: "destructive",
         })
         setSubmitting(false)
@@ -194,15 +236,15 @@ export default function BindPage() {
         // Save auth token in both storages
         localStorage.setItem("authToken", data.token)
         sessionStorage.setItem("authToken", data.token)
-        
+
         // No need to set cookies - JWT token is stored in localStorage/sessionStorage
       }
-      
+
       if (data.user) {
         // Save user data in both storages
         localStorage.setItem("user", JSON.stringify(data.user))
         sessionStorage.setItem("user", JSON.stringify(data.user))
-        
+
         // If admin, set a flag
         if (data.user.role === 'admin') {
           sessionStorage.setItem('is_admin', 'true');
@@ -213,7 +255,7 @@ export default function BindPage() {
       // Set all authentication flags
       sessionStorage.setItem('authenticated', 'true');
       localStorage.setItem('authenticated', 'true');
-      
+
       // Mark that auto-login is now processed to prevent repeat logins
       sessionStorage.setItem('auto_login_processed', 'true');
 
@@ -222,19 +264,19 @@ export default function BindPage() {
         title: "綁定成功",
         description: "即將前往儀表板",
       })
-      
+
       // Set all flags needed for smooth transition to dashboard
       try {
         // Remove binding page flag
         sessionStorage.removeItem('on_binding_page');
-        
+
         // Set flag to skip auto-login redirects
         if (liff.isInClient()) {
           // In LIFF browser, we need these extra flags to ensure smooth transition
           sessionStorage.setItem('dashboard_direct', 'true');
           localStorage.setItem('dashboard_direct', 'true');
         }
-        
+
         console.log("Updated session flags before dashboard redirect");
       } catch (e) {
         console.error("Error updating session flags:", e);
@@ -244,10 +286,10 @@ export default function BindPage() {
       // Use a loading state to prevent any flicker
       setSubmitting(true);
       setError(null);
-      
+
       // Redirect immediately with auth bypass parameter
       console.log("Direct navigation to dashboard with auth bypass");
-      
+
       // For LIFF browser, need different approach to avoid redirect loop
       if (liff.isInClient()) {
         // Use more direct approach in LIFF browser
@@ -257,14 +299,20 @@ export default function BindPage() {
         window.location.href = '/dashboard?auth_bypass=true';
       }
     } catch (err) {
-      console.error('Error during employee ID binding:', err)
-      setError('系統錯誤，請稍後再試')
+      // This should only run for network errors or unexpected exceptions
+      console.error('Unexpected error during employee ID binding:', err)
+
+      let errorMsg = '系統錯誤，請稍後再試';
+      if (err instanceof Error && err.message !== 'Error during employee ID binding') {
+        errorMsg = err.message;
+      }
+
+      setError(errorMsg)
       toast({
         title: "系統錯誤",
-        description: "請稍後再試",
+        description: errorMsg,
         variant: "destructive",
       })
-    } finally {
       setSubmitting(false)
     }
   }
@@ -333,9 +381,9 @@ export default function BindPage() {
             </div>
 
             <div className="mt-6 space-y-4">
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={submitting}
               >
                 {submitting ? (
