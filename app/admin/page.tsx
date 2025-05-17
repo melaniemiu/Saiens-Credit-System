@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider } from "@/components/ui/sidebar"
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarSeparator } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,8 +15,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "@/hooks/use-toast"
 import { adminApi, departmentApi } from "@/lib/api"
 import { DateRange } from "react-day-picker"
-import { Users, CreditCard, CalendarIcon, Download, Search, UserPlus, Edit, Trash2, User, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { Users, CreditCard, CalendarIcon, Download, Search, UserPlus, Edit, Trash2, User, ArrowUpDown, ArrowUp, ArrowDown, Home } from "lucide-react"
 import { format } from "date-fns"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -401,8 +402,8 @@ export default function AdminPage() {
   return (
     <div suppressHydrationWarning>
       <SidebarProvider defaultOpen={true}>
-        <Sidebar className="border-r">
-        <SidebarContent>
+        <Sidebar className="border-r flex flex-col">
+        <SidebarContent className="flex-1">
           <SidebarGroup>
             <SidebarGroupLabel>管理面板</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -423,6 +424,25 @@ export default function AdminPage() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+        
+        <div className="border-t p-2">
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <Link href="/dashboard" passHref legacyBehavior>
+                    <SidebarMenuButton asChild>
+                      <a className="w-full">
+                        <Home className="h-4 w-4" />
+                        <span>返回儀表板</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </div>
       </Sidebar>
 
       <SidebarInset>
