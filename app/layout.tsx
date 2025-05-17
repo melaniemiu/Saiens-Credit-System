@@ -1,5 +1,5 @@
 import type React from "react"
-import { Inter } from "next/font/google"
+import { Inter, Open_Sans } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/context/auth-context"
@@ -7,6 +7,10 @@ import { LiffInit } from "@/components/liff-init"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
+const openSans = Open_Sans({ 
+  subsets: ["latin"],
+  variable: '--font-open-sans'
+})
 
 export const metadata = {
   title: "Saiens Credit System",
@@ -28,28 +32,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-TW" suppressHydrationWarning>
-      <body className={inter.className}>
-        {/* 背景容器 */}
-        <div className="min-h-screen relative bg-gradient-to-br from-gray-50 via-white to-gray-50/40">
-          {/* 細微的網格圖案 */}
-          <div className="fixed inset-0 pointer-events-none z-0"
-            style={{
-              backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 30px, rgba(0,0,0,0.03) 30px, rgba(0,0,0,0.03) 31px)`
-            }}>
-          </div>
-
-          {/* 主要內容 */}
-          <div className="relative z-10">
-            <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" disableTransitionOnChange>
-              <AuthProvider>
-                {/* LIFF initializer component */}
-                <LiffInit />
-                {children}
-              </AuthProvider>
-              <Toaster />
-            </ThemeProvider>
-          </div>
-        </div>
+      <head>
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
+        <script src="https://kit.fontawesome.com/42d5adcbca.js" crossOrigin="anonymous" defer></script>
+      </head>
+      <body className={`${inter.className} ${openSans.variable}`}>
+        <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" disableTransitionOnChange>
+          <AuthProvider>
+            {/* LIFF initializer component */}
+            <LiffInit />
+            {children}
+          </AuthProvider>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   )

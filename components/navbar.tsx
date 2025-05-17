@@ -43,8 +43,8 @@ export function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-50 border-b bg-white shadow-sm">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+    <nav className="sticky top-0 z-50 bg-white shadow-soft-xl rounded-2xl mx-4 mt-4">
+      <div className="container mx-auto flex h-16 items-center justify-between px-6">
         <div className="flex items-center">
           <Link href="/dashboard" className="flex items-center">
             <h1 className="text-xl font-bold gradient-text">山恩互動表彰系統</h1>

@@ -1,16 +1,54 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { CirclePlus } from "lucide-react"
-import Link from "next/link"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { GiveCreditForm } from "./give-credit-form"
+import { Gift, Sparkles } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export function GiveCreditButton() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+
   return (
-    <Link href="/dashboard/give-credit">
-      <Button className="bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 rounded-full flex items-center gap-4 fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 shadow-2xl z-50 px-8 py-8 md:px-12 md:py-10 transform hover:scale-105 transition-all duration-300 text-xl md:text-2xl font-bold">
-        <CirclePlus className="h-8 w-8 md:h-10 md:w-10" />
-        發送 Credit
-      </Button>
-    </Link>
+    <>
+      <div className="fixed bottom-8 right-8 z-40">
+        <div className="relative">
+          {/* Animated background effect */}
+          <div className={cn(
+            "absolute inset-0 bg-gradient-fuchsia rounded-full blur-xl opacity-60 transition-all duration-500",
+            isHovered ? "scale-125 opacity-80" : "scale-100"
+          )} />
+          
+          {/* Main button */}
+          <Button
+            onClick={() => setIsOpen(true)}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            size="lg"
+            className="relative h-16 px-8 bg-gradient-fuchsia text-white border-0 shadow-soft-2xl hover:shadow-soft-xl hover:scale-[1.05] transition-all duration-300 flex items-center gap-3 rounded-full"
+          >
+            <div className="relative">
+              <Gift className={cn(
+                "h-6 w-6 transition-transform duration-300",
+                isHovered ? "rotate-12" : ""
+              )} />
+              <Sparkles className={cn(
+                "h-3 w-3 absolute -top-2 -right-2 transition-all duration-300",
+                isHovered ? "opacity-100 scale-100" : "opacity-0 scale-0"
+              )} />
+            </div>
+            <span className="font-bold text-lg">給予 Credit</span>
+          </Button>
+        </div>
+      </div>
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-lg p-0 overflow-hidden border-0 shadow-soft-2xl">
+          <GiveCreditForm />
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

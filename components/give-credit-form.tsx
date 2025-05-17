@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { Check, ChevronsUpDown, X, Search } from "lucide-react"
+import { Check, ChevronsUpDown, X, Search, Send } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { userApi, creditApi } from "@/lib/api"
 import { useAuth } from "@/context/auth-context"
+import { SoftCard, SoftCardContent, SoftCardHeader, SoftCardTitle, SoftCardDescription } from "@/components/ui/soft-card"
 
 interface Employee {
   id: string
@@ -35,12 +36,9 @@ export function GiveCreditForm() {
 
   // Fetch employees only once when component mounts
   useEffect(() => {
-    // We use a ref to track if the component is mounted
     let isMounted = true;
 
     const fetchEmployees = async () => {
-      // Don't set loading state if we already have employees data
-      // This prevents the blinking when switching to this page
       if (employees.length === 0) {
         setIsLoading(true);
       }
@@ -49,7 +47,6 @@ export function GiveCreditForm() {
         const response = await userApi.getUsers();
 
         if (response.data?.users && isMounted) {
-
           const mappedEmployees = response.data.users.map(emp => {
             let departmentName = "未分配部門";
             
@@ -80,13 +77,8 @@ export function GiveCreditForm() {
       }
     };
 
-    // Fetch user data including remaining credits
     const fetchUserData = async () => {
       try {
-        // Don't refresh user data, just use what we have
-        // This prevents API call loop
-
-        // Set remaining credits from user data
         if (user && isMounted) {
           setRemainingCredits(user.remainingDailyCredits || 0);
         }
@@ -94,14 +86,12 @@ export function GiveCreditForm() {
       }
     };
 
-    // Only fetch employees if we don't have them yet
     if (employees.length === 0) {
       fetchEmployees();
     }
 
     fetchUserData();
 
-    // Cleanup function to prevent memory leaks
     return () => {
       isMounted = false;
     };
@@ -138,7 +128,6 @@ export function GiveCreditForm() {
       return
     }
 
-    // Check if user has remaining credits
     if (selectedEmployeeIds.length > remainingCredits) {
       toast({
         title: "Credit 不足",
@@ -152,14 +141,12 @@ export function GiveCreditForm() {
 
     try {
       if (selectedEmployeeIds.length === 1) {
-        // Single credit
         await creditApi.giveCredit(selectedEmployeeIds[0], reason)
         toast({
           title: "Credit 送出成功",
           description: "您已成功給予同事 Credit",
         })
       } else {
-        // Bulk credits
         await creditApi.giveBulkCredits(selectedEmployeeIds, reason)
         toast({
           title: "Credit 送出成功",
@@ -169,7 +156,6 @@ export function GiveCreditForm() {
 
       const response = await userApi.getCurrentUser();
 
-      // Update remaining credits from the response
       if (response.data?.remainingCredits !== undefined) {
         setRemainingCredits(response.data.remainingCredits);
       }
@@ -179,7 +165,6 @@ export function GiveCreditForm() {
       setReason("")
       setSearchQuery("")
 
-      // Refresh user data
       refreshUser()
     } catch (error) {
       toast({
@@ -192,129 +177,155 @@ export function GiveCreditForm() {
     }
   }
 
-  // Filter employees based on search query
   const filteredEmployees = employees.filter(emp => {
-    if (emp.id === user?.id) return false; // Filter out current user
+    if (emp.id === user?.id) return false;
     const query = searchQuery.toLowerCase();
     return emp.name.toLowerCase().includes(query) || 
            emp.department.toLowerCase().includes(query);
   });
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-
-      <div className="space-y-2">
-        <Label htmlFor="employee">選擇同事（可多選）</Label>
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="w-full justify-between"
-              disabled={isLoading}
-            >
-              {selectedEmployeeIds.length > 0 ?
-                `已選擇 ${selectedEmployeeIds.length} 位同事`
-                : "選擇同事..."}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-full p-0">
-            <div className="p-2 border-b">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="搜尋同事..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-            </div>
-            <div className="max-h-[300px] overflow-y-auto">
-              {filteredEmployees.length === 0 ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">
-                  找不到符合的同事
+    <form onSubmit={handleSubmit}>
+      <SoftCard>
+        <SoftCardHeader>
+          <SoftCardTitle>給予 Credit</SoftCardTitle>
+          <SoftCardDescription>選擇同事並說明給予 Credit 的理由</SoftCardDescription>
+        </SoftCardHeader>
+        <SoftCardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="employee" className="text-slate-700 font-semibold">選擇同事（可多選）</Label>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-full justify-between border-gray-200 text-left font-normal shadow-soft-xl hover:shadow-soft-2xl transition-all duration-300"
+                  disabled={isLoading}
+                >
+                  {selectedEmployeeIds.length > 0 ?
+                    `已選擇 ${selectedEmployeeIds.length} 位同事`
+                    : "選擇同事..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0 shadow-soft-xl">
+                <div className="p-2 border-b">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="搜尋同事..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-8 border-gray-200"
+                    />
+                  </div>
                 </div>
-              ) : (
-                <div className="p-2">
-                  {filteredEmployees.map((employee) => (
-                    <button
-                      key={employee.id}
-                      type="button"
-                      onClick={() => handleToggleEmployee(employee.id)}
-                      className={cn(
-                        "flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                        selectedEmployeeIds.includes(employee.id) && "bg-accent"
-                      )}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedEmployeeIds.includes(employee.id) ? "opacity-100" : "opacity-0",
-                        )}
-                      />
-                      <span>{employee.name}</span>
-                      {employee.department && (
-                        <span className="ml-2 text-xs text-gray-500">({employee.department})</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {selectedEmployeeIds.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {selectedEmployeeIds.map(employeeId => {
-              const employee = employees.find(emp => emp.id === employeeId);
-              if (!employee) return null;
-
-              return (
-                <Badge key={employee.id} variant="secondary" className="flex items-center gap-1">
-                  {employee.name}
-                  {employee.department && (
-                    <span className="text-xs text-gray-500 ml-1">({employee.department})</span>
+                <div className="max-h-[300px] overflow-y-auto">
+                  {filteredEmployees.length === 0 ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">
+                      找不到符合的同事
+                    </div>
+                  ) : (
+                    <div className="p-2">
+                      {filteredEmployees.map((employee) => (
+                        <button
+                          key={employee.id}
+                          type="button"
+                          onClick={() => handleToggleEmployee(employee.id)}
+                          className={cn(
+                            "flex w-full items-center rounded-lg px-3 py-2 text-sm hover:bg-gray-100 transition-colors duration-200",
+                            selectedEmployeeIds.includes(employee.id) && "bg-gray-100"
+                          )}
+                        >
+                          <div className={cn(
+                            "flex h-4 w-4 items-center justify-center rounded border mr-3 transition-colors duration-200",
+                            selectedEmployeeIds.includes(employee.id) 
+                              ? "bg-fuchsia-500 border-fuchsia-500" 
+                              : "border-gray-300"
+                          )}>
+                            {selectedEmployeeIds.includes(employee.id) && (
+                              <Check className="h-3 w-3 text-white" />
+                            )}
+                          </div>
+                          <span className="text-slate-700">{employee.name}</span>
+                          {employee.department && (
+                            <span className="ml-2 text-xs text-slate-400">({employee.department})</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
                   )}
-                  <button
-                    type="button"
-                    className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    onClick={() => setSelectedEmployeeIds(prev => prev.filter(id => id !== employeeId))}
-                  >
-                    <X className="h-3 w-3" />
-                    <span className="sr-only">Remove {employee.name}</span>
-                  </button>
-                </Badge>
-              );
-            })}
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {selectedEmployeeIds.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {selectedEmployeeIds.map(employeeId => {
+                  const employee = employees.find(emp => emp.id === employeeId);
+                  if (!employee) return null;
+
+                  return (
+                    <Badge 
+                      key={employee.id} 
+                      variant="secondary" 
+                      className="flex items-center gap-1 bg-gradient-fuchsia text-white border-0 pr-1 shadow-soft-xl"
+                    >
+                      {employee.name}
+                      <button
+                        type="button"
+                        className="ml-1 rounded-full p-0.5 hover:bg-white/20 transition-colors duration-200"
+                        onClick={() => setSelectedEmployeeIds(prev => prev.filter(id => id !== employeeId))}
+                      >
+                        <X className="h-3 w-3" />
+                        <span className="sr-only">Remove {employee.name}</span>
+                      </button>
+                    </Badge>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="reason">給予理由</Label>
-        <Textarea
-          id="reason"
-          placeholder="請描述給予 Credit 的理由（至少 10 個字）"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          required
-          minLength={10}
-          className="min-h-[100px]"
-        />
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="reason" className="text-slate-700 font-semibold">給予理由</Label>
+            <Textarea
+              id="reason"
+              placeholder="請描述給予 Credit 的理由（至少 10 個字）"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              required
+              minLength={10}
+              className="min-h-[120px] border-gray-200 shadow-soft-xl resize-none transition-all duration-300 focus:shadow-soft-2xl"
+            />
+          </div>
 
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-500">
-          剩餘 Credit: {remainingCredits}
-        </div>
-        <Button type="submit" disabled={isSubmitting || selectedEmployeeIds.length === 0}>
-          {isSubmitting ? "送出中..." : "送出 Credit"}
-        </Button>
-      </div>
+          <div className="flex items-center justify-between pt-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-400">剩餘 Credit:</span>
+              <span className="text-lg font-bold text-fuchsia-500">{remainingCredits}</span>
+            </div>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || selectedEmployeeIds.length === 0}
+              className="bg-gradient-fuchsia text-white border-0 shadow-soft-xl hover:shadow-soft-2xl hover:scale-[1.02] transition-all duration-300 flex items-center gap-2 px-6"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  送出中...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  送出 Credit
+                </>
+              )}
+            </Button>
+          </div>
+        </SoftCardContent>
+      </SoftCard>
     </form>
   )
 }
