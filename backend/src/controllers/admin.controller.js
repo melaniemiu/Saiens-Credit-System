@@ -1,6 +1,5 @@
 const { User, Credit, Department } = require("../models");
 const { Op } = require("sequelize");
-const bcrypt = require("bcryptjs");
 
 // Get all users with filtering and pagination
 exports.getUsers = async (req, res, next) => {

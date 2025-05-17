@@ -584,12 +584,54 @@ export default function AdminPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead>使用者</TableHead>
-                                <TableHead>員工編號</TableHead>
-                                <TableHead>部門</TableHead>
-                                <TableHead>角色</TableHead>
-                                <TableHead>Credits</TableHead>
-                                <TableHead>最後登入</TableHead>
+                                <SortableTableHead 
+                                  sortField="name" 
+                                  currentSortField={userSortField} 
+                                  currentSortOrder={userSortOrder} 
+                                  onSort={handleUserSort}
+                                >
+                                  使用者
+                                </SortableTableHead>
+                                <SortableTableHead 
+                                  sortField="employeeId" 
+                                  currentSortField={userSortField} 
+                                  currentSortOrder={userSortOrder} 
+                                  onSort={handleUserSort}
+                                >
+                                  員工編號
+                                </SortableTableHead>
+                                <SortableTableHead 
+                                  sortField="department" 
+                                  currentSortField={userSortField} 
+                                  currentSortOrder={userSortOrder} 
+                                  onSort={handleUserSort}
+                                >
+                                  部門
+                                </SortableTableHead>
+                                <SortableTableHead 
+                                  sortField="role" 
+                                  currentSortField={userSortField} 
+                                  currentSortOrder={userSortOrder} 
+                                  onSort={handleUserSort}
+                                >
+                                  角色
+                                </SortableTableHead>
+                                <SortableTableHead 
+                                  sortField="creditsSent" 
+                                  currentSortField={userSortField} 
+                                  currentSortOrder={userSortOrder} 
+                                  onSort={handleUserSort}
+                                >
+                                  Credits
+                                </SortableTableHead>
+                                <SortableTableHead 
+                                  sortField="lastLogin" 
+                                  currentSortField={userSortField} 
+                                  currentSortOrder={userSortOrder} 
+                                  onSort={handleUserSort}
+                                >
+                                  最後登入
+                                </SortableTableHead>
                                 <TableHead>操作</TableHead>
                               </TableRow>
                             </TableHeader>
@@ -863,9 +905,30 @@ export default function AdminPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead>時間</TableHead>
-                                <TableHead>發送者</TableHead>
-                                <TableHead>接收者</TableHead>
+                                <SortableTableHead 
+                                  sortField="createdAt" 
+                                  currentSortField={creditSortField} 
+                                  currentSortOrder={creditSortOrder} 
+                                  onSort={handleCreditSort}
+                                >
+                                  時間
+                                </SortableTableHead>
+                                <SortableTableHead 
+                                  sortField="sender" 
+                                  currentSortField={creditSortField} 
+                                  currentSortOrder={creditSortOrder} 
+                                  onSort={handleCreditSort}
+                                >
+                                  發送者
+                                </SortableTableHead>
+                                <SortableTableHead 
+                                  sortField="receiver" 
+                                  currentSortField={creditSortField} 
+                                  currentSortOrder={creditSortOrder} 
+                                  onSort={handleCreditSort}
+                                >
+                                  接收者
+                                </SortableTableHead>
                                 <TableHead>原因</TableHead>
                               </TableRow>
                             </TableHeader>
