@@ -1,10 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarSeparator } from "@/components/ui/sidebar"
+import { AdminNavbar } from "@/components/admin-navbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -16,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "@/hooks/use-toast"
 import { adminApi, departmentApi } from "@/lib/api"
 import { DateRange } from "react-day-picker"
-import { Users, CreditCard, CalendarIcon, Download, Search, UserPlus, Edit, Trash2, User, ArrowUpDown, ArrowUp, ArrowDown, Home, Menu } from "lucide-react"
+import { CalendarIcon, Download, Search, UserPlus, Edit, Trash2, User, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { format } from "date-fns"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -160,7 +159,6 @@ export default function AdminPage() {
   const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   // Ensure client-side hydration
   useEffect(() => {
@@ -279,7 +277,7 @@ export default function AdminPage() {
       fetchUsers()
     } catch (error: any) {
       console.error("Failed to create user:", error)
-      
+
       // Show specific error message if available
       if (error.response?.data?.message) {
         const message = error.response.data.message
@@ -406,124 +404,19 @@ export default function AdminPage() {
     }
   }
 
-  const sidebarMenuItems = [
-    {
-      id: 'users',
-      title: '使用者管理',
-      icon: Users,
-    },
-    {
-      id: 'credits',
-      title: 'Credit 管理',
-      icon: CreditCard,
-    },
-  ]
 
   if (!mounted) {
     return null
   }
 
   return (
-    <div suppressHydrationWarning>
-      <SidebarProvider>
-        <Sidebar className="hidden md:flex border-r flex-col w-[240px]">
-        <SidebarContent className="flex-1">
-          <SidebarGroup>
-            <SidebarGroupLabel>管理面板</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {sidebarMenuItems.map((item) => (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton
-                      onClick={() => setActiveSection(item.id as 'users' | 'credits')}
-                      isActive={activeSection === item.id}
-                      className="w-full"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-        
-        <div className="border-t p-2">
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <Link href="/dashboard" passHref legacyBehavior>
-                    <SidebarMenuButton asChild>
-                      <a className="w-full">
-                        <Home className="h-4 w-4" />
-                        <span>返回儀表板</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </Link>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </div>
-      </Sidebar>
+    <div suppressHydrationWarning className="min-h-screen bg-gray-50">
+      <AdminNavbar activeSection={activeSection} onSectionChange={setActiveSection} />
 
-      <SidebarInset>
-        <div className="flex min-h-screen">
-          <main className="flex-1">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            {/* Mobile header with menu button */}
-            <div className="md:hidden mb-4 flex items-center justify-between">
-              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-[240px]">
-                  <div className="flex flex-col h-full">
-                    <div className="flex-1 p-4">
-                      <h2 className="text-lg font-semibold mb-4">管理面板</h2>
-                      <div className="space-y-1">
-                        {sidebarMenuItems.map((item) => (
-                          <Button
-                            key={item.id}
-                            variant={activeSection === item.id ? "secondary" : "ghost"}
-                            className="w-full justify-start"
-                            onClick={() => {
-                              setActiveSection(item.id as 'users' | 'credits')
-                              setIsMobileMenuOpen(false)
-                            }}
-                          >
-                            <item.icon className="h-4 w-4 mr-2" />
-                            {item.title}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="border-t p-4">
-                      <Link href="/dashboard" passHref>
-                        <Button
-                          variant="ghost"
-                          className="w-full justify-start"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          <Home className="h-4 w-4 mr-2" />
-                          返回儀表板
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-              <h1 className="text-xl font-bold">
-                {activeSection === 'users' ? '使用者管理' : 'Credit 管理'}
-              </h1>
-            </div>
-            
-            {/* Desktop header */}
-            <div className="hidden md:block mb-6">
+      <main className="container mx-auto px-4 py-6">
+        <div className="max-w-7xl mx-auto">
+            {/* Page header */}
+            <div className="mb-6">
               <h1 className="text-2xl font-bold">
                 {activeSection === 'users' ? '使用者管理' : 'Credit 管理'}
               </h1>
@@ -584,50 +477,50 @@ export default function AdminPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <SortableTableHead 
-                                  sortField="name" 
-                                  currentSortField={userSortField} 
-                                  currentSortOrder={userSortOrder} 
+                                <SortableTableHead
+                                  sortField="name"
+                                  currentSortField={userSortField}
+                                  currentSortOrder={userSortOrder}
                                   onSort={handleUserSort}
                                 >
                                   使用者
                                 </SortableTableHead>
-                                <SortableTableHead 
-                                  sortField="employeeId" 
-                                  currentSortField={userSortField} 
-                                  currentSortOrder={userSortOrder} 
+                                <SortableTableHead
+                                  sortField="employeeId"
+                                  currentSortField={userSortField}
+                                  currentSortOrder={userSortOrder}
                                   onSort={handleUserSort}
                                 >
                                   員工編號
                                 </SortableTableHead>
-                                <SortableTableHead 
-                                  sortField="department" 
-                                  currentSortField={userSortField} 
-                                  currentSortOrder={userSortOrder} 
+                                <SortableTableHead
+                                  sortField="department"
+                                  currentSortField={userSortField}
+                                  currentSortOrder={userSortOrder}
                                   onSort={handleUserSort}
                                 >
                                   部門
                                 </SortableTableHead>
-                                <SortableTableHead 
-                                  sortField="role" 
-                                  currentSortField={userSortField} 
-                                  currentSortOrder={userSortOrder} 
+                                <SortableTableHead
+                                  sortField="role"
+                                  currentSortField={userSortField}
+                                  currentSortOrder={userSortOrder}
                                   onSort={handleUserSort}
                                 >
                                   角色
                                 </SortableTableHead>
-                                <SortableTableHead 
-                                  sortField="creditsSent" 
-                                  currentSortField={userSortField} 
-                                  currentSortOrder={userSortOrder} 
+                                <SortableTableHead
+                                  sortField="creditsSent"
+                                  currentSortField={userSortField}
+                                  currentSortOrder={userSortOrder}
                                   onSort={handleUserSort}
                                 >
                                   Credits
                                 </SortableTableHead>
-                                <SortableTableHead 
-                                  sortField="lastLogin" 
-                                  currentSortField={userSortField} 
-                                  currentSortOrder={userSortOrder} 
+                                <SortableTableHead
+                                  sortField="lastLogin"
+                                  currentSortField={userSortField}
+                                  currentSortOrder={userSortOrder}
                                   onSort={handleUserSort}
                                 >
                                   最後登入
@@ -905,26 +798,26 @@ export default function AdminPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <SortableTableHead 
-                                  sortField="createdAt" 
-                                  currentSortField={creditSortField} 
-                                  currentSortOrder={creditSortOrder} 
+                                <SortableTableHead
+                                  sortField="createdAt"
+                                  currentSortField={creditSortField}
+                                  currentSortOrder={creditSortOrder}
                                   onSort={handleCreditSort}
                                 >
                                   時間
                                 </SortableTableHead>
-                                <SortableTableHead 
-                                  sortField="sender" 
-                                  currentSortField={creditSortField} 
-                                  currentSortOrder={creditSortOrder} 
+                                <SortableTableHead
+                                  sortField="sender"
+                                  currentSortField={creditSortField}
+                                  currentSortOrder={creditSortOrder}
                                   onSort={handleCreditSort}
                                 >
                                   發送者
                                 </SortableTableHead>
-                                <SortableTableHead 
-                                  sortField="receiver" 
-                                  currentSortField={creditSortField} 
-                                  currentSortOrder={creditSortOrder} 
+                                <SortableTableHead
+                                  sortField="receiver"
+                                  currentSortField={creditSortField}
+                                  currentSortOrder={creditSortOrder}
                                   onSort={handleCreditSort}
                                 >
                                   接收者
@@ -1054,14 +947,10 @@ export default function AdminPage() {
                 </CardContent>
               </Card>
             )}
-            </div>
-          </main>
-        </div>
-      </SidebarInset>
 
       {/* 新增使用者對話框 */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} modal={true}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto" style={{ zIndex: 9999 }}>
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto z-[9999]">
           <DialogHeader>
             <DialogTitle>新增使用者</DialogTitle>
             <DialogDescription>
@@ -1072,25 +961,25 @@ export default function AdminPage() {
             e.preventDefault()
             // Reset errors
             setCreateUserErrors({})
-            
+
             // Validate form
             const errors: Partial<UserFormData> = {}
             if (!createUserForm.name) errors.name = "請輸入姓名"
             if (!createUserForm.email) errors.email = "請輸入 Email"
             if (!createUserForm.employeeId) errors.employeeId = "請輸入員工編號"
             if (!createUserForm.departmentId) errors.departmentId = "請選擇部門"
-            
+
             // Email format validation
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
             if (createUserForm.email && !emailRegex.test(createUserForm.email)) {
               errors.email = "請輸入有效的 Email 格式"
             }
-            
+
             if (Object.keys(errors).length > 0) {
               setCreateUserErrors(errors)
               return
             }
-            
+
             handleCreateUser(createUserForm)
           }}>
             <div className="space-y-4">
@@ -1158,7 +1047,7 @@ export default function AdminPage() {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent style={{ zIndex: 10000 }}>
+                  <SelectContent className="z-[10000]">
                     <SelectItem value="user">一般使用者</SelectItem>
                     <SelectItem value="admin">管理員</SelectItem>
                   </SelectContent>
@@ -1178,7 +1067,7 @@ export default function AdminPage() {
                   <SelectTrigger id="create-department" className={createUserErrors.departmentId ? "border-red-500" : ""}>
                     <SelectValue placeholder="選擇部門" />
                   </SelectTrigger>
-                  <SelectContent style={{ zIndex: 10000 }}>
+                  <SelectContent className="z-[10000]">
                     {departments.map((dept) => (
                       <SelectItem key={dept.id} value={dept.id}>
                         {dept.name}
@@ -1214,7 +1103,7 @@ export default function AdminPage() {
 
       {/* 編輯使用者對話框 */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} modal={true}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto" style={{ zIndex: 9999 }}>
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto z-[9999]">
           <DialogHeader>
             <DialogTitle>編輯使用者</DialogTitle>
             <DialogDescription>
@@ -1252,7 +1141,7 @@ export default function AdminPage() {
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent style={{ zIndex: 10000 }}>
+                    <SelectContent className="z-[10000]">
                       <SelectItem value="user">一般使用者</SelectItem>
                       <SelectItem value="admin">管理員</SelectItem>
                     </SelectContent>
@@ -1264,7 +1153,7 @@ export default function AdminPage() {
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent style={{ zIndex: 10000 }}>
+                    <SelectContent className="z-[10000]">
                       {departments.map((dept) => (
                         <SelectItem key={dept.id} value={dept.id}>
                           {dept.name}
@@ -1287,7 +1176,7 @@ export default function AdminPage() {
 
       {/* 刪除確認對話框 */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} modal={true}>
-        <DialogContent className="sm:max-w-[425px]" style={{ zIndex: 9999 }}>
+        <DialogContent className="sm:max-w-[425px] z-[9999]">
           <DialogHeader>
             <DialogTitle>確認刪除</DialogTitle>
             <DialogDescription>
@@ -1304,7 +1193,8 @@ export default function AdminPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </SidebarProvider>
+        </div>
+      </main>
     </div>
   )
 }

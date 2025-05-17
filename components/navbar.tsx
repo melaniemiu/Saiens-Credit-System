@@ -124,7 +124,7 @@ export function Navbar() {
                   <div className="my-2 border-t" />
                   <Button
                     variant="ghost"
-                    className="w-full justify-start gap-2"
+                    className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                     onClick={() => {
                       setIsOpen(false)
                       logout()
@@ -139,9 +139,9 @@ export function Navbar() {
           </div>
 
           <div className="hidden md:block">
-            <Button variant="ghost" size="icon" onClick={logout}>
-              <LogOut className="h-5 w-5" />
-              <span className="sr-only">登出</span>
+            <Button onClick={logout} variant="outline" size="sm" className="text-red-600 hover:text-red-700 border-red-600 hover:bg-red-50">
+              <LogOut className="h-4 w-4 mr-2" />
+              登出
             </Button>
           </div>
         </div>
