@@ -21,8 +21,8 @@ exports.authenticate = async (req, res, next) => {
 
     // Check if user exists
     const user = await User.findByPk(decoded.id);
-    console.log("decoded", decoded);
-    console.log("user", user);
+    // console.log("decoded", decoded);
+    // console.log("user", user);
     if (!user || !user.isActive) {
       return res.status(401).json({ message: "User not found or inactive" });
     }
