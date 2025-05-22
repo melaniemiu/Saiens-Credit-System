@@ -9,7 +9,8 @@
     "seed": "node src/utils/seed.js",
     "seed:force": "node src/utils/seed.js --force",
     "migrate": "node src/utils/run-migrations.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test-credit": "node test-credit-script.js"
   },
   "dependencies": {
     "axios": "^1.6.2",
@@ -22,7 +23,9 @@
     "morgan": "^1.10.0",
     "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
-    "sequelize": "^6.35.2"
+    "sequelize": "^6.35.2",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

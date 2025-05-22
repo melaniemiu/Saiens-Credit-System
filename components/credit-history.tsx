@@ -8,6 +8,7 @@ import { creditApi } from "@/lib/api"
 import { Loader2, User, Clock, ChevronRight, ArrowUpRight, ArrowDownRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { triggerConfettiIfNotShown } from "@/lib/confetti"
 
 interface Credit {
   id: string
@@ -103,8 +104,17 @@ export function CreditHistory() {
     const action = type === 'received' ? '收到來自' : '送出給'
     const icon = type === 'received' ? ArrowDownRight : ArrowUpRight
     
+    const handleCreditClick = () => {
+      if (type === 'received') {
+        triggerConfettiIfNotShown(credit.id)
+      }
+    }
+    
     return (
-      <div className="flex items-start gap-3 p-4 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-soft-xl group">
+      <div 
+        className="flex items-start gap-3 p-4 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-soft-xl group cursor-pointer"
+        onClick={handleCreditClick}
+      >
         <Avatar className="h-10 w-10 border-2 border-white shadow-soft-xl">
           <AvatarImage src={person?.profilePicture} alt={person?.name} />
           <AvatarFallback className={cn(

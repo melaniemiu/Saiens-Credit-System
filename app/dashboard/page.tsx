@@ -13,6 +13,7 @@ import { RefreshCw, Loader2, User, CreditCard, TrendingUp, Wallet } from "lucide
 import { AuthError } from "@/components/auth-error"
 import { GiveCreditButton } from "@/components/give-credit-button"
 import { useSearchParams } from "next/navigation"
+import { useOfflineConfetti } from "@/hooks/use-offline-confetti"
 
 function DashboardContent() {
   const { user, loading: authLoading } = useAuth()
@@ -23,6 +24,9 @@ function DashboardContent() {
     Job: user.Job
   } : null)
   const searchParams = useSearchParams()
+  
+  // Check for offline credits and trigger confetti on login
+  useOfflineConfetti()
 
   // Handle auth token from URL (for LIFF browser redirect and binding process)
   useEffect(() => {

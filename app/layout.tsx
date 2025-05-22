@@ -3,6 +3,7 @@ import { Inter, Open_Sans } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/context/auth-context"
+import { SocketProvider } from "@/context/socket-context"
 import { LiffInit } from "@/components/liff-init"
 import "./globals.css"
 
@@ -39,9 +40,11 @@ export default function RootLayout({
       <body className={`${inter.className} ${openSans.variable}`}>
         <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" disableTransitionOnChange>
           <AuthProvider>
-            {/* LIFF initializer component */}
-            <LiffInit />
-            {children}
+            <SocketProvider>
+              {/* LIFF initializer component */}
+              <LiffInit />
+              {children}
+            </SocketProvider>
           </AuthProvider>
           <Toaster />
         </ThemeProvider>

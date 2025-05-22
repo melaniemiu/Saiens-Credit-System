@@ -14,8 +14,10 @@ exports.giveCredit = async (req, res, next) => {
         .json({ message: "You cannot give credit to yourself" });
     }
 
-    // Get sender
-    const sender = await User.findByPk(senderId);
+    // Get sender with department
+    const sender = await User.findByPk(senderId, {
+      include: [{ model: Department, attributes: ['id', 'name'] }]
+    });
 
     if (!sender) {
       return res.status(404).json({ message: "Sender not found" });
@@ -55,6 +57,19 @@ exports.giveCredit = async (req, res, next) => {
     // Update receiver's credits received
     receiver.creditsReceived += 1;
     await receiver.save();
+
+    // Emit socket notification to receiver
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user-${receiverId}`).emit('credit-received', {
+        id: credit.id,
+        senderId: sender.id,
+        senderName: sender.name,
+        senderDepartment: sender.Department?.name,
+        reason: credit.reason,
+        createdAt: credit.createdAt
+      });
+    }
 
     // Return the created credit
     return res.status(201).json({
@@ -102,8 +117,10 @@ exports.giveBulkCredit = async (req, res, next) => {
         .json({ message: "You cannot give credit to yourself" });
     }
 
-    // Get sender
-    const sender = await User.findByPk(senderId);
+    // Get sender with department
+    const sender = await User.findByPk(senderId, {
+      include: [{ model: Department, attributes: ['id', 'name'] }]
+    });
 
     if (!sender) {
       return res.status(404).json({ message: "Sender not found" });
@@ -148,10 +165,26 @@ exports.giveBulkCredit = async (req, res, next) => {
     sender.creditsSent += credits.length; // Increase by number of credits sent
     await sender.save();
 
-    // Update each receiver's credits received
-    for (const receiver of receivers) {
+    // Update each receiver's credits received and emit notifications
+    const io = req.app.get('io');
+    for (let i = 0; i < receivers.length; i++) {
+      const receiver = receivers[i];
+      const credit = credits[i];
+      
       receiver.creditsReceived += 1;
       await receiver.save();
+      
+      // Emit socket notification to each receiver
+      if (io) {
+        io.to(`user-${receiver.id}`).emit('credit-received', {
+          id: credit.id,
+          senderId: sender.id,
+          senderName: sender.name,
+          senderDepartment: sender.Department?.name,
+          reason: credit.reason,
+          createdAt: credit.createdAt
+        });
+      }
     }
 
     // Return the created credits

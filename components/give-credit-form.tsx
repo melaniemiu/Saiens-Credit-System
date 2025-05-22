@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { userApi, creditApi } from "@/lib/api"
 import { useAuth } from "@/context/auth-context"
 import { SoftCard, SoftCardContent, SoftCardHeader, SoftCardTitle, SoftCardDescription } from "@/components/ui/soft-card"
+import { triggerCreditGivenConfetti } from "@/lib/confetti"
 
 interface Employee {
   id: string
@@ -142,12 +143,14 @@ export function GiveCreditForm() {
     try {
       if (selectedEmployeeIds.length === 1) {
         await creditApi.giveCredit(selectedEmployeeIds[0], reason)
+        triggerCreditGivenConfetti()
         toast({
           title: "Credit 送出成功",
           description: "您已成功給予同事 Credit",
         })
       } else {
         await creditApi.giveBulkCredit(selectedEmployeeIds, reason)
+        triggerCreditGivenConfetti()
         toast({
           title: "Credit 送出成功",
           description: `您已成功給予 ${selectedEmployeeIds.length} 位同事 Credit`,
