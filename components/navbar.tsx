@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { UserCircle, Home, Gift, Clock, LogOut, Menu, Shield } from "lucide-react"
+import { Home, Gift, Clock, LogOut, Menu, Shield } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { useIsMobile } from "@/hooks/use-mobile"
 
@@ -83,13 +83,6 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center space-x-4">
-            <Link href="/dashboard/profile">
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <UserCircle className="h-5 w-5" />
-                <span className="sr-only">個人資料</span>
-              </Button>
-            </Link>
-
             {/* Mobile Navigation */}
             <div className="md:hidden">
               <Sheet open={isOpen} onOpenChange={setIsOpen}>
