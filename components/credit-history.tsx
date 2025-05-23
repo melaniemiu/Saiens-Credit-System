@@ -5,10 +5,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { creditApi } from "@/lib/api"
-import { Loader2, User, Clock, ChevronRight, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import { Loader2, User, Clock, ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { triggerConfettiIfNotShown } from "@/lib/confetti"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface Credit {
   id: string
@@ -40,17 +41,14 @@ export function CreditHistory() {
   const [givenPage, setGivenPage] = useState(1)
   const [receivedTotalPages, setReceivedTotalPages] = useState(1)
   const [givenTotalPages, setGivenTotalPages] = useState(1)
+  const isMobile = useIsMobile()
 
   const fetchReceivedCredits = async (page = 1) => {
     try {
       setIsLoadingReceived(true)
-      const response = await creditApi.getReceivedCredits(page)
+      const response = await creditApi.getReceivedCredits(page, 5) // 5 items per page
       if (response.data) {
-        if (page === 1) {
-          setReceivedCredits(response.data.credits)
-        } else {
-          setReceivedCredits(prev => [...prev, ...response.data.credits])
-        }
+        setReceivedCredits(response.data.credits)
         setReceivedTotalPages(response.data.totalPages)
         setReceivedPage(page)
       }
@@ -64,14 +62,10 @@ export function CreditHistory() {
   const fetchGivenCredits = async (page = 1) => {
     try {
       setIsLoadingGiven(true)
-      const response = await creditApi.getSentCredits(page)
+      const response = await creditApi.getSentCredits(page, 5) // 5 items per page
 
       if (response.data) {
-        if (page === 1) {
-          setGivenCredits(response.data.credits)
-        } else {
-          setGivenCredits(prev => [...prev, ...response.data.credits])
-        }
+        setGivenCredits(response.data.credits)
         setGivenTotalPages(response.data.totalPages)
         setGivenPage(page)
       }
@@ -87,16 +81,181 @@ export function CreditHistory() {
     fetchGivenCredits(1)
   }, [])
 
-  const handleLoadMore = (type: 'received' | 'given') => {
+  const handlePageChange = (type: 'received' | 'given', page: number) => {
     if (type === 'received') {
-      if (receivedPage < receivedTotalPages) {
-        fetchReceivedCredits(receivedPage + 1)
-      }
+      fetchReceivedCredits(page)
     } else {
-      if (givenPage < givenTotalPages) {
-        fetchGivenCredits(givenPage + 1)
-      }
+      fetchGivenCredits(page)
     }
+  }
+
+  const renderPaginationControls = (
+    currentPage: number,
+    totalPages: number,
+    type: 'received' | 'given',
+    isLoading: boolean
+  ) => {
+    if (totalPages <= 1) return null
+
+    const pageNumbers = []
+    const maxVisiblePages = 5
+    const maxVisiblePagesMobile = 3
+    const maxPages = isMobile ? maxVisiblePagesMobile : maxVisiblePages
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxPages / 2))
+    let endPage = Math.min(totalPages, startPage + maxPages - 1)
+    
+    if (endPage - startPage + 1 < maxPages) {
+      startPage = Math.max(1, endPage - maxPages + 1)
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i)
+    }
+
+    return (
+      <div className="mt-6">
+        {/* Mobile view - simplified layout */}
+        <div className="sm:hidden space-y-3">
+          {/* Current page indicator */}
+          <div className="text-center text-sm text-gray-600">
+            第 {currentPage} 頁，共 {totalPages} 頁
+          </div>
+          
+          {/* Large touch-friendly navigation */}
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              variant="outline"
+              onClick={() => handlePageChange(type, currentPage - 1)}
+              disabled={currentPage === 1 || isLoading}
+              className="h-14 text-base font-medium shadow-soft-xl hover:shadow-soft-2xl"
+            >
+              <ChevronLeft className="h-5 w-5 mr-1" />
+              上一頁
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={() => handlePageChange(type, currentPage + 1)}
+              disabled={currentPage === totalPages || isLoading}
+              className="h-14 text-base font-medium shadow-soft-xl hover:shadow-soft-2xl"
+            >
+              下一頁
+              <ChevronRight className="h-5 w-5 ml-1" />
+            </Button>
+          </div>
+          
+          {/* Page numbers in a row */}
+          <div className="flex justify-center items-center gap-2">
+            {startPage > 1 && (
+              <>
+                <Button
+                  variant={currentPage === 1 ? "default" : "ghost"}
+                  onClick={() => handlePageChange(type, 1)}
+                  disabled={isLoading}
+                  className="h-10 w-10 p-0 text-sm"
+                >
+                  1
+                </Button>
+                {startPage > 2 && <span className="text-gray-400">...</span>}
+              </>
+            )}
+            
+            {pageNumbers.map(page => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "ghost"}
+                onClick={() => handlePageChange(type, page)}
+                disabled={isLoading}
+                className={cn(
+                  "h-10 w-10 p-0 text-sm",
+                  currentPage === page && "shadow-soft-xl"
+                )}
+              >
+                {page}
+              </Button>
+            ))}
+            
+            {endPage < totalPages && (
+              <>
+                {endPage < totalPages - 1 && <span className="text-gray-400">...</span>}
+                <Button
+                  variant={currentPage === totalPages ? "default" : "ghost"}
+                  onClick={() => handlePageChange(type, totalPages)}
+                  disabled={isLoading}
+                  className="h-10 w-10 p-0 text-sm"
+                >
+                  {totalPages}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop view */}
+        <div className="hidden sm:flex justify-center items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handlePageChange(type, currentPage - 1)}
+            disabled={currentPage === 1 || isLoading}
+            className="h-10 w-10"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          {startPage > 1 && (
+            <>
+              <Button
+                variant={currentPage === 1 ? "default" : "outline"}
+                onClick={() => handlePageChange(type, 1)}
+                disabled={isLoading}
+                className="h-10 min-w-[40px] px-3"
+              >
+                1
+              </Button>
+              {startPage > 2 && <span className="text-gray-400 px-1">...</span>}
+            </>
+          )}
+          
+          {pageNumbers.map(page => (
+            <Button
+              key={page}
+              variant={currentPage === page ? "default" : "outline"}
+              onClick={() => handlePageChange(type, page)}
+              disabled={isLoading}
+              className="h-10 min-w-[40px] px-3"
+            >
+              {page}
+            </Button>
+          ))}
+          
+          {endPage < totalPages && (
+            <>
+              {endPage < totalPages - 1 && <span className="text-gray-400 px-1">...</span>}
+              <Button
+                variant={currentPage === totalPages ? "default" : "outline"}
+                onClick={() => handlePageChange(type, totalPages)}
+                disabled={isLoading}
+                className="h-10 min-w-[40px] px-3"
+              >
+                {totalPages}
+              </Button>
+            </>
+          )}
+          
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handlePageChange(type, currentPage + 1)}
+            disabled={currentPage === totalPages || isLoading}
+            className="h-10 w-10"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   const CreditItem = ({ credit, type }: { credit: Credit; type: 'received' | 'given' }) => {
@@ -204,28 +363,7 @@ export function CreditHistory() {
               ))}
             </div>
 
-            {receivedPage < receivedTotalPages && (
-              <div className="flex justify-center mt-6">
-                <Button
-                  variant="outline"
-                  onClick={() => handleLoadMore('received')}
-                  disabled={isLoadingReceived}
-                  className="shadow-soft-xl hover:shadow-soft-2xl transition-all duration-300"
-                >
-                  {isLoadingReceived ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      載入中...
-                    </>
-                  ) : (
-                    <>
-                      載入更多
-                      <ChevronRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
+            {renderPaginationControls(receivedPage, receivedTotalPages, 'received', isLoadingReceived)}
           </>
         )}
       </TabsContent>
@@ -247,28 +385,7 @@ export function CreditHistory() {
               ))}
             </div>
 
-            {givenPage < givenTotalPages && (
-              <div className="flex justify-center mt-6">
-                <Button
-                  variant="outline"
-                  onClick={() => handleLoadMore('given')}
-                  disabled={isLoadingGiven}
-                  className="shadow-soft-xl hover:shadow-soft-2xl transition-all duration-300"
-                >
-                  {isLoadingGiven ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      載入中...
-                    </>
-                  ) : (
-                    <>
-                      載入更多
-                      <ChevronRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
+            {renderPaginationControls(givenPage, givenTotalPages, 'given', isLoadingGiven)}
           </>
         )}
       </TabsContent>
