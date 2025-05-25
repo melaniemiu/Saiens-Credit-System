@@ -113,59 +113,66 @@ async function seed() {
       );
       skills = await Skill.findAll();
     } else {
-      // Skills data based on the CSV
+      // Skills data based exactly on the CSV
       const skillsData = [
-        { name: "公司介紹與文化", category: "山恩DNA", isRequired: true, learningMethod: "實體", assessmentMethod: "考卷考核" },
-        { name: "基本工作流程", category: "山恩DNA", isRequired: true, learningMethod: "實體", assessmentMethod: "考卷考核" },
-        { name: "基本產品知識", category: "產品知識", isRequired: true, learningMethod: "實體", assessmentMethod: "考卷考核" },
-        { name: "石材的特性", category: "產品知識", isRequired: true, learningMethod: "線上", assessmentMethod: "考卷考核" },
-        { name: "機具認識", category: "工具使用", isRequired: true, learningMethod: "線上", assessmentMethod: "考卷考核" },
-        { name: "加工方法", category: "安裝知識", isRequired: true, learningMethod: "線上", assessmentMethod: "考卷考核" },
-        { name: "個人防護裝備的使用", category: "安全操作", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
-        { name: "基本安全操作規範", category: "安全操作", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
-        { name: "安裝前保護措施", category: "安裝技術", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
-        { name: "石材表面的檢查和清潔", category: "安裝技術", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
-        { name: "安裝後檢查和驗收", category: "安裝技術", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
-        { name: "石材存放與保護", category: "安全操作", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
-        { name: "石材的檢查與搬運技巧", category: "安全操作", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
-        { name: "機具使用", category: "工具使用", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "圖面解讀", category: "安裝技術", isRequired: true, learningMethod: "實體", assessmentMethod: "考卷考核" },
+        // 新手村 skills
+        { name: "山恩DNA 公司介紹與文化", category: "山恩DNA", isRequired: true, learningMethod: "實體", assessmentMethod: "考卷考核" },
+        { name: "山恩DNA 基本工作流程", category: "山恩DNA", isRequired: true, learningMethod: "實體", assessmentMethod: "考卷考核" },
+        { name: "產品知識 基本產品知識", category: "產品知識", isRequired: true, learningMethod: "實體", assessmentMethod: "考卷考核" },
+        { name: "產品知識 石材的特性", category: "產品知識", isRequired: true, learningMethod: "線上", assessmentMethod: "考卷考核" },
+        { name: "工具使用 機具認識", category: "工具使用", isRequired: true, learningMethod: "線上", assessmentMethod: "考卷考核" },
+        { name: "安裝知識 加工方法", category: "安裝知識", isRequired: true, learningMethod: "線上", assessmentMethod: "考卷考核" },
+        { name: "安全操作 個人防護裝備的使用", category: "安全操作", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
+        { name: "安全操作 基本安全操作規範", category: "安全操作", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
+        { name: "安裝技術 安裝前保護措施", category: "安裝技術", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
+        { name: "安裝技術 石材表面的檢查和清潔", category: "安裝技術", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
+        { name: "安裝技術 安裝後檢查和驗收", category: "安裝技術", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
+        { name: "安全操作 石材存放與保護", category: "安全操作", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
+        { name: "安全操作 石材的檢查與搬運技巧", category: "安全操作", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
+        { name: "工具使用 機具使用", category: "工具使用", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "安裝技術 圖面解讀", category: "安裝技術", isRequired: true, learningMethod: "實體", assessmentMethod: "考卷考核" },
+        
+        // 助理工程師 skills
         { name: "工單操作教學", category: "工單操作教學", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "砂輪機", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "電鑽", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "跳鋸機", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "雕刻機", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "磨邊機", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "大電鋸", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "矽利康技巧", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "檯面設定（水平＆垂直）", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "接縫銜接（切割＆研磨修整）", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "側落 45 度接（背切修整）", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "石材的檢查與搬運技巧（實體）", category: "安全操作", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "案場作業流程", category: "現場作業", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "與其他工種的協作", category: "現場作業", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "一字型工程", category: "一字型工程", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "中島+雙側落工程", category: "中島+雙側落工程", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "接縫膠調色準確度", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "基礎水電知識", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "接縫平接（切割＆研磨修整）", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "開插座孔", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "鑽龍頭孔", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "裝修包覆", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "複雜安裝項目", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "石材修復與保養", category: "品質控制", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "管理工具與管理思維", category: "領導力與溝通", isRequired: false, learningMethod: "線上", assessmentMethod: "考卷考核" },
-        { name: "有效溝通與問題解決", category: "領導力與溝通", isRequired: false, learningMethod: "線上", assessmentMethod: "考卷考核" },
-        { name: "平接切邊", category: "平接切邊", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "水磨（包括熱彎安裝）", category: "水磨（包括熱彎安裝）", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "L型工程", category: "L型工程", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "ㄇ字型工程", category: "ㄇ字型工程", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "側落", category: "側落", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "高背", category: "高背", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "牆面工程", category: "牆面工程", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "維修美容工程", category: "維修美容工程", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "地板工程", category: "地板工程", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "木作全包覆工程", category: "木作全包覆工程", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" }
+        { name: "工具使用 砂輪機", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "工具使用 電鑽", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "工具使用 跳鋸機", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "工具使用 雕刻機", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "工具使用 磨邊機", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "工具使用 大電鋸", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "安裝技術 矽利康技巧", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "安裝技術 檯面設定（水平＆垂直）", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "安裝技術 接縫銜接（切割＆研磨修整）", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "安裝技術 側落 45 度接（背切修整）", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "安全操作 石材的檢查與搬運技巧", category: "安全操作", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "現場作業 案場作業流程", category: "現場作業", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "現場作業 與其他工種的協作", category: "現場作業", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "一字型工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "中島+雙側落工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
+        
+        // 正式工程師 skills
+        { name: "安裝技術 接縫膠調色準確度", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "安裝技術 基礎水電知識", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "安裝技術 接縫平接（切割＆研磨修整）", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "安裝技術 開插座孔", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "安裝技術 鑽龍頭孔", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "安裝技術 裝修包覆", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "安裝技術 複雜安裝項目", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "品質控制 石材修復與保養", category: "品質控制", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "領導力與溝通 管理工具與管理思維", category: "領導力與溝通", isRequired: false, learningMethod: "線上", assessmentMethod: "考卷考核" },
+        { name: "領導力與溝通 有效溝通與問題解決", category: "領導力與溝通", isRequired: false, learningMethod: "線上", assessmentMethod: "考卷考核" },
+        { name: "平接切邊", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "水磨（包括熱彎安裝）", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "L型工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "ㄇ字型工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "側落", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "高背", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "牆面工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "維修美容工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
+        
+        // 資深工程師 skills
+        { name: "地板工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
+        { name: "木作全包覆工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" }
       ];
 
       skills = await Skill.bulkCreate(skillsData);
@@ -189,27 +196,30 @@ async function seed() {
     if (existingJobSkillCount === 0 || forceDrop) {
       console.log("Creating job-skill associations...");
       
-      // Map CSV data to job titles in our system
+      // Map CSV data to job titles in our system - exactly as in CSV
       const jobSkillMappings = [
-        // 新手村 skills
+        // 新手村 skills - exactly from CSV
         { jobName: "新手村", skills: [
-          "公司介紹與文化", "基本工作流程", "基本產品知識", "石材的特性", "機具認識", "加工方法",
-          "個人防護裝備的使用", "基本安全操作規範", "安裝前保護措施", "石材表面的檢查和清潔",
-          "安裝後檢查和驗收", "石材存放與保護", "石材的檢查與搬運技巧", "機具使用", "圖面解讀"
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "產品知識 基本產品知識", "產品知識 石材的特性", 
+          "工具使用 機具認識", "安裝知識 加工方法", "安全操作 個人防護裝備的使用", "安全操作 基本安全操作規範",
+          "安裝技術 安裝前保護措施", "安裝技術 石材表面的檢查和清潔", "安裝技術 安裝後檢查和驗收", 
+          "安全操作 石材存放與保護", "安全操作 石材的檢查與搬運技巧", "工具使用 機具使用", "安裝技術 圖面解讀"
         ]},
-        // 助理工程師 skills
+        // 助理工程師 skills - exactly from CSV
         { jobName: "助理工程師", skills: [
-          "工單操作教學", "砂輪機", "電鑽", "跳鋸機", "雕刻機", "磨邊機", "大電鋸",
-          "矽利康技巧", "檯面設定（水平＆垂直）", "接縫銜接（切割＆研磨修整）", "側落 45 度接（背切修整）",
-          "石材的檢查與搬運技巧（實體）", "案場作業流程", "與其他工種的協作", "一字型工程", "中島+雙側落工程"
+          "工單操作教學", "工具使用 砂輪機", "工具使用 電鑽", "工具使用 跳鋸機", "工具使用 雕刻機", 
+          "工具使用 磨邊機", "工具使用 大電鋸", "安裝技術 矽利康技巧", "安裝技術 檯面設定（水平＆垂直）",
+          "安裝技術 接縫銜接（切割＆研磨修整）", "安裝技術 側落 45 度接（背切修整）", "安全操作 石材的檢查與搬運技巧",
+          "現場作業 案場作業流程", "現場作業 與其他工種的協作", "一字型工程", "中島+雙側落工程"
         ]},
-        // 正式工程師 skills
+        // 正式工程師 skills - exactly from CSV
         { jobName: "正式工程師", skills: [
-          "接縫膠調色準確度", "基礎水電知識", "接縫平接（切割＆研磨修整）", "開插座孔", "鑽龍頭孔",
-          "裝修包覆", "複雜安裝項目", "石材修復與保養", "管理工具與管理思維", "有效溝通與問題解決",
+          "安裝技術 接縫膠調色準確度", "安裝技術 基礎水電知識", "安裝技術 接縫平接（切割＆研磨修整）", 
+          "安裝技術 開插座孔", "安裝技術 鑽龍頭孔", "安裝技術 裝修包覆", "安裝技術 複雜安裝項目",
+          "品質控制 石材修復與保養", "領導力與溝通 管理工具與管理思維", "領導力與溝通 有效溝通與問題解決",
           "平接切邊", "水磨（包括熱彎安裝）", "L型工程", "ㄇ字型工程", "側落", "高背", "牆面工程", "維修美容工程"
         ]},
-        // 資深工程師 skills
+        // 資深工程師 skills - exactly from CSV
         { jobName: "資深工程師", skills: [
           "地板工程", "木作全包覆工程"
         ]}
@@ -451,28 +461,40 @@ async function seed() {
 
     console.log(`Created ${users.length} users`);
 
-    // Create sample user skill progress
+    // Create progressive user skill progress
     const existingUserSkillCount = await UserSkill.count();
     
     if (existingUserSkillCount === 0 || forceDrop) {
-      console.log("Creating sample user skill progress...");
+      console.log("Creating progressive user skill progress...");
       
-      // Get some basic skills for demonstration
-      const basicSkills = await Skill.findAll({
-        where: {
-          category: '山恩DNA'
-        },
-        limit: 3
+      // Get all job skill mappings to create progression
+      const allJobSkills = await JobSkill.findAll({
+        include: [
+          {
+            model: Job,
+            attributes: ['id', 'name']
+          },
+          {
+            model: Skill,
+            attributes: ['id', 'name', 'category']
+          }
+        ]
       });
 
-      const toolSkills = await Skill.findAll({
-        where: {
-          category: '工具使用'
-        },
-        limit: 2
+      // Group skills by job
+      const skillsByJob = {};
+      allJobSkills.forEach(jobSkill => {
+        const jobName = jobSkill.Job.name;
+        if (!skillsByJob[jobName]) {
+          skillsByJob[jobName] = [];
+        }
+        skillsByJob[jobName].push(jobSkill.Skill);
       });
 
       const userSkillProgress = [];
+      
+      // Define job progression order
+      const jobProgression = ['新手村', '助理工程師', '正式工程師', '資深工程師'];
 
       // Add progress for engineering users
       const engineeringUsers = users.filter(user => 
@@ -480,56 +502,92 @@ async function seed() {
       );
 
       for (const user of engineeringUsers) {
-        // Basic skills - completed for all engineering users
-        for (const skill of basicSkills) {
-          userSkillProgress.push({
-            userId: user.id,
-            skillId: skill.id,
-            status: 'completed',
-            startedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-            completedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000), // 20 days ago
-            score: Math.floor(Math.random() * 20) + 80, // Score between 80-100
-            attempts: 1
-          });
-        }
+        const userJobName = Object.keys(jobMap).find(key => jobMap[key] === user.jobId);
+        const userJobIndex = jobProgression.findIndex(job => userJobName?.includes(job) || userJobName === job);
+        
+        console.log(`Creating skills for ${user.name} (${userJobName}) - Job index: ${userJobIndex}`);
 
-        // Tool skills - varying progress based on job level
-        for (const skill of toolSkills) {
-          let status = 'not_started';
-          let startedAt = null;
-          let completedAt = null;
-          let score = null;
-          let attempts = 0;
+        // Track unique skills for this user to avoid duplicates
+        const userSkillsAdded = new Set();
 
-          // Advanced users have more progress
-          if (user.jobId === jobMap["正式工程師"]) {
-            status = 'certified';
-            startedAt = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
-            completedAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
-            score = Math.floor(Math.random() * 15) + 85;
-            attempts = 1;
-          } else if (user.jobId === jobMap["助理工程師"]) {
-            status = 'in_progress';
-            startedAt = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
-            attempts = 0;
+        // Create progressive skill completion based on job level
+        for (let i = 0; i <= userJobIndex; i++) {
+          const currentJobLevel = jobProgression[i];
+          const skillsForLevel = skillsByJob[currentJobLevel] || [];
+
+          for (const skill of skillsForLevel) {
+            // Skip if we've already added this skill for this user
+            if (userSkillsAdded.has(skill.id)) {
+              continue;
+            }
+            userSkillsAdded.add(skill.id);
+
+            let status, startedAt, completedAt, certifiedAt, score, attempts;
+            
+            // All previous job levels should be completed/certified
+            if (i < userJobIndex) {
+              status = 'certified';
+              const daysAgo = 60 - (i * 15); // Older completions for earlier levels
+              startedAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+              completedAt = new Date(Date.now() - (daysAgo - 5) * 24 * 60 * 60 * 1000);
+              certifiedAt = new Date(Date.now() - (daysAgo - 7) * 24 * 60 * 60 * 1000);
+              score = Math.floor(Math.random() * 15) + 85; // High scores for certified skills
+              attempts = 1;
+            } 
+            // Current job level skills
+            else if (i === userJobIndex) {
+              // Mix of completed and in-progress for current level
+              const random = Math.random();
+              if (random < 0.7) { // 70% completed
+                status = 'completed';
+                startedAt = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000);
+                completedAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+                score = Math.floor(Math.random() * 20) + 80;
+                attempts = Math.floor(Math.random() * 2) + 1;
+              } else if (random < 0.9) { // 20% in progress
+                status = 'in_progress';
+                startedAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+                attempts = 0;
+              } else { // 10% not started
+                status = 'not_started';
+                attempts = 0;
+              }
+            }
+
+            userSkillProgress.push({
+              userId: user.id,
+              skillId: skill.id,
+              status,
+              startedAt,
+              completedAt,
+              certifiedAt,
+              score,
+              attempts,
+              certifiedBy: status === 'certified' ? user1.id : null // Admin certifies
+            });
           }
-          // 新手村 users remain at not_started
-
-          userSkillProgress.push({
-            userId: user.id,
-            skillId: skill.id,
-            status,
-            startedAt,
-            completedAt,
-            score,
-            attempts
-          });
         }
       }
 
       if (userSkillProgress.length > 0) {
         await UserSkill.bulkCreate(userSkillProgress);
-        console.log(`Created ${userSkillProgress.length} user skill progress records`);
+        console.log(`Created ${userSkillProgress.length} progressive user skill records`);
+        
+        // Log summary for each user
+        const summaryByUser = {};
+        userSkillProgress.forEach(up => {
+          const user = engineeringUsers.find(u => u.id === up.userId);
+          const userName = user?.name || 'Unknown';
+          if (!summaryByUser[userName]) {
+            summaryByUser[userName] = { certified: 0, completed: 0, in_progress: 0, not_started: 0 };
+          }
+          summaryByUser[userName][up.status]++;
+        });
+        
+        console.log('Skill progress summary:');
+        Object.entries(summaryByUser).forEach(([name, stats]) => {
+          console.log(`  ${name}: ${stats.certified} certified, ${stats.completed} completed, ${stats.in_progress} in progress, ${stats.not_started} not started`);
+        });
       }
     } else {
       console.log(`Found ${existingUserSkillCount} existing user skill progress records, skipping creation`);

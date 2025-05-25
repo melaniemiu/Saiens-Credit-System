@@ -1,4 +1,4 @@
-const { User, Department, Credit, Job } = require('../models');
+const { User, Department, Credit, Job, Skill, UserSkill, JobSkill } = require('../models');
 const { Op } = require('sequelize');
 
 // Get current user profile
@@ -17,7 +17,24 @@ exports.getCurrentUser = async (req, res, next) => {
         },
         {
           model: Job,
-          attributes: ['id', 'name']
+          attributes: ['id', 'name'],
+          include: [
+            {
+              model: Skill,
+              as: 'skills',
+              attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod'],
+              through: { attributes: ['isRequired'] }
+            }
+          ]
+        },
+        {
+          model: Skill,
+          as: 'skills',
+          attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod'],
+          through: { 
+            attributes: ['status', 'startedAt', 'completedAt', 'certifiedAt', 'score', 'attempts'],
+            as: 'progress'
+          }
         }
       ]
     });
@@ -53,8 +70,10 @@ exports.getCurrentUser = async (req, res, next) => {
         jobId: user.jobId,
         Job: user.Job ? {
           id: user.Job.id,
-          name: user.Job.name
+          name: user.Job.name,
+          skills: user.Job.skills || []
         } : null,
+        skills: user.skills || [],
         creditsReceived: user.creditsReceived,
         creditsSent: user.creditsSent,
         remainingDailyCredits: user.remainingDailyCredits,

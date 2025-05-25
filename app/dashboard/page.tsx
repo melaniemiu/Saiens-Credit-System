@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button"
 import { RefreshCw, Loader2, User, CreditCard, TrendingUp, Wallet } from "lucide-react"
 import { AuthError } from "@/components/auth-error"
 import { GiveCreditButton } from "@/components/give-credit-button"
+import { SkillProgressCard } from "@/components/skill-progress-card"
+import { SuggestedSkillsCard } from "@/components/suggested-skills-card"
+import { SkillRoadmap } from "@/components/skill-roadmap"
 import { useSearchParams } from "next/navigation"
 import { useOfflineConfetti } from "@/hooks/use-offline-confetti"
 
@@ -416,57 +419,22 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Right Column - Skills and Daily Credits */}
+            {/* Right Column - Skills */}
             <div className="w-full max-w-full px-3 lg:w-1/2 lg:flex-none">
               <div className="flex flex-col gap-6">
-                {/* Acquired Skills Card */}
-                <SoftCard>
-                  <SoftCardHeader>
-                    <SoftCardTitle>習得技能</SoftCardTitle>
-                    <SoftCardDescription>您已掌握的技能</SoftCardDescription>
-                  </SoftCardHeader>
-                  <SoftCardContent>
-                    <div className="flex flex-wrap gap-4">
-                      <div className="h-16 w-16 flex items-center justify-center bg-gradient-success text-white rounded-2xl shadow-soft-xl text-xs font-semibold text-center p-2 leading-tight">
-                        木作
-                      </div>
-                      <div className="h-16 w-16 flex items-center justify-center bg-gradient-success text-white rounded-2xl shadow-soft-xl text-xs font-semibold text-center p-2 leading-tight">
-                        油漆
-                      </div>
-                      <div className="h-16 w-16 flex items-center justify-center bg-gradient-success text-white rounded-2xl shadow-soft-xl text-xs font-semibold text-center p-2 leading-tight">
-                        水電
-                      </div>
-                      <div className="h-16 w-16 flex items-center justify-center bg-gradient-success text-white rounded-2xl shadow-soft-xl text-xs font-semibold text-center p-2 leading-tight">
-                        系統櫃
-                      </div>
-                    </div>
-                  </SoftCardContent>
-                </SoftCard>
+                {/* Skill Progress Card */}
+                <SkillProgressCard />
 
                 {/* Suggested Skills Card */}
-                <SoftCard>
-                  <SoftCardHeader>
-                    <SoftCardTitle>建議學習技能</SoftCardTitle>
-                    <SoftCardDescription>推薦您學習的技能</SoftCardDescription>
-                  </SoftCardHeader>
-                  <SoftCardContent>
-                    <div className="flex flex-wrap gap-4">
-                      <div className="h-16 w-16 flex items-center justify-center bg-gradient-warning text-white rounded-2xl shadow-soft-xl text-xs font-semibold text-center p-2 leading-tight">
-                        3D設計
-                      </div>
-                      <div className="h-16 w-16 flex items-center justify-center bg-gradient-warning text-white rounded-2xl shadow-soft-xl text-xs font-semibold text-center p-2 leading-tight">
-                        智能家居
-                      </div>
-                      <div className="h-16 w-16 flex items-center justify-center bg-gradient-warning text-white rounded-2xl shadow-soft-xl text-xs font-semibold text-center p-2 leading-tight">
-                        綠建材
-                      </div>
-                      <div className="h-16 w-16 flex items-center justify-center bg-gradient-warning text-white rounded-2xl shadow-soft-xl text-xs font-semibold text-center p-2 leading-tight">
-                        燈光設計
-                      </div>
-                    </div>
-                  </SoftCardContent>
-                </SoftCard>
+                <SuggestedSkillsCard />
               </div>
+            </div>
+          </div>
+
+          {/* Full-width Skill Roadmap */}
+          <div className="flex flex-wrap -mx-3 mt-6">
+            <div className="w-full px-3">
+              <SkillRoadmap />
             </div>
           </div>
 

@@ -508,6 +508,49 @@ export const departmentApi = {
   },
 };
 
+export const skillApi = {
+  // Get user's skill progress
+  getUserSkills: async () => {
+    return fetchApi<{ userSkills: any[] }>('/skills/user', {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Get skills available for user's job
+  getJobSkills: async () => {
+    return fetchApi<{ job: any; skillsWithProgress: any[] }>('/skills/job', {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Get suggested skills (next job level)
+  getSuggestedSkills: async () => {
+    return fetchApi<{ nextJob: any; suggestedSkills: any[] }>('/skills/suggested', {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Get skill statistics
+  getSkillStats: async () => {
+    return fetchApi<{ skillStats: any; total: number; completed: number; completionPercentage: number }>('/skills/stats', {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Update user skill progress
+  updateSkillProgress: async (skillId: string, data: { status: string; score?: number; notes?: string }) => {
+    return fetchApi<{ message: string; userSkill: any }>(`/skills/${skillId}/progress`, {
+      method: 'PUT',
+      headers: createHeaders(),
+      body: JSON.stringify(data),
+    });
+  },
+};
+
 // Utility functions
 export const setAuthToken = (token: string) => {
   if (typeof window !== 'undefined') {
@@ -545,6 +588,7 @@ export default {
   userApi,
   creditApi,
   departmentApi,
+  skillApi,
   setAuthToken,
   removeAuthToken,
 };
