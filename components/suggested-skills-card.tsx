@@ -114,13 +114,13 @@ export function SuggestedSkillsCard() {
             {suggestedSkills.map((skillItem) => (
               <div
                 key={skillItem.id}
-                className="h-16 flex items-center justify-center bg-gradient-warning text-white rounded-2xl shadow-soft-xl text-xs font-semibold text-center p-2 leading-tight relative cursor-pointer hover:shadow-lg transition-shadow"
+                className="h-16 flex items-center justify-center bg-gradient-warning text-white rounded-2xl shadow-soft-xl text-xs font-semibold text-center p-2 leading-tight cursor-pointer hover:shadow-lg transition-shadow"
                 title={`類別: ${skillItem.Skill.category}\n學習方式: ${skillItem.Skill.learningMethod}\n評估方式: ${skillItem.Skill.assessmentMethod}`}
               >
-                <div className="absolute top-1 right-1">
-                  <BookOpen className="h-3 w-3 text-white/80" />
+                <div className="flex items-center gap-1">
+                  <BookOpen className="h-5 w-5 text-white/80 flex-shrink-0" />
+                  <span className="break-words">{skillItem.Skill.name}</span>
                 </div>
-                <span className="break-words">{skillItem.Skill.name}</span>
               </div>
             ))}
           </div>

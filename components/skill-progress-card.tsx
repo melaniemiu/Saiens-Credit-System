@@ -207,13 +207,13 @@ export function SkillProgressCard() {
             {latestCertifiedSkills.map((skill) => (
               <div
                 key={skill.id}
-                className="h-16 flex items-center justify-center text-white rounded-2xl shadow-soft-xl text-xs font-semibold text-center p-2 leading-tight relative bg-gradient-warning"
+                className="h-16 flex items-center justify-center text-white rounded-2xl shadow-soft-xl text-xs font-semibold text-center p-2 leading-tight bg-gradient-warning"
                 title={`已認證: ${skill.name}\n職位層級: ${skill.jobLevel}\n認證時間: ${skill.progress?.certifiedAt ? new Date(skill.progress.certifiedAt).toLocaleDateString() : '未知'}`}
               >
-                <div className="absolute top-1 right-1">
-                  <Award className="h-4 w-4 text-yellow-200" />
+                <div className="flex items-center gap-1">
+                  <Award className="h-5 w-5 text-yellow-200 flex-shrink-0" />
+                  <span className="break-words">{skill.name}</span>
                 </div>
-                <span className="break-words">{skill.name}</span>
               </div>
             ))}
           </div>
