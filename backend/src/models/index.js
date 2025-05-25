@@ -30,6 +30,9 @@ db.User = require('./user.model')(sequelize, Sequelize);
 db.Credit = require('./credit.model')(sequelize, Sequelize);
 db.Department = require('./department.model')(sequelize, Sequelize);
 db.Job = require('./job.model')(sequelize, Sequelize);
+db.Skill = require('./skill.model')(sequelize, Sequelize);
+db.JobSkill = require('./job-skill.model')(sequelize, Sequelize);
+db.UserSkill = require('./user-skill.model')(sequelize, Sequelize);
 
 // Define associations using explicit foreign key
 db.User.belongsTo(db.Department, { foreignKey: 'departmentId' });
@@ -43,5 +46,47 @@ db.Credit.belongsTo(db.User, { as: 'receiver', foreignKey: 'receiverId' });
 
 db.User.hasMany(db.Credit, { as: 'sentCredits', foreignKey: 'senderId' });
 db.User.hasMany(db.Credit, { as: 'receivedCredits', foreignKey: 'receiverId' });
+
+// Job and Skill many-to-many relationship through JobSkill
+db.Job.belongsToMany(db.Skill, { 
+  through: db.JobSkill, 
+  foreignKey: 'jobId',
+  otherKey: 'skillId',
+  as: 'skills'
+});
+db.Skill.belongsToMany(db.Job, { 
+  through: db.JobSkill, 
+  foreignKey: 'skillId',
+  otherKey: 'jobId',
+  as: 'jobs'
+});
+
+// Direct associations for JobSkill
+db.JobSkill.belongsTo(db.Job, { foreignKey: 'jobId' });
+db.JobSkill.belongsTo(db.Skill, { foreignKey: 'skillId' });
+db.Job.hasMany(db.JobSkill, { foreignKey: 'jobId' });
+db.Skill.hasMany(db.JobSkill, { foreignKey: 'skillId' });
+
+// User and Skill many-to-many relationship through UserSkill
+db.User.belongsToMany(db.Skill, { 
+  through: db.UserSkill, 
+  foreignKey: 'userId',
+  otherKey: 'skillId',
+  as: 'skills'
+});
+db.Skill.belongsToMany(db.User, { 
+  through: db.UserSkill, 
+  foreignKey: 'skillId',
+  otherKey: 'userId',
+  as: 'users'
+});
+
+// Direct associations for UserSkill
+db.UserSkill.belongsTo(db.User, { foreignKey: 'userId' });
+db.UserSkill.belongsTo(db.Skill, { foreignKey: 'skillId' });
+db.UserSkill.belongsTo(db.User, { as: 'certifier', foreignKey: 'certifiedBy' });
+db.User.hasMany(db.UserSkill, { foreignKey: 'userId' });
+db.User.hasMany(db.UserSkill, { as: 'certifiedSkills', foreignKey: 'certifiedBy' });
+db.Skill.hasMany(db.UserSkill, { foreignKey: 'skillId' });
 
 module.exports = db;
