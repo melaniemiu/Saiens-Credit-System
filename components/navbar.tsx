@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { Home, Gift, Clock, LogOut, Menu, Shield } from "lucide-react"
+import { Home, Gift, Clock, LogOut, Menu, Shield, Map } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { useIsMobile } from "@/hooks/use-mobile"
 
@@ -34,6 +34,11 @@ export function Navbar() {
       href: "/dashboard/history",
       label: "Credit 歷程",
       icon: Clock,
+    },
+    {
+      href: "/dashboard/skills",
+      label: "技能路線圖",
+      icon: Map,
     },
   ]
 

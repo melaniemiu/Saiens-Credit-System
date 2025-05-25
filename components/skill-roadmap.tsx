@@ -185,6 +185,37 @@ export function SkillRoadmap() {
         </div>
       </SoftCardHeader>
       <SoftCardContent>
+        {/* Progress Summary */}
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <div className="text-sm font-medium text-gray-700 mb-2">進度總覽</div>
+          <div className="grid grid-cols-4 gap-4 text-xs">
+            <div className="text-center">
+              <div className="text-yellow-600 font-semibold">
+                {jobLevels.reduce((sum, level) => sum + level.skills.filter(s => s.status === 'certified').length, 0)}
+              </div>
+              <div className="text-gray-500">已認證</div>
+            </div>
+            <div className="text-center">
+              <div className="text-green-600 font-semibold">
+                {jobLevels.reduce((sum, level) => sum + level.skills.filter(s => s.status === 'completed').length, 0)}
+              </div>
+              <div className="text-gray-500">已完成</div>
+            </div>
+            <div className="text-center">
+              <div className="text-blue-600 font-semibold">
+                {jobLevels.reduce((sum, level) => sum + level.skills.filter(s => s.status === 'in_progress').length, 0)}
+              </div>
+              <div className="text-gray-500">學習中</div>
+            </div>
+            <div className="text-center">
+              <div className="text-gray-600 font-semibold">
+                {jobLevels.reduce((sum, level) => sum + level.skills.filter(s => s.status === 'not_started').length, 0)}
+              </div>
+              <div className="text-gray-500">未開始</div>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-6">
           {jobLevels.map((level, index) => (
             <div key={level.name} className="relative">
@@ -274,37 +305,6 @@ export function SkillRoadmap() {
               )}
             </div>
           ))}
-        </div>
-
-        {/* Progress Summary */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <div className="text-sm font-medium text-gray-700 mb-2">進度總覽</div>
-          <div className="grid grid-cols-4 gap-4 text-xs">
-            <div className="text-center">
-              <div className="text-yellow-600 font-semibold">
-                {jobLevels.reduce((sum, level) => sum + level.skills.filter(s => s.status === 'certified').length, 0)}
-              </div>
-              <div className="text-gray-500">已認證</div>
-            </div>
-            <div className="text-center">
-              <div className="text-green-600 font-semibold">
-                {jobLevels.reduce((sum, level) => sum + level.skills.filter(s => s.status === 'completed').length, 0)}
-              </div>
-              <div className="text-gray-500">已完成</div>
-            </div>
-            <div className="text-center">
-              <div className="text-blue-600 font-semibold">
-                {jobLevels.reduce((sum, level) => sum + level.skills.filter(s => s.status === 'in_progress').length, 0)}
-              </div>
-              <div className="text-gray-500">學習中</div>
-            </div>
-            <div className="text-center">
-              <div className="text-gray-600 font-semibold">
-                {jobLevels.reduce((sum, level) => sum + level.skills.filter(s => s.status === 'not_started').length, 0)}
-              </div>
-              <div className="text-gray-500">未開始</div>
-            </div>
-          </div>
         </div>
       </SoftCardContent>
     </SoftCard>

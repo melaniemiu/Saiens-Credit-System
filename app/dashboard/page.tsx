@@ -13,7 +13,6 @@ import { AuthError } from "@/components/auth-error"
 import { GiveCreditButton } from "@/components/give-credit-button"
 import { SkillProgressCard } from "@/components/skill-progress-card"
 import { SuggestedSkillsCard } from "@/components/suggested-skills-card"
-import { SkillRoadmap } from "@/components/skill-roadmap"
 import { useSearchParams } from "next/navigation"
 import { useOfflineConfetti } from "@/hooks/use-offline-confetti"
 
@@ -428,13 +427,6 @@ function DashboardContent() {
                 {/* Suggested Skills Card */}
                 <SuggestedSkillsCard />
               </div>
-            </div>
-          </div>
-
-          {/* Full-width Skill Roadmap */}
-          <div className="flex flex-wrap -mx-3 mt-6">
-            <div className="w-full px-3">
-              <SkillRoadmap />
             </div>
           </div>
 
