@@ -35,7 +35,6 @@ export default function RootLayout({
     <html lang="zh-TW" suppressHydrationWarning>
       <head>
         <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
-        <script src="https://kit.fontawesome.com/42d5adcbca.js" crossOrigin="anonymous" defer></script>
       </head>
       <body className={`${inter.className} ${openSans.variable}`}>
         <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" disableTransitionOnChange>
