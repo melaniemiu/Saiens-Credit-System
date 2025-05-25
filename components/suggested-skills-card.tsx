@@ -47,7 +47,13 @@ export function SuggestedSkillsCard() {
             // Show skills that are not started or in progress (not completed/certified)
             return !userProgress || userProgress.status === 'not_started' || userProgress.status === 'in_progress'
           })
-          .slice(0, 4) // Limit to 4 suggestions
+          .sort((a, b) => {
+            // Sort by required status first (必修 first, then 選修)
+            if (a.Skill.isRequired && !b.Skill.isRequired) return -1
+            if (!a.Skill.isRequired && b.Skill.isRequired) return 1
+            return a.Skill.name.localeCompare(b.Skill.name) // Then by name
+          })
+          .slice(0, 6) // Increase limit to show more skills
         
         setSuggestedSkills(unlearnedSkills)
         setCurrentJob(jobSkillsResponse.data?.job || null)
@@ -110,19 +116,29 @@ export function SuggestedSkillsCard() {
       </SoftCardHeader>
       <SoftCardContent>
         {suggestedSkills.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
-            {suggestedSkills.map((skillItem) => (
-              <div
-                key={skillItem.id}
-                className="h-16 flex items-center justify-center bg-gradient-warning text-white rounded-2xl shadow-soft-xl text-xs font-semibold text-center p-2 leading-tight cursor-pointer hover:shadow-lg transition-shadow"
-                title={`類別: ${skillItem.Skill.category}\n學習方式: ${skillItem.Skill.learningMethod}\n評估方式: ${skillItem.Skill.assessmentMethod}`}
-              >
-                <div className="flex items-center gap-1">
-                  <BookOpen className="h-5 w-5 text-white/80 flex-shrink-0" />
-                  <span className="break-words">{skillItem.Skill.name}</span>
+          <div className="flex flex-wrap gap-2">
+            {suggestedSkills.map((skillItem) => {
+              const isRequired = skillItem.Skill.isRequired
+              const badgeClasses = isRequired
+                ? "inline-flex items-center gap-2 px-3 py-2 bg-red-100 text-red-800 rounded-full text-xs font-medium border border-red-200 shadow-sm hover:bg-red-200 transition-colors cursor-pointer"
+                : "inline-flex items-center gap-2 px-3 py-2 bg-blue-100 text-blue-800 rounded-full text-xs font-medium border border-blue-200 shadow-sm hover:bg-blue-200 transition-colors cursor-pointer"
+              const iconClasses = isRequired ? "h-4 w-4 text-red-600 flex-shrink-0" : "h-4 w-4 text-blue-600 flex-shrink-0"
+              
+              return (
+                <div
+                  key={skillItem.id}
+                  className={badgeClasses}
+                  title={`${isRequired ? '[必]' : '[選]'}\n類別: ${skillItem.Skill.category}\n學習方式: ${skillItem.Skill.learningMethod}\n評估方式: ${skillItem.Skill.assessmentMethod}`}
+                >
+                  <BookOpen className={iconClasses} />
+                  <span className="break-words">
+                    {isRequired && <span className="font-bold text-red-900">[必] </span>}
+                    {!isRequired && <span className="font-bold text-blue-900">[選] </span>}
+                    {skillItem.Skill.name}
+                  </span>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         ) : (
           <div className="text-center py-4 text-gray-500">
