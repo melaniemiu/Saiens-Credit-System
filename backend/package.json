@@ -10,6 +10,7 @@
     "seed:force": "node src/utils/seed.js --force",
     "migrate": "node src/utils/run-migrations.js",
     "setup-db": "node src/utils/setup-production-db.js",
+    "debug-env": "node src/utils/debug-env.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test-credit": "node test-credit-script.js"
   },
