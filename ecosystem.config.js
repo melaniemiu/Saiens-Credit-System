@@ -1,44 +1,25 @@
 module.exports = {
   apps: [
     {
-      name: "ss-frontend",
+      name: "saiens-frontend-dev",
       script: "node_modules/.bin/next",
       args: "dev --turbopack -p 4000",
       cwd: "./",
-      watch: false, // Let Next.js handle auto-reload
+      watch: false,
       env: {
         NODE_ENV: "development",
       },
     },
     {
-      name: "ss-backend",
+      name: "saiens-backend-dev",
       script: "npm",
       args: "run dev",
       cwd: "./backend",
-      watch: false, // npm run dev already watches files
+      watch: false,
       env: {
         NODE_ENV: "development",
       },
     },
-  ],
-
-  // Production apps configuration
-  deploy: {
-    production: {
-      user: "apps",
-      host: "ss.unayung.cc",
-      ref: "origin/main",
-      repo: "git@github.com:Unayung/SaiensCreditSystem.git",
-      path: "/home/apps/saiensCreditSystem",
-      "pre-deploy-local": "",
-      "post-deploy":
-        "ln -sf /home/apps/saiensCreditSystem/shared/.env.production.frontend .env.production && npm install --legacy-peer-deps && npm run build && cd backend && ln -sf /home/apps/saiensCreditSystem/shared/.env.production.backend .env && npm install && npm run migrate && cd .. && /home/apps/.yarn/bin/pm2 delete all && /home/apps/.yarn/bin/pm2 start ecosystem.config.js --env production",
-      "pre-setup": "",
-    },
-  },
-
-  // Production PM2 apps
-  production: [
     {
       name: "saiens-frontend-prod",
       script: "node_modules/.bin/next",
@@ -65,4 +46,19 @@ module.exports = {
       },
     },
   ],
+
+  // Deployment configuration
+  deploy: {
+    production: {
+      user: "apps",
+      host: "ss.unayung.cc",
+      ref: "origin/main",
+      repo: "git@github.com:Unayung/SaiensCreditSystem.git",
+      path: "/home/apps/saiensCreditSystem",
+      "pre-deploy-local": "",
+      "post-deploy":
+        "ln -sf /home/apps/saiensCreditSystem/shared/.env.production.frontend .env.production && npm install --legacy-peer-deps && npm run build && cd backend && ln -sf /home/apps/saiensCreditSystem/shared/.env.production.backend .env && npm install && npm run migrate && cd .. && /home/apps/.yarn/bin/pm2 delete all && /home/apps/.yarn/bin/pm2 start saiens-frontend-prod saiens-backend-prod",
+      "pre-setup": "",
+    },
+  },
 };
