@@ -12,7 +12,7 @@ import liff from '@line/liff'
 import { clearAuthStorage } from "@/lib/auth"
 
 // Hardcoded LIFF ID - use environment variable in production
-const LIFF_ID = "2007394904-dYXDv6o9"
+const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2007394904-dYXDv6o9"
 
 export default function BindPage() {
   const [employeeId, setEmployeeId] = useState("")

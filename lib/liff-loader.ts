@@ -2,8 +2,8 @@
 
 import liff from '@line/liff'
 
-// LIFF ID is hardcoded here as a fallback
-const LIFF_ID = "2007394904-dYXDv6o9"
+// LIFF ID from environment variable
+const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2007394904-dYXDv6o9"
 
 // Track initialization state
 let isInitialized = false

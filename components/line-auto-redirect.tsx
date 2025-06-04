@@ -6,8 +6,8 @@ import { Loader2 } from "lucide-react"
 import { setAuthToken } from "@/lib/api"
 import { setCurrentUser } from "@/lib/auth"
 
-// The LIFF ID must be hardcoded to avoid problems with environment variables on mobile
-const LIFF_ID = "2007394904-dYXDv6o9"
+// LIFF ID from environment variable
+const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID || "2007394904-dYXDv6o9"
 
 export function LineAutoRedirect() {
   const [status, setStatus] = useState("初始化中...")

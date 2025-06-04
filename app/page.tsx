@@ -266,7 +266,7 @@ function HomeContent() {
 
         try {
           // Initialize LIFF to properly detect browser type
-          const liffId = '2007394904-dYXDv6o9'; // Hardcoded LIFF ID
+          const liffId = process.env.NEXT_PUBLIC_LIFF_ID || '2007394904-dYXDv6o9';
           await liff.init({ liffId });
 
           // Check if we're in LIFF browser
