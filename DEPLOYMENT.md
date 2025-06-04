@@ -189,8 +189,8 @@ NODE_ENV=production
 PORT=5000
 DB_HOST=localhost
 DB_PORT=5432
-DB_USER=unayung
-DB_PASSWORD=
+DB_USER=saiens_credit
+DB_PASSWORD=32fabdd45cab!
 DB_NAME=saiens_credit_production
 JWT_SECRET=your_jwt_secret
 LIFF_CHANNEL_ID=your_liff_channel_id
@@ -201,7 +201,7 @@ LIFF_CHANNEL_SECRET=your_liff_channel_secret
 
 The `npm run setup-db` script will:
 1. Create the database `saiens_credit_production` if it doesn't exist
-2. Create the user `unayung` if it doesn't exist
+2. Create the user `saiens_credit` with password `32fabdd45cab!` if it doesn't exist
 3. Grant necessary privileges
 4. Test the connection
 

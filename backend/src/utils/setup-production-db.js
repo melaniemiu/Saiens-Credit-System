@@ -5,8 +5,8 @@ require('dotenv').config();
 
 const setupDatabase = async () => {
   const dbName = process.env.DB_NAME || 'saiens_credit_production';
-  const dbUser = process.env.DB_USER || 'unayung';
-  const dbPassword = process.env.DB_PASSWORD || '';
+  const dbUser = process.env.DB_USER || 'saiens_credit';
+  const dbPassword = process.env.DB_PASSWORD || '32fabdd45cab!';
   const dbHost = process.env.DB_HOST || 'localhost';
   const dbPort = process.env.DB_PORT || 5432;
 
