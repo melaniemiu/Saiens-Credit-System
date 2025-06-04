@@ -2,8 +2,8 @@
 import { API_URL } from '@/lib/env';
 import { apiCache } from '@/lib/cache';
 
-// API base URL - use the hardcoded URL as the API_URL from env might not be loaded
-const API_BASE_URL = 'https://5.unayung.cc/api';
+// API base URL from environment variable
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || API_URL || 'https://ss-backend.unayung.cc/api';
 
 // Interface for API response
 interface ApiResponse<T> {
