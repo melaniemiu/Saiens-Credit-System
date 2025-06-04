@@ -32,7 +32,7 @@ module.exports = {
       path: "/home/apps/saiensCreditSystem",
       "pre-deploy-local": "",
       "post-deploy":
-        "npm install && npm run build && cd backend && npm install && pm2 reload ecosystem.config.js --env production",
+        "npm install --legacy-peer-deps && npm run build && cd backend && npm install && pm2 reload ecosystem.config.js --env production",
       "pre-setup": "",
     },
   },
