@@ -14,6 +14,8 @@ const nextConfig = {
     "3.unayung.cc",
     "4.unayung.cc",
     "5.unayung.cc",
+    "ss.unayung.cc",
+    "ss-backend.unayung.cc",
   ],
 };
 

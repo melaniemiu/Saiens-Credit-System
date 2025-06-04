@@ -24,13 +24,15 @@ const io = new Server(server, {
       process.env.FRONTEND_URL,
       "http://localhost:3000",
       "https://3.unayung.cc",
-      "https://4.unayung.cc", 
+      "https://4.unayung.cc",
       "https://5.unayung.cc",
       "http://localhost:3001",
+      "https://ss.unayung.cc",
+      "https://ss-backend.unayung.cc",
     ],
     credentials: true,
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+  },
 });
 const PORT = process.env.PORT || 5000;
 
@@ -65,35 +67,45 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/skills", skillRoutes);
 
 // Make io available to routes
-app.set('io', io);
+app.set("io", io);
 
 // Socket.io connection handling
-io.on('connection', (socket) => {
-  console.log(`🔌 [SOCKET] User connected: ${socket.id} from ${socket.handshake.address}`);
-  
+io.on("connection", (socket) => {
+  console.log(
+    `🔌 [SOCKET] User connected: ${socket.id} from ${socket.handshake.address}`
+  );
+
   // Join user to their personal room for targeted notifications
-  socket.on('join-user-room', (userId) => {
+  socket.on("join-user-room", (userId) => {
     socket.join(`user-${userId}`);
-    console.log(`👤 [SOCKET] User ${userId} joined room: user-${userId} (socket: ${socket.id})`);
-    
+    console.log(
+      `👤 [SOCKET] User ${userId} joined room: user-${userId} (socket: ${socket.id})`
+    );
+
     // Log room info
     const room = io.sockets.adapter.rooms.get(`user-${userId}`);
     const roomSize = room ? room.size : 0;
-    console.log(`📊 [SOCKET] Room user-${userId} now has ${roomSize} connected client(s)`);
+    console.log(
+      `📊 [SOCKET] Room user-${userId} now has ${roomSize} connected client(s)`
+    );
   });
-  
+
   // Handle test credit notifications from script
-  socket.on('credit-received-test', ({ room, data }) => {
+  socket.on("credit-received-test", ({ room, data }) => {
     console.log(`📧 [TEST] Test notification for room: ${room}`);
     const targetRoom = io.sockets.adapter.rooms.get(room);
     const clientCount = targetRoom ? targetRoom.size : 0;
-    console.log(`📡 [TEST] Broadcasting to ${clientCount} client(s) in ${room}`);
-    io.to(room).emit('credit-received', data);
+    console.log(
+      `📡 [TEST] Broadcasting to ${clientCount} client(s) in ${room}`
+    );
+    io.to(room).emit("credit-received", data);
     console.log(`✅ [TEST] Test credit notification sent to ${room}`);
   });
-  
-  socket.on('disconnect', (reason) => {
-    console.log(`❌ [SOCKET] User disconnected: ${socket.id} (reason: ${reason})`);
+
+  socket.on("disconnect", (reason) => {
+    console.log(
+      `❌ [SOCKET] User disconnected: ${socket.id} (reason: ${reason})`
+    );
   });
 });
 
