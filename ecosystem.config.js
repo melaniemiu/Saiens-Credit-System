@@ -57,7 +57,7 @@ module.exports = {
       path: "/home/apps/saiensCreditSystem",
       "pre-deploy-local": "",
       "post-deploy":
-        "ln -sf /home/apps/saiensCreditSystem/shared/.env.production.frontend .env.production && npm install --legacy-peer-deps && npm run build && cd backend && ln -sf /home/apps/saiensCreditSystem/shared/.env.production.backend .env && npm install && npm run migrate && cd .. && /home/apps/.yarn/bin/pm2 delete all && /home/apps/.yarn/bin/pm2 start saiens-frontend-prod saiens-backend-prod",
+        "ln -sf /home/apps/saiensCreditSystem/shared/.env.production.frontend .env.production && npm install --legacy-peer-deps && npm run build && cd backend && ln -sf /home/apps/saiensCreditSystem/shared/.env.production.backend .env && npm install && npm run migrate && cd .. && /home/apps/.yarn/bin/pm2 delete saiens-frontend-prod saiens-backend-prod 2>/dev/null || true && /home/apps/.yarn/bin/pm2 start saiens-frontend-prod saiens-backend-prod",
       "pre-setup": "",
     },
   },
