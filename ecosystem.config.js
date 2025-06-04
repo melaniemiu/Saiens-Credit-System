@@ -28,7 +28,7 @@ module.exports = {
       user: "apps",
       host: "ss.unayung.cc",
       ref: "origin/main",
-      repo: "git@github.com:Unayung/SaiensCreditSystem.git", // Update this with your actual repo
+      repo: "git@github.com:Unayung/SaiensCreditSystem.git",
       path: "/home/apps/saiensCreditSystem",
       "pre-deploy-local": "",
       "post-deploy":
