@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: "frontend",
+      name: "ss-frontend",
       script: "node_modules/.bin/next",
       args: "dev --turbopack -p 4000",
       cwd: "./",
@@ -11,7 +11,7 @@ module.exports = {
       },
     },
     {
-      name: "backend",
+      name: "ss-backend",
       script: "npm",
       args: "run dev",
       cwd: "./backend",
