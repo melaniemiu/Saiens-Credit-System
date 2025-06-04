@@ -10,12 +10,8 @@ const nextConfig = {
     unoptimized: true,
   },
   allowedDevOrigins: [
-    "dev.example.com",
-    "3.unayung.cc",
-    "4.unayung.cc",
-    "5.unayung.cc",
+    "localhost",
     "ss.unayung.cc",
-    "ss-backend.unayung.cc",
   ],
 };
 
