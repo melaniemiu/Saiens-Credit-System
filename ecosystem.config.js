@@ -21,4 +21,46 @@ module.exports = {
       },
     },
   ],
+
+  // Production apps configuration
+  deploy: {
+    production: {
+      user: "apps",
+      host: "ss.unayung.cc",
+      ref: "origin/main",
+      repo: "git@github.com:Unayung/SaiensCreditSystem.git", // Update this with your actual repo
+      path: "/home/apps/saiensCreditSystem",
+      "pre-deploy-local": "",
+      "post-deploy":
+        "npm install && npm run build && cd backend && npm install && pm2 reload ecosystem.config.js --env production",
+      "pre-setup": "",
+    },
+  },
+
+  // Production PM2 apps
+  production: [
+    {
+      name: "saiens-frontend-prod",
+      script: "node_modules/.bin/next",
+      args: "start -p 3000",
+      cwd: "./",
+      instances: 1,
+      exec_mode: "cluster",
+      env: {
+        NODE_ENV: "production",
+        PORT: 3000,
+      },
+    },
+    {
+      name: "saiens-backend-prod",
+      script: "src/index.js",
+      cwd: "./backend",
+      instances: 1,
+      exec_mode: "cluster",
+      env: {
+        NODE_ENV: "production",
+        PORT: 5000,
+      },
+    },
+  ],
 };

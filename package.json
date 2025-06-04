@@ -11,7 +11,15 @@
     "dev:delete": "pm2 delete all",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy:setup": "pm2 deploy ecosystem.config.js production setup",
+    "deploy": "pm2 deploy ecosystem.config.js production",
+    "deploy:revert": "pm2 deploy ecosystem.config.js production revert 1",
+    "prod:start": "pm2 start ecosystem.config.js --env production",
+    "prod:stop": "pm2 stop saiens-frontend-prod saiens-backend-prod",
+    "prod:restart": "pm2 restart saiens-frontend-prod saiens-backend-prod",
+    "prod:logs": "pm2 logs saiens-frontend-prod saiens-backend-prod",
+    "prod:status": "pm2 status"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
