@@ -23,14 +23,14 @@ module.exports = {
     {
       name: "saiens-frontend-prod",
       script: "node_modules/.bin/next",
-      args: "start -p 3000",
+      args: "start -p 4000",
       cwd: "./",
       instances: 1,
       exec_mode: "cluster",
       env_file: ".env.production",
       env: {
         NODE_ENV: "production",
-        PORT: 3000,
+        PORT: 4000,
       },
     },
     {
