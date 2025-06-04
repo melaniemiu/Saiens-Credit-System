@@ -2,9 +2,9 @@ const jwt = require("jsonwebtoken");
 const axios = require("axios");
 const { User, Department, Job } = require("../models");
 
-// LINE API endpoints
-const LINE_VERIFY_TOKEN_URL = "https://api.line.me/oauth2/v2.1/verify";
-const LINE_USER_PROFILE_URL = "https://api.line.me/v2/profile";
+// LINE API endpoints from environment or fallback
+const LINE_VERIFY_TOKEN_URL = process.env.LINE_VERIFY_TOKEN_URL || "https://api.line.me/oauth2/v2.1/verify";
+const LINE_USER_PROFILE_URL = process.env.LINE_USER_PROFILE_URL || "https://api.line.me/v2/profile";
 
 // Verify LINE token and authenticate user
 exports.lineLogin = async (req, res, next) => {

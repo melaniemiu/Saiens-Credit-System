@@ -18,14 +18,26 @@ const skillRoutes = require("./routes/skill.routes");
 // Initialize express app
 const app = express();
 const server = createServer(app);
+// Parse allowed origins from environment variable
+const getAllowedOrigins = () => {
+  const envOrigins = process.env.CORS_ALLOWED_ORIGINS;
+  const defaultOrigins = [
+    process.env.FRONTEND_URL,
+    "http://localhost:3000",
+    "http://localhost:4000",
+    "https://ss.unayung.cc",
+  ].filter(Boolean);
+  
+  if (envOrigins) {
+    return envOrigins.split(',').map(origin => origin.trim());
+  }
+  
+  return defaultOrigins;
+};
+
 const io = new Server(server, {
   cors: {
-    origin: [
-      process.env.FRONTEND_URL,
-      "http://localhost:3000",
-      "http://localhost:4000",
-      "https://ss.unayung.cc",
-    ],
+    origin: getAllowedOrigins(),
     credentials: true,
     methods: ["GET", "POST"],
   },
@@ -38,12 +50,7 @@ app.use(helmet()); // Security headers
 // Configure CORS with all needed origins
 app.use(
   cors({
-    origin: [
-      process.env.FRONTEND_URL,
-      "http://localhost:3000",
-      "http://localhost:4000",
-      "https://ss.unayung.cc",
-    ],
+    origin: getAllowedOrigins(),
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],

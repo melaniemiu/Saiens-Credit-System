@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward the request to our backend
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://5.unayung.cc/api';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ss-backend.unayung.cc/api';
     console.log(`Calling backend auth endpoint: ${backendUrl}/auth/line`);
 
     const response = await fetch(`${backendUrl}/auth/line`, {

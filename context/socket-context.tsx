@@ -55,7 +55,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     
     // Final fallback
     if (!backendUrl) {
-      backendUrl = 'http://localhost:5000'
+      backendUrl = process.env.NEXT_PUBLIC_SOCKET_URL_FALLBACK || 'https://ss-backend.unayung.cc'
     }
     
     console.log(`🔗 [CLIENT] Attempting to connect to: ${backendUrl}`)
