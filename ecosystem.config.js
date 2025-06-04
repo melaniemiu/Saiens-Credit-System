@@ -32,7 +32,7 @@ module.exports = {
       path: "/home/apps/saiensCreditSystem",
       "pre-deploy-local": "",
       "post-deploy":
-        "ln -sf /home/apps/saiensCreditSystem/shared/.env.production.frontend .env.production && npm install --legacy-peer-deps && npm run build && cd backend && ln -sf /home/apps/saiensCreditSystem/shared/.env.production.backend .env && npm install && npm run migrate && cd .. && /home/apps/.yarn/bin/pm2 reload ecosystem.config.js --env production",
+        "ln -sf /home/apps/saiensCreditSystem/shared/.env.production.frontend .env.production && npm install --legacy-peer-deps && npm run build && cd backend && ln -sf /home/apps/saiensCreditSystem/shared/.env.production.backend .env && npm install && npm run migrate && cd .. && /home/apps/.yarn/bin/pm2 delete all && /home/apps/.yarn/bin/pm2 start ecosystem.config.js --env production",
       "pre-setup": "",
     },
   },
