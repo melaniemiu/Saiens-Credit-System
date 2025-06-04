@@ -32,7 +32,7 @@ module.exports = {
       path: "/home/apps/saiensCreditSystem",
       "pre-deploy-local": "",
       "post-deploy":
-        "npm install --legacy-peer-deps && npm run build && cd backend && npm install && cd .. && /home/apps/.yarn/bin/pm2 reload ecosystem.config.js --env production",
+        "ln -sf /home/apps/saiensCreditSystem/shared/.env.production.frontend .env.production && npm install --legacy-peer-deps && npm run build && cd backend && ln -sf /home/apps/saiensCreditSystem/shared/.env.production.backend .env && npm install && cd .. && pm2 reload ecosystem.config.js --env production",
       "pre-setup": "",
     },
   },
@@ -46,6 +46,7 @@ module.exports = {
       cwd: "./",
       instances: 1,
       exec_mode: "cluster",
+      env_file: ".env.production",
       env: {
         NODE_ENV: "production",
         PORT: 3000,
@@ -57,6 +58,7 @@ module.exports = {
       cwd: "./backend",
       instances: 1,
       exec_mode: "cluster",
+      env_file: ".env",
       env: {
         NODE_ENV: "production",
         PORT: 5000,
