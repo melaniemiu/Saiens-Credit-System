@@ -160,13 +160,49 @@ server {
 }
 ```
 
-### Database Migration
+### Database Setup
 
-Before first deployment, run database migrations on the server:
+#### First Time Database Setup
+
+Before first deployment, set up the PostgreSQL database on the server:
 
 ```bash
-ssh root@ss.unayung.cc
-cd /var/www/saiensCreditSystem/backend
+ssh apps@ss.unayung.cc
+cd /home/apps/saiensCreditSystem/current/backend
+
+# Set up database (requires postgres superuser password)
+npm run setup-db
+
+# Run migrations (included in deployment)
 npm run migrate
-npm run seed  # Optional: seed with initial data
+
+# Optional: seed with initial data
+npm run seed
 ```
+
+#### Environment Configuration
+
+Make sure your production backend environment file (`/home/apps/saiensCreditSystem/shared/.env.production.backend`) contains:
+
+```env
+NODE_ENV=production
+PORT=5000
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=unayung
+DB_PASSWORD=
+DB_NAME=saiens_credit_production
+JWT_SECRET=your_jwt_secret
+LIFF_CHANNEL_ID=your_liff_channel_id
+LIFF_CHANNEL_SECRET=your_liff_channel_secret
+```
+
+#### Database Setup Script
+
+The `npm run setup-db` script will:
+1. Create the database `saiens_credit_production` if it doesn't exist
+2. Create the user `unayung` if it doesn't exist
+3. Grant necessary privileges
+4. Test the connection
+
+**Note**: You'll need the PostgreSQL superuser password. Set it as `POSTGRES_PASSWORD` environment variable if different from default.
