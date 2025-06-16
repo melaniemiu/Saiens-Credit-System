@@ -506,6 +506,61 @@ export const departmentApi = {
       headers: createHeaders(),
     });
   },
+
+  // Admin: Get all departments with pagination and search
+  getAdminDepartments: async (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortField?: string;
+    sortOrder?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page.toString());
+    if (params.limit) query.append('limit', params.limit.toString());
+    if (params.search) query.append('search', params.search);
+    if (params.sortField) query.append('sortField', params.sortField);
+    if (params.sortOrder) query.append('sortOrder', params.sortOrder);
+
+    return fetchApi<{
+      departments: any[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
+    }>(`/admin/departments?${query.toString()}`, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Admin: Create department
+  createDepartment: async (data: { name: string; description?: string; isActive?: boolean }) => {
+    return fetchApi<{ message: string; department: any }>('/admin/departments', {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Admin: Update department
+  updateDepartment: async (id: string, data: { name?: string; description?: string; isActive?: boolean }) => {
+    return fetchApi<{ message: string; department: any }>(`/admin/departments/${id}`, {
+      method: 'PUT',
+      headers: createHeaders(),
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Admin: Delete department
+  deleteDepartment: async (id: string) => {
+    return fetchApi<{ message: string }>(`/admin/departments/${id}`, {
+      method: 'DELETE',
+      headers: createHeaders(),
+    });
+  },
 };
 
 export const skillApi = {
@@ -547,6 +602,80 @@ export const skillApi = {
       method: 'PUT',
       headers: createHeaders(),
       body: JSON.stringify(data),
+    });
+  },
+
+  // Admin: Get all skills with pagination and search
+  getAdminSkills: async (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    category?: string;
+    departmentId?: string;
+    sortField?: string;
+    sortOrder?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page.toString());
+    if (params.limit) query.append('limit', params.limit.toString());
+    if (params.search) query.append('search', params.search);
+    if (params.category) query.append('category', params.category);
+    if (params.departmentId) query.append('departmentId', params.departmentId);
+    if (params.sortField) query.append('sortField', params.sortField);
+    if (params.sortOrder) query.append('sortOrder', params.sortOrder);
+
+    return fetchApi<{
+      skills: any[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
+      categories: string[];
+    }>(`/admin/skills?${query.toString()}`, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Admin: Create skill
+  createSkill: async (data: {
+    name: string;
+    category: string;
+    isRequired?: boolean;
+    learningMethod: string;
+    assessmentMethod: string;
+    departmentIds?: string[];
+  }) => {
+    return fetchApi<{ message: string; skill: any }>('/admin/skills', {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Admin: Update skill
+  updateSkill: async (id: string, data: {
+    name?: string;
+    category?: string;
+    isRequired?: boolean;
+    learningMethod?: string;
+    assessmentMethod?: string;
+    departmentIds?: string[];
+  }) => {
+    return fetchApi<{ message: string; skill: any }>(`/admin/skills/${id}`, {
+      method: 'PUT',
+      headers: createHeaders(),
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Admin: Delete skill
+  deleteSkill: async (id: string) => {
+    return fetchApi<{ message: string }>(`/admin/skills/${id}`, {
+      method: 'DELETE',
+      headers: createHeaders(),
     });
   },
 };

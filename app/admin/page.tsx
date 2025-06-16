@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { AdminNavbar } from "@/components/admin-navbar"
+import { AdminDepartmentList } from "@/components/admin-department-list"
+import { AdminSkillList } from "@/components/admin-skill-list"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -115,7 +117,7 @@ function SortableTableHead({
 
 export default function AdminPage() {
   // Sidebar state
-  const [activeSection, setActiveSection] = useState<'users' | 'credits'>('users')
+  const [activeSection, setActiveSection] = useState<'users' | 'credits' | 'departments' | 'skills'>('users')
 
   // Users state
   const [users, setUsers] = useState<User[]>([])
@@ -418,7 +420,10 @@ export default function AdminPage() {
             {/* Page header */}
             <div className="mb-6">
               <h1 className="text-2xl font-bold">
-                {activeSection === 'users' ? '使用者管理' : 'Credit 管理'}
+                {activeSection === 'users' && '使用者管理'}
+                {activeSection === 'credits' && 'Credit 管理'}
+                {activeSection === 'departments' && '部門管理'}
+                {activeSection === 'skills' && '技能管理'}
               </h1>
             </div>
             {activeSection === 'users' && (
@@ -946,6 +951,14 @@ export default function AdminPage() {
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {activeSection === 'departments' && (
+              <AdminDepartmentList />
+            )}
+
+            {activeSection === 'skills' && (
+              <AdminSkillList />
             )}
 
       {/* 新增使用者對話框 */}

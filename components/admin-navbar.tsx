@@ -4,12 +4,12 @@ import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { Home, LogOut, Menu, Users, CreditCard } from "lucide-react"
+import { Home, LogOut, Menu, Users, CreditCard, Building2, Brain } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 
 interface AdminNavbarProps {
-  activeSection: 'users' | 'credits'
-  onSectionChange: (section: 'users' | 'credits') => void
+  activeSection: 'users' | 'credits' | 'departments' | 'skills'
+  onSectionChange: (section: 'users' | 'credits' | 'departments' | 'skills') => void
 }
 
 export function AdminNavbar({ activeSection, onSectionChange }: AdminNavbarProps) {
@@ -27,6 +27,16 @@ export function AdminNavbar({ activeSection, onSectionChange }: AdminNavbarProps
       label: 'Credit 管理',
       icon: CreditCard,
     },
+    {
+      id: 'departments',
+      label: '部門管理',
+      icon: Building2,
+    },
+    {
+      id: 'skills',
+      label: '技能管理',
+      icon: Brain,
+    },
   ]
 
   return (
@@ -42,7 +52,7 @@ export function AdminNavbar({ activeSection, onSectionChange }: AdminNavbarProps
             {adminMenuItems.map((item) => (
               <Button
                 key={item.id}
-                onClick={() => onSectionChange(item.id as 'users' | 'credits')}
+                onClick={() => onSectionChange(item.id as 'users' | 'credits' | 'departments' | 'skills')}
                 variant={activeSection === item.id ? "default" : "ghost"}
                 className={`flex items-center gap-2 transition-all duration-300 ${
                   activeSection === item.id
@@ -74,7 +84,7 @@ export function AdminNavbar({ activeSection, onSectionChange }: AdminNavbarProps
                     <Button
                       key={item.id}
                       onClick={() => {
-                        onSectionChange(item.id as 'users' | 'credits')
+                        onSectionChange(item.id as 'users' | 'credits' | 'departments' | 'skills')
                         setIsOpen(false)
                       }}
                       variant={activeSection === item.id ? "default" : "ghost"}

@@ -1,4 +1,4 @@
-const { Skill, UserSkill, Job, JobSkill, User } = require('../models');
+const { Skill, UserSkill, Job, JobSkill, User, Department, SkillDepartment } = require('../models');
 const { Op } = require('sequelize');
 
 // Get user's skill progress with job level organization
@@ -280,6 +280,281 @@ exports.getSkillStats = async (req, res, next) => {
       completed,
       completionPercentage,
       currentJobLevel: user.Job.name
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Admin: Get all skills with pagination and search
+exports.getAdminSkills = async (req, res, next) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 10, 
+      search = '', 
+      category = '',
+      departmentId = '',
+      sortField = 'name', 
+      sortOrder = 'ASC' 
+    } = req.query;
+
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Build where clause for search
+    const whereClause = {};
+    if (search) {
+      whereClause[Op.or] = [
+        { name: { [Op.iLike]: `%${search}%` } }
+      ];
+    }
+    if (category) {
+      whereClause.category = category;
+    }
+
+    // Build include clause for department filter
+    const includeClause = [
+      {
+        model: Department,
+        as: 'departments',
+        attributes: ['id', 'name'],
+        through: { attributes: [] },
+        required: !!departmentId
+      },
+      {
+        model: Job,
+        as: 'jobs',
+        attributes: ['id', 'name'],
+        through: { attributes: [] }
+      }
+    ];
+
+    if (departmentId) {
+      includeClause[0].where = { id: departmentId };
+    }
+
+    const { count, rows: skills } = await Skill.findAndCountAll({
+      where: whereClause,
+      include: includeClause,
+      order: [[sortField, sortOrder.toUpperCase()]],
+      limit: parseInt(limit),
+      offset,
+      distinct: true
+    });
+
+    // Add counts to each skill
+    const skillsWithCounts = skills.map(skill => ({
+      ...skill.toJSON(),
+      departmentCount: skill.departments ? skill.departments.length : 0,
+      jobCount: skill.jobs ? skill.jobs.length : 0
+    }));
+
+    // Get unique categories for filter
+    const categories = await Skill.findAll({
+      attributes: [
+        [require('sequelize').fn('DISTINCT', require('sequelize').col('category')), 'category']
+      ],
+      raw: true
+    });
+
+    return res.status(200).json({
+      skills: skillsWithCounts,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(count / parseInt(limit))
+      },
+      categories: categories.map(c => c.category)
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Admin: Create skill
+exports.createSkill = async (req, res, next) => {
+  try {
+    const { 
+      name, 
+      category, 
+      isRequired = false, 
+      learningMethod, 
+      assessmentMethod,
+      departmentIds = []
+    } = req.body;
+
+    if (!name || !category || !learningMethod || !assessmentMethod) {
+      return res.status(400).json({ 
+        error: '技能名稱、類別、學習方式、評估方式為必填項目' 
+      });
+    }
+
+    // Check if skill name already exists
+    const existingSkill = await Skill.findOne({
+      where: { name }
+    });
+
+    if (existingSkill) {
+      return res.status(400).json({ error: '技能名稱已存在' });
+    }
+
+    // Create skill
+    const skill = await Skill.create({
+      name,
+      category,
+      isRequired,
+      learningMethod,
+      assessmentMethod
+    });
+
+    // Associate with departments if provided
+    if (departmentIds.length > 0) {
+      const validDepartments = await Department.findAll({
+        where: { id: { [Op.in]: departmentIds } }
+      });
+
+      if (validDepartments.length !== departmentIds.length) {
+        return res.status(400).json({ error: '部分部門不存在' });
+      }
+
+      await skill.setDepartments(validDepartments);
+    }
+
+    // Reload with associations
+    const skillWithAssociations = await Skill.findByPk(skill.id, {
+      include: [
+        {
+          model: Department,
+          as: 'departments',
+          attributes: ['id', 'name'],
+          through: { attributes: [] }
+        }
+      ]
+    });
+
+    return res.status(201).json({
+      message: '技能創建成功',
+      skill: skillWithAssociations
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Admin: Update skill
+exports.updateSkill = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { 
+      name, 
+      category, 
+      isRequired, 
+      learningMethod, 
+      assessmentMethod,
+      departmentIds
+    } = req.body;
+
+    const skill = await Skill.findByPk(id);
+    if (!skill) {
+      return res.status(404).json({ error: '找不到指定的技能' });
+    }
+
+    // Check if new name conflicts with existing skills
+    if (name && name !== skill.name) {
+      const existingSkill = await Skill.findOne({
+        where: { 
+          name,
+          id: { [Op.ne]: id }
+        }
+      });
+
+      if (existingSkill) {
+        return res.status(400).json({ error: '技能名稱已存在' });
+      }
+    }
+
+    // Update skill
+    await skill.update({
+      name: name || skill.name,
+      category: category || skill.category,
+      isRequired: isRequired !== undefined ? isRequired : skill.isRequired,
+      learningMethod: learningMethod || skill.learningMethod,
+      assessmentMethod: assessmentMethod || skill.assessmentMethod
+    });
+
+    // Update department associations if provided
+    if (departmentIds !== undefined) {
+      if (departmentIds.length > 0) {
+        const validDepartments = await Department.findAll({
+          where: { id: { [Op.in]: departmentIds } }
+        });
+
+        if (validDepartments.length !== departmentIds.length) {
+          return res.status(400).json({ error: '部分部門不存在' });
+        }
+
+        await skill.setDepartments(validDepartments);
+      } else {
+        await skill.setDepartments([]);
+      }
+    }
+
+    // Reload with associations
+    const updatedSkill = await Skill.findByPk(skill.id, {
+      include: [
+        {
+          model: Department,
+          as: 'departments',
+          attributes: ['id', 'name'],
+          through: { attributes: [] }
+        }
+      ]
+    });
+
+    return res.status(200).json({
+      message: '技能更新成功',
+      skill: updatedSkill
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Admin: Delete skill
+exports.deleteSkill = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const skill = await Skill.findByPk(id, {
+      include: [
+        { model: UserSkill, required: false },
+        { model: JobSkill, required: false }
+      ]
+    });
+
+    if (!skill) {
+      return res.status(404).json({ error: '找不到指定的技能' });
+    }
+
+    // Check if skill is being used
+    if (skill.UserSkills && skill.UserSkills.length > 0) {
+      return res.status(400).json({ 
+        error: '無法刪除此技能，因為有用戶正在學習此技能' 
+      });
+    }
+
+    if (skill.JobSkills && skill.JobSkills.length > 0) {
+      return res.status(400).json({ 
+        error: '無法刪除此技能，因為此技能已被工作職位使用' 
+      });
+    }
+
+    // Soft delete the skill
+    await skill.destroy();
+
+    return res.status(200).json({
+      message: '技能刪除成功'
     });
   } catch (error) {
     next(error);

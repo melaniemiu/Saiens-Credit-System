@@ -1,6 +1,6 @@
 const dotenv = require("dotenv");
 dotenv.config();
-const { sequelize, Department, User, Job, Skill, JobSkill, UserSkill } = require("../models");
+const { sequelize, Department, User, Job, Skill, JobSkill, UserSkill, SkillDepartment } = require("../models");
 // Seeds the database with initial data
 async function seed() {
   try {
@@ -256,6 +256,97 @@ async function seed() {
       }
     } else {
       console.log(`Found ${existingJobSkillCount} existing job-skill associations, skipping creation`);
+    }
+
+    // Create skill-department associations
+    const existingSkillDeptCount = await SkillDepartment.count();
+    
+    if (existingSkillDeptCount === 0 || forceDrop) {
+      console.log("Creating skill-department associations...");
+      
+      // Most skills are engineering-specific, but some are cross-departmental
+      const skillDepartmentMappings = [
+        // Engineering department gets all technical skills
+        {
+          departmentName: "工程部",
+          skillCategories: [
+            "山恩DNA", "產品知識", "工具使用", "安裝知識", "安全操作", 
+            "安裝技術", "工單操作教學", "現場作業", "工程項目", "品質控制"
+          ]
+        },
+        // HR department gets leadership and communication skills
+        {
+          departmentName: "人資部", 
+          skillCategories: ["領導力與溝通", "山恩DNA"]
+        },
+        // All departments get basic DNA skills
+        {
+          departmentName: "行銷部",
+          skillCategories: ["山恩DNA", "領導力與溝通"]
+        },
+        {
+          departmentName: "財務部",
+          skillCategories: ["山恩DNA"]
+        },
+        {
+          departmentName: "客服部",
+          skillCategories: ["山恩DNA", "領導力與溝通"]
+        },
+        {
+          departmentName: "設計部",
+          skillCategories: ["山恩DNA", "產品知識"]
+        }
+      ];
+
+      const skillDeptAssociations = [];
+      
+      for (const mapping of skillDepartmentMappings) {
+        // Find department
+        const department = departments.find(d => d.name === mapping.departmentName);
+        if (!department) {
+          console.log(`Warning: Department '${mapping.departmentName}' not found`);
+          continue;
+        }
+
+        // Find skills by category
+        for (const category of mapping.skillCategories) {
+          const categorySkills = skills.filter(skill => skill.category === category);
+          
+          for (const skill of categorySkills) {
+            // Check if association already exists
+            const existingAssociation = skillDeptAssociations.find(
+              assoc => assoc.skillId === skill.id && assoc.departmentId === department.id
+            );
+            
+            if (!existingAssociation) {
+              skillDeptAssociations.push({
+                skillId: skill.id,
+                departmentId: department.id
+              });
+            }
+          }
+        }
+      }
+
+      if (skillDeptAssociations.length > 0) {
+        await SkillDepartment.bulkCreate(skillDeptAssociations);
+        console.log(`Created ${skillDeptAssociations.length} skill-department associations`);
+        
+        // Log summary by department
+        const summaryByDept = {};
+        skillDeptAssociations.forEach(assoc => {
+          const dept = departments.find(d => d.id === assoc.departmentId);
+          const deptName = dept?.name || 'Unknown';
+          summaryByDept[deptName] = (summaryByDept[deptName] || 0) + 1;
+        });
+        
+        console.log('Skill-department associations summary:');
+        Object.entries(summaryByDept).forEach(([deptName, count]) => {
+          console.log(`  ${deptName}: ${count} skills`);
+        });
+      }
+    } else {
+      console.log(`Found ${existingSkillDeptCount} existing skill-department associations, skipping creation`);
     }
 
     // Let's try a direct approach to department assignment
