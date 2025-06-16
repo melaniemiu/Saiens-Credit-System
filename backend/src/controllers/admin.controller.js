@@ -1,4 +1,4 @@
-const { User, Credit, Department } = require("../models");
+const { User, Credit, Department, Job, UserSkill, JobSkill, Skill } = require("../models");
 const { Op } = require("sequelize");
 
 // Get all users with filtering and pagination
@@ -38,6 +38,7 @@ exports.getUsers = async (req, res, next) => {
     // Map frontend sort fields to database fields
     const sortFieldMap = {
       'department': 'Department.name',
+      'jobTitle': 'Job.name',
       'creditsSent': 'creditsSent',
       'creditsReceived': 'creditsReceived',
       'name': 'name',
@@ -51,9 +52,11 @@ exports.getUsers = async (req, res, next) => {
     // Build the order clause
     let orderClause;
     
-    // Special handling for department sorting
+    // Special handling for department and job sorting
     if (sortField === 'department') {
       orderClause = [[{ model: Department }, 'name', sortOrder]];
+    } else if (sortField === 'jobTitle') {
+      orderClause = [[{ model: Job }, 'name', sortOrder]];
     } else {
       const mappedField = sortFieldMap[sortField] || 'createdAt';
       orderClause = [[mappedField, sortOrder]];
@@ -66,6 +69,10 @@ exports.getUsers = async (req, res, next) => {
       include: [
         {
           model: Department,
+          attributes: ["id", "name"],
+        },
+        {
+          model: Job,
           attributes: ["id", "name"],
         },
       ],
@@ -93,6 +100,7 @@ exports.getUsers = async (req, res, next) => {
       totalCreditsReceived: user.creditsReceived,
       totalCreditsSent: user.creditsSent,
       department: user.Department,
+      job: user.Job,
     }));
 
     return res.status(200).json({
@@ -530,6 +538,207 @@ exports.exportCredits = async (req, res, next) => {
 
     // Send CSV data
     return res.status(200).send(csv);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Check if user can be promoted (all required skills for current job completed)
+exports.checkUserPromotion = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    // Get user with current job
+    const user = await User.findByPk(userId, {
+      include: [
+        {
+          model: Job,
+          include: [
+            {
+              model: Skill,
+              as: 'skills',
+              through: { 
+                attributes: ['isRequired'],
+                where: { isRequired: true } // Only check required skills
+              }
+            }
+          ]
+        }
+      ]
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.Job) {
+      return res.status(400).json({ 
+        message: "User has no assigned job",
+        canPromote: false 
+      });
+    }
+
+    // Check if current job has a next job
+    const currentJob = await Job.findByPk(user.Job.id, {
+      include: [
+        {
+          model: Job,
+          as: 'NextJob',
+          attributes: ['id', 'name']
+        }
+      ]
+    });
+
+    if (!currentJob.nextJobId) {
+      return res.status(400).json({ 
+        message: "No next job level available for this position",
+        canPromote: false,
+        isMaxLevel: true
+      });
+    }
+
+    // Get required skills for current job
+    const requiredSkills = user.Job.skills || [];
+    
+    if (requiredSkills.length === 0) {
+      return res.status(200).json({
+        canPromote: true,
+        message: "No required skills for current job",
+        nextJob: currentJob.NextJob,
+        completedSkills: [],
+        requiredSkills: []
+      });
+    }
+
+    // Get user's completed skills (status = 'completed' or 'certified')
+    const userSkills = await UserSkill.findAll({
+      where: {
+        userId: userId,
+        skillId: { [Op.in]: requiredSkills.map(skill => skill.id) },
+        status: { [Op.in]: ['completed', 'certified'] }
+      },
+      include: [
+        {
+          model: Skill,
+          attributes: ['id', 'name', 'category']
+        }
+      ]
+    });
+
+    const completedSkillIds = userSkills.map(us => us.skillId);
+    const requiredSkillIds = requiredSkills.map(skill => skill.id);
+    
+    const canPromote = requiredSkillIds.every(skillId => completedSkillIds.includes(skillId));
+
+    return res.status(200).json({
+      canPromote,
+      nextJob: currentJob.NextJob,
+      currentJob: {
+        id: user.Job.id,
+        name: user.Job.name
+      },
+      requiredSkills: requiredSkills.map(skill => ({
+        id: skill.id,
+        name: skill.name,
+        category: skill.category,
+        completed: completedSkillIds.includes(skill.id)
+      })),
+      completedSkills: userSkills.map(us => ({
+        id: us.Skill.id,
+        name: us.Skill.name,
+        category: us.Skill.category,
+        status: us.status,
+        score: us.score
+      }))
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Promote user to next job level
+exports.promoteUser = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    // Get user with current job
+    const user = await User.findByPk(userId, {
+      include: [{ model: Job }]
+    });
+
+    if (!user || !user.Job) {
+      return res.status(404).json({ message: "User or job not found" });
+    }
+
+    // Get current job with next job info
+    const currentJob = await Job.findByPk(user.Job.id);
+    
+    if (!currentJob.nextJobId) {
+      return res.status(400).json({ message: "No next job level available" });
+    }
+
+    // Check if all required skills are completed
+    const requiredSkills = await JobSkill.findAll({
+      where: {
+        jobId: user.Job.id,
+        isRequired: true
+      }
+    });
+
+    const userCompletedSkills = await UserSkill.findAll({
+      where: {
+        userId: userId,
+        skillId: { [Op.in]: requiredSkills.map(js => js.skillId) },
+        status: { [Op.in]: ['completed', 'certified'] }
+      }
+    });
+
+    if (userCompletedSkills.length < requiredSkills.length) {
+      return res.status(400).json({ 
+        message: "User has not completed all required skills for current job level",
+        missingSkills: requiredSkills.length - userCompletedSkills.length
+      });
+    }
+
+    // Promote user to next job
+    await user.update({ jobId: currentJob.nextJobId });
+
+    // Get the new job info
+    const nextJob = await Job.findByPk(currentJob.nextJobId, {
+      include: [{ model: Department, attributes: ['id', 'name'] }]
+    });
+
+    // Emit socket notification to the promoted user
+    const io = req.app.get('io');
+    if (io) {
+      const promotionData = {
+        id: `${user.id}-${Date.now()}`, // Unique promotion ID for confetti tracking
+        userId: user.id,
+        userName: user.name,
+        employeeId: user.employeeId,
+        previousJob: user.Job.name,
+        newJob: nextJob.name,
+        department: nextJob.Department?.name,
+        promotedAt: new Date().toISOString()
+      };
+      
+      console.log(`🚀 [PROMOTION] Emitting promotion notification to user-${user.id}`);
+      io.to(`user-${user.id}`).emit('user-promoted', promotionData);
+    }
+
+    return res.status(200).json({
+      message: "User promoted successfully",
+      user: {
+        id: user.id,
+        name: user.name,
+        employeeId: user.employeeId,
+        previousJob: user.Job.name,
+        newJob: nextJob.name,
+        department: nextJob.Department?.name
+      }
+    });
+
   } catch (error) {
     next(error);
   }

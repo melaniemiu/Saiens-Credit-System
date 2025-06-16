@@ -3,6 +3,7 @@ const router = express.Router();
 const adminController = require('../controllers/admin.controller');
 const departmentController = require('../controllers/department.controller');
 const skillController = require('../controllers/skill.controller');
+const jobController = require('../controllers/job.controller');
 const { authenticate, isAdmin } = require('../middlewares/auth.middleware');
 
 // All admin routes require authentication and admin role
@@ -29,5 +30,15 @@ router.get('/skills', skillController.getAdminSkills);
 router.post('/skills', skillController.createSkill);
 router.put('/skills/:id', skillController.updateSkill);
 router.delete('/skills/:id', skillController.deleteSkill);
+
+// Job management
+router.get('/jobs', jobController.getAdminJobs);
+router.post('/jobs', jobController.createJob);
+router.put('/jobs/:id', jobController.updateJob);
+router.delete('/jobs/:id', jobController.deleteJob);
+
+// User promotion
+router.get('/users/:userId/promotion-check', adminController.checkUserPromotion);
+router.post('/users/:userId/promote', adminController.promoteUser);
 
 module.exports = router;

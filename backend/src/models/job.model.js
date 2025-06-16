@@ -9,6 +9,22 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true
+    },
+    departmentId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'departments',
+        key: 'id'
+      }
+    },
+    nextJobId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'jobs',
+        key: 'id'
+      }
     }
   }, {
     // Options

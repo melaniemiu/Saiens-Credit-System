@@ -2,8 +2,13 @@ const { v4: uuidv4 } = require('uuid');
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    // Create skill_departments table
-    await queryInterface.createTable('skill_departments', {
+    // Check if table already exists
+    const tableExists = await queryInterface.tableExists('skill_departments');
+    
+    if (!tableExists) {
+      console.log('Creating skill_departments table...');
+      // Create skill_departments table
+      await queryInterface.createTable('skill_departments', {
       id: {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4,
@@ -45,23 +50,36 @@ module.exports = {
       }
     });
 
-    // Add unique constraint for skillId-departmentId combination
-    await queryInterface.addIndex('skill_departments', ['skillId', 'departmentId'], {
-      unique: true,
-      name: 'skill_departments_skill_department_unique'
-    });
+      // Add unique constraint for skillId-departmentId combination
+      await queryInterface.addIndex('skill_departments', ['skillId', 'departmentId'], {
+        unique: true,
+        name: 'skill_departments_skill_department_unique'
+      });
 
-    // Add individual indexes for foreign keys
-    await queryInterface.addIndex('skill_departments', ['skillId'], {
-      name: 'skill_departments_skill_id_index'
-    });
+      // Add individual indexes for foreign keys
+      await queryInterface.addIndex('skill_departments', ['skillId'], {
+        name: 'skill_departments_skill_id_index'
+      });
 
-    await queryInterface.addIndex('skill_departments', ['departmentId'], {
-      name: 'skill_departments_department_id_index'
-    });
+      await queryInterface.addIndex('skill_departments', ['departmentId'], {
+        name: 'skill_departments_department_id_index'
+      });
+      
+      console.log('✓ skill_departments table and indexes created successfully');
+    } else {
+      console.log('✓ skill_departments table already exists, skipping...');
+    }
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('skill_departments');
+    const tableExists = await queryInterface.tableExists('skill_departments');
+    
+    if (tableExists) {
+      console.log('Dropping skill_departments table...');
+      await queryInterface.dropTable('skill_departments');
+      console.log('✓ skill_departments table dropped successfully');
+    } else {
+      console.log('✓ skill_departments table does not exist, skipping...');
+    }
   }
 };

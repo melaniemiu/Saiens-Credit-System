@@ -103,6 +103,18 @@ io.on("connection", (socket) => {
     console.log(`✅ [TEST] Test credit notification sent to ${room}`);
   });
 
+  // Handle test promotion notifications from script
+  socket.on("user-promoted-test", ({ room, data }) => {
+    console.log(`🚀 [TEST] Test promotion notification for room: ${room}`);
+    const targetRoom = io.sockets.adapter.rooms.get(room);
+    const clientCount = targetRoom ? targetRoom.size : 0;
+    console.log(
+      `📡 [TEST] Broadcasting promotion to ${clientCount} client(s) in ${room}`
+    );
+    io.to(room).emit("user-promoted", data);
+    console.log(`✅ [TEST] Test promotion notification sent to ${room}`);
+  });
+
   socket.on("disconnect", (reason) => {
     console.log(
       `❌ [SOCKET] User disconnected: ${socket.id} (reason: ${reason})`

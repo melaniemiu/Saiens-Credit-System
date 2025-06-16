@@ -42,6 +42,14 @@ db.Department.hasMany(db.User, { foreignKey: 'departmentId' });
 db.User.belongsTo(db.Job, { foreignKey: 'jobId' });
 db.Job.hasMany(db.User, { foreignKey: 'jobId' });
 
+// Job belongs to Department
+db.Job.belongsTo(db.Department, { foreignKey: 'departmentId' });
+db.Department.hasMany(db.Job, { foreignKey: 'departmentId' });
+
+// Job self-association for hierarchy (nextJobId)
+db.Job.belongsTo(db.Job, { as: 'NextJob', foreignKey: 'nextJobId' });
+db.Job.hasMany(db.Job, { as: 'PreviousJobs', foreignKey: 'nextJobId' });
+
 db.Credit.belongsTo(db.User, { as: 'sender', foreignKey: 'senderId' });
 db.Credit.belongsTo(db.User, { as: 'receiver', foreignKey: 'receiverId' });
 

@@ -66,12 +66,16 @@ async function seed() {
     } else {
       // Create specific engineering jobs based on CSV document
       const engineeringJobs = ["新手村", "助理工程師", "正式工程師", "資深工程師"];
+      const engineeringDeptId = deptMap["工程部"];
       
       for (const jobName of engineeringJobs) {
-        const job = await Job.create({ name: jobName });
+        const job = await Job.create({ 
+          name: jobName, 
+          departmentId: engineeringDeptId 
+        });
         jobs.push(job);
         jobMap[jobName] = job.id;
-        console.log(`Created job: ${jobName}, ID: ${job.id}`);
+        console.log(`Created job: ${jobName}, ID: ${job.id}, Department: 工程部`);
       }
 
       // Create jobs for other departments with generic variants
@@ -85,10 +89,13 @@ async function seed() {
         
         for (const suffix of otherDeptJobSuffixes) {
           const jobName = `${deptNameBase}${suffix}`;
-          const job = await Job.create({ name: jobName });
+          const job = await Job.create({ 
+            name: jobName, 
+            departmentId: dept.id 
+          });
           jobs.push(job);
           jobMap[jobName] = job.id;
-          console.log(`Created job: ${jobName}, ID: ${job.id}`);
+          console.log(`Created job: ${jobName}, ID: ${job.id}, Department: ${dept.name}`);
         }
       }
 
@@ -101,6 +108,39 @@ async function seed() {
         jobMap[job.name] = job.id;
       });
     }
+
+    // Set up job hierarchy (nextJobId relationships)
+    console.log("Setting up job hierarchy...");
+    
+    // Engineering progression: 新手村 → 助理工程師 → 正式工程師 → 資深工程師
+    if (jobMap["新手村"] && jobMap["助理工程師"]) {
+      await Job.update({ nextJobId: jobMap["助理工程師"] }, { where: { id: jobMap["新手村"] } });
+    }
+    if (jobMap["助理工程師"] && jobMap["正式工程師"]) {
+      await Job.update({ nextJobId: jobMap["正式工程師"] }, { where: { id: jobMap["助理工程師"] } });
+    }
+    if (jobMap["正式工程師"] && jobMap["資深工程師"]) {
+      await Job.update({ nextJobId: jobMap["資深工程師"] }, { where: { id: jobMap["正式工程師"] } });
+    }
+    
+    // Other departments progression: 初心者 → 玩家 → 大師
+    for (const dept of departments) {
+      const deptNameBase = dept.name.replace("部", "");
+      if (deptNameBase === "工程") continue; // Skip engineering as we handled it above
+      
+      const level1 = `${deptNameBase}初心者`;
+      const level2 = `${deptNameBase}玩家`;
+      const level3 = `${deptNameBase}大師`;
+      
+      if (jobMap[level1] && jobMap[level2]) {
+        await Job.update({ nextJobId: jobMap[level2] }, { where: { id: jobMap[level1] } });
+      }
+      if (jobMap[level2] && jobMap[level3]) {
+        await Job.update({ nextJobId: jobMap[level3] }, { where: { id: jobMap[level2] } });
+      }
+    }
+    
+    console.log("Job hierarchy setup completed");
 
     // Create skills based on the CSV data
     const existingSkillCount = await Skill.count();
@@ -222,6 +262,62 @@ async function seed() {
         // 資深工程師 skills - exactly from CSV
         { jobName: "資深工程師", skills: [
           "地板工程", "木作全包覆工程"
+        ]},
+        
+        // Non-engineering jobs get department-specific skills
+        // 行銷部 jobs
+        { jobName: "行銷初心者", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"
+        ]},
+        { jobName: "行銷玩家", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維"
+        ]},
+        { jobName: "行銷大師", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維", "領導力與溝通 有效溝通與問題解決"
+        ]},
+        
+        // 人資部 jobs
+        { jobName: "人資初心者", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"
+        ]},
+        { jobName: "人資玩家", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維"
+        ]},
+        { jobName: "人資大師", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維", "領導力與溝通 有效溝通與問題解決"
+        ]},
+        
+        // 財務部 jobs
+        { jobName: "財務初心者", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"
+        ]},
+        { jobName: "財務玩家", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"
+        ]},
+        { jobName: "財務大師", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"
+        ]},
+        
+        // 客服部 jobs
+        { jobName: "客服初心者", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"
+        ]},
+        { jobName: "客服玩家", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維"
+        ]},
+        { jobName: "客服大師", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維", "領導力與溝通 有效溝通與問題解決"
+        ]},
+        
+        // 設計部 jobs
+        { jobName: "設計初心者", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"
+        ]},
+        { jobName: "設計玩家", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "產品知識 基本產品知識"
+        ]},
+        { jobName: "設計大師", skills: [
+          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "產品知識 基本產品知識", "產品知識 石材的特性"
         ]}
       ];
 
@@ -584,26 +680,44 @@ async function seed() {
 
       const userSkillProgress = [];
       
-      // Define job progression order
-      const jobProgression = ['新手村', '助理工程師', '正式工程師', '資深工程師'];
+      // Define job progression orders for each department
+      const jobProgressions = {
+        '工程部': ['新手村', '助理工程師', '正式工程師', '資深工程師'],
+        '行銷部': ['行銷初心者', '行銷玩家', '行銷大師'],
+        '人資部': ['人資初心者', '人資玩家', '人資大師'],
+        '財務部': ['財務初心者', '財務玩家', '財務大師'],
+        '客服部': ['客服初心者', '客服玩家', '客服大師'],
+        '設計部': ['設計初心者', '設計玩家', '設計大師']
+      };
 
-      // Add progress for engineering users
-      const engineeringUsers = users.filter(user => 
-        user.departmentId === engineeringDept?.id
-      );
-
-      for (const user of engineeringUsers) {
-        const userJobName = Object.keys(jobMap).find(key => jobMap[key] === user.jobId);
-        const userJobIndex = jobProgression.findIndex(job => userJobName?.includes(job) || userJobName === job);
+      // Add progress for ALL users based on their department and job
+      for (const user of users) {
+        // Get user's department name
+        const userDept = await Department.findByPk(user.departmentId);
+        const deptName = userDept?.name;
         
-        console.log(`Creating skills for ${user.name} (${userJobName}) - Job index: ${userJobIndex}`);
+        if (!deptName || !jobProgressions[deptName]) {
+          console.log(`Warning: No progression defined for department ${deptName}`);
+          continue;
+        }
+        const userJobName = Object.keys(jobMap).find(key => jobMap[key] === user.jobId);
+        const deptProgression = jobProgressions[deptName];
+        const userJobIndex = deptProgression.findIndex(job => userJobName?.includes(job) || userJobName === job);
+        
+        console.log(`Creating skills for ${user.name} (${deptName} - ${userJobName}) - Job index: ${userJobIndex}`);
+
+        // Skip if job not found in progression
+        if (userJobIndex === -1) {
+          console.log(`Warning: Job ${userJobName} not found in ${deptName} progression`);
+          continue;
+        }
 
         // Track unique skills for this user to avoid duplicates
         const userSkillsAdded = new Set();
 
         // Create progressive skill completion based on job level
         for (let i = 0; i <= userJobIndex; i++) {
-          const currentJobLevel = jobProgression[i];
+          const currentJobLevel = deptProgression[i];
           const skillsForLevel = skillsByJob[currentJobLevel] || [];
 
           for (const skill of skillsForLevel) {
@@ -667,7 +781,7 @@ async function seed() {
         // Log summary for each user
         const summaryByUser = {};
         userSkillProgress.forEach(up => {
-          const user = engineeringUsers.find(u => u.id === up.userId);
+          const user = users.find(u => u.id === up.userId);
           const userName = user?.name || 'Unknown';
           if (!summaryByUser[userName]) {
             summaryByUser[userName] = { certified: 0, completed: 0, in_progress: 0, not_started: 0 };
