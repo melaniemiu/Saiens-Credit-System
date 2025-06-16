@@ -260,7 +260,7 @@ export function CreditHistory() {
 
   const CreditItem = ({ credit, type }: { credit: Credit; type: 'received' | 'given' }) => {
     const person = type === 'received' ? credit.sender : credit.receiver
-    const action = type === 'received' ? '收到來自' : '送出給'
+    const action = type === 'received' ? '獲得來自' : '表彰了'
     const icon = type === 'received' ? ArrowDownRight : ArrowUpRight
     
     const handleCreditClick = () => {
@@ -321,7 +321,7 @@ export function CreditHistory() {
               )}
             >
               {icon && React.createElement(icon, { className: "h-3 w-3" })}
-              {type === 'received' ? '收到' : '送出'} 1 Credit
+              {type === 'received' ? '獲得' : '給予'} 1 Credit
             </Badge>
           </div>
         </div>

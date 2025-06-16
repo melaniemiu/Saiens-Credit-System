@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { AdminNavbar } from "@/components/admin-navbar"
 import { AdminDepartmentList } from "@/components/admin-department-list"
 import { AdminSkillList } from "@/components/admin-skill-list"
+import { AdminJobList } from "@/components/admin-job-list"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,9 +16,10 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "@/hooks/use-toast"
-import { adminApi, departmentApi } from "@/lib/api"
+import { adminApi, departmentApi, promotionApi } from "@/lib/api"
+import { triggerPromotionConfetti } from "@/lib/confetti"
 import { DateRange } from "react-day-picker"
-import { CalendarIcon, Download, Search, UserPlus, Edit, Trash2, User, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { CalendarIcon, Download, Search, UserPlus, Edit, Trash2, User, ArrowUpDown, ArrowUp, ArrowDown, TrendingUp, Award, CheckCircle, XCircle } from "lucide-react"
 import { format } from "date-fns"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -31,6 +33,10 @@ interface User {
   profilePicture: string | null
   role: 'user' | 'admin'
   department: {
+    id: string
+    name: string
+  }
+  job?: {
     id: string
     name: string
   }
@@ -117,7 +123,7 @@ function SortableTableHead({
 
 export default function AdminPage() {
   // Sidebar state
-  const [activeSection, setActiveSection] = useState<'users' | 'credits' | 'departments' | 'skills'>('users')
+  const [activeSection, setActiveSection] = useState<'users' | 'credits' | 'departments' | 'skills' | 'jobs'>('users')
 
   // Users state
   const [users, setUsers] = useState<User[]>([])
@@ -130,6 +136,9 @@ export default function AdminPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isPromotionDialogOpen, setIsPromotionDialogOpen] = useState(false)
+  const [promotionData, setPromotionData] = useState<any>(null)
+  const [promotionLoading, setPromotionLoading] = useState(false)
 
   // Sorting state for users
   const [userSortField, setUserSortField] = useState<string>('createdAt')
@@ -406,6 +415,56 @@ export default function AdminPage() {
     }
   }
 
+  // Check user promotion eligibility
+  const checkUserPromotion = async (userId: string) => {
+    try {
+      setPromotionLoading(true)
+      const response = await promotionApi.checkUserPromotion(userId)
+      if (response.data) {
+        setPromotionData(response.data)
+        setIsPromotionDialogOpen(true)
+      }
+    } catch (error) {
+      toast({
+        title: "錯誤",
+        description: "無法檢查升職資格",
+        variant: "destructive",
+      })
+    } finally {
+      setPromotionLoading(false)
+    }
+  }
+
+  // Promote user to next level
+  const handlePromoteUser = async () => {
+    if (!selectedUser) return
+
+    try {
+      setPromotionLoading(true)
+      const response = await promotionApi.promoteUser(selectedUser.id)
+      if (response.data) {
+        // Trigger confetti for admin who performed the promotion
+        triggerPromotionConfetti()
+        
+        toast({
+          title: "升職成功",
+          description: `${response.data.user.name} 已從 ${response.data.user.previousJob} 升職至 ${response.data.user.newJob}`,
+        })
+        setIsPromotionDialogOpen(false)
+        setIsEditDialogOpen(false)
+        // Refresh user list
+        fetchUsers()
+      }
+    } catch (error: any) {
+      toast({
+        title: "升職失敗",
+        description: error.message || "升職過程中發生錯誤",
+        variant: "destructive",
+      })
+    } finally {
+      setPromotionLoading(false)
+    }
+  }
 
   if (!mounted) {
     return null
@@ -424,6 +483,7 @@ export default function AdminPage() {
                 {activeSection === 'credits' && 'Credit 管理'}
                 {activeSection === 'departments' && '部門管理'}
                 {activeSection === 'skills' && '技能管理'}
+                {activeSection === 'jobs' && '職位管理'}
               </h1>
             </div>
             {activeSection === 'users' && (
@@ -523,12 +583,12 @@ export default function AdminPage() {
                                   Credits
                                 </SortableTableHead>
                                 <SortableTableHead
-                                  sortField="lastLogin"
+                                  sortField="jobTitle"
                                   currentSortField={userSortField}
                                   currentSortOrder={userSortOrder}
                                   onSort={handleUserSort}
                                 >
-                                  最後登入
+                                  職位
                                 </SortableTableHead>
                                 <TableHead>操作</TableHead>
                               </TableRow>
@@ -578,7 +638,7 @@ export default function AdminPage() {
                                       </span>
                                     </TableCell>
                                     <TableCell>{user.totalCreditsSent} / {user.totalCreditsReceived}</TableCell>
-                                    <TableCell>{user.lastLogin ? format(new Date(user.lastLogin), 'yyyy-MM-dd HH:mm') : '從未登入'}</TableCell>
+                                    <TableCell>{user.job?.name || '未指派'}</TableCell>
                                     <TableCell>
                                       <div className="flex gap-2">
                                         <Button
@@ -644,7 +704,7 @@ export default function AdminPage() {
                                     <div className="font-medium">{user.name}</div>
                                     <div className="text-sm text-muted-foreground">{user.email}</div>
                                     <div className="text-sm text-muted-foreground mt-1">
-                                      {user.employeeId} · {user.department.name}
+                                      {user.employeeId} · {user.department.name} · {user.job?.name || '未指派'}
                                     </div>
                                     <div className="flex items-center gap-2 mt-2">
                                       <span className={cn(
@@ -726,7 +786,7 @@ export default function AdminPage() {
             {activeSection === 'credits' && (
               <Card>
                 <CardHeader className="px-4 sm:px-6 py-3">
-                  <CardDescription className="text-sm">查看和管理所有 Credit 交易記錄</CardDescription>
+                  <CardDescription className="text-sm">查看和管理所有 Credit 表彰記錄</CardDescription>
                 </CardHeader>
                 <CardContent className="px-4 sm:px-6 pb-6">
                   <div className="space-y-4">
@@ -736,7 +796,7 @@ export default function AdminPage() {
                         <div className="relative">
                           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                           <Input
-                            placeholder="搜尋交易..."
+                            placeholder="搜尋記錄..."
                             value={creditSearchTerm}
                             onChange={(e) => setCreditSearchTerm(e.target.value)}
                             className="pl-10 w-full"
@@ -842,7 +902,7 @@ export default function AdminPage() {
                               ) : credits.length === 0 ? (
                                 <TableRow>
                                   <TableCell colSpan={4} className="text-center text-muted-foreground">
-                                    沒有找到交易記錄
+                                    沒有找到記錄
                                   </TableCell>
                                 </TableRow>
                               ) : (
@@ -884,7 +944,7 @@ export default function AdminPage() {
                       ) : credits.length === 0 ? (
                         <Card>
                           <CardContent className="p-4 text-center text-muted-foreground">
-                            沒有找到交易記錄
+                            沒有找到記錄
                           </CardContent>
                         </Card>
                       ) : (
@@ -959,6 +1019,10 @@ export default function AdminPage() {
 
             {activeSection === 'skills' && (
               <AdminSkillList />
+            )}
+
+            {activeSection === 'jobs' && (
+              <AdminJobList />
             )}
 
       {/* 新增使用者對話框 */}
@@ -1175,6 +1239,30 @@ export default function AdminPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Promotion Section */}
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-base font-semibold">職位升級</Label>
+                    <Award className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">
+                      目前職位: <span className="font-medium">{selectedUser.job?.name || '未指派'}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => checkUserPromotion(selectedUser.id)}
+                      disabled={promotionLoading || !selectedUser.job}
+                      className="w-full"
+                    >
+                      <TrendingUp className="mr-2 h-4 w-4" />
+                      {promotionLoading ? '檢查中...' : '檢查升職資格'}
+                    </Button>
+                  </div>
+                </div>
               </div>
               <DialogFooter className="mt-6">
                 <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
@@ -1203,6 +1291,111 @@ export default function AdminPage() {
             <Button variant="destructive" onClick={handleDeleteUser}>
               確認刪除
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 升職確認對話框 */}
+      <Dialog open={isPromotionDialogOpen} onOpenChange={setIsPromotionDialogOpen} modal={true}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto z-[9999]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-blue-500" />
+              職位升級檢查
+            </DialogTitle>
+            <DialogDescription>
+              檢查 {selectedUser?.name} 的升職資格與技能完成情況
+            </DialogDescription>
+          </DialogHeader>
+          
+          {promotionData && (
+            <div className="space-y-4">
+              {/* Current and Next Job */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">目前職位</Label>
+                  <div className="p-2 bg-gray-50 rounded-md text-sm">
+                    {promotionData.currentJob.name}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">下一級職位</Label>
+                  <div className="p-2 bg-blue-50 rounded-md text-sm">
+                    {promotionData.nextJob?.name || '已達最高級'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Promotion Status */}
+              <div className="flex items-center gap-2 p-3 rounded-md bg-gray-50">
+                {promotionData.canPromote ? (
+                  <>
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <span className="text-green-700 font-medium">符合升職資格</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-5 w-5 text-red-500" />
+                    <span className="text-red-700 font-medium">
+                      {promotionData.isMaxLevel ? '已達最高職位' : '尚未符合升職資格'}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Required Skills Progress */}
+              {promotionData.requiredSkills && promotionData.requiredSkills.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">必修技能完成情況</Label>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {promotionData.requiredSkills.map((skill: any) => (
+                      <div key={skill.id} className="flex items-center justify-between p-2 border rounded-md">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">{skill.name}</div>
+                          <div className="text-xs text-muted-foreground">{skill.category}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {skill.completed ? (
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-red-500" />
+                          )}
+                          <span className="text-xs font-medium">
+                            {skill.completed ? '已完成' : '未完成'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Completed Skills Summary */}
+              {promotionData.completedSkills && promotionData.completedSkills.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">已完成技能摘要</Label>
+                  <div className="text-sm text-muted-foreground">
+                    已完成 {promotionData.completedSkills.length} / {promotionData.requiredSkills?.length || 0} 項必修技能
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPromotionDialogOpen(false)}>
+              關閉
+            </Button>
+            {promotionData?.canPromote && !promotionData?.isMaxLevel && (
+              <Button 
+                onClick={handlePromoteUser} 
+                disabled={promotionLoading}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <TrendingUp className="mr-2 h-4 w-4" />
+                {promotionLoading ? '升職中...' : '確認升職'}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

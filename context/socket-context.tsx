@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { useAuth } from './auth-context'
 import { useToast } from '@/hooks/use-toast'
-import { triggerConfettiIfNotShown, cleanupConfettiRecords } from '@/lib/confetti'
+import { triggerConfettiIfNotShown, cleanupConfettiRecords, triggerPromotionConfettiIfNotShown } from '@/lib/confetti'
 
 interface CreditNotification {
   id: string
@@ -13,6 +13,17 @@ interface CreditNotification {
   senderDepartment?: string
   reason: string
   createdAt: string
+}
+
+interface PromotionNotification {
+  id: string
+  userId: string
+  userName: string
+  employeeId: string
+  previousJob: string
+  newJob: string
+  department?: string
+  promotedAt: string
 }
 
 interface SocketContextType {
@@ -164,6 +175,29 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
           console.log(`⏭️ [CLIENT] Confetti skipped (already shown) for credit: ${data.id}`)
         }
       }, 500)
+    })
+
+    // Listen for promotion notifications
+    socketInstance.on('user-promoted', (data: PromotionNotification) => {
+      console.log(`🚀 [CLIENT] Promotion notification received:`, data)
+      
+      // Show celebration toast notification
+      toast({
+        title: "🎉 恭喜升職！",
+        description: `您已從 ${data.previousJob} 升職至 ${data.newJob}！`,
+        duration: 8000,
+      })
+      console.log(`🎖️ [CLIENT] Promotion toast notification shown for ${data.userName}`)
+      
+      // Trigger promotion confetti with built-in deduplication
+      setTimeout(() => {
+        const confettiTriggered = triggerPromotionConfettiIfNotShown(data.id)
+        if (confettiTriggered) {
+          console.log(`🎊 [CLIENT] Promotion confetti triggered for: ${data.id}`)
+        } else {
+          console.log(`⏭️ [CLIENT] Promotion confetti skipped (already shown) for: ${data.id}`)
+        }
+      }, 1000) // Slightly longer delay for promotion celebration
     })
 
     // Clean up old confetti records on connection

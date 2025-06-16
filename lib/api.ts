@@ -680,6 +680,127 @@ export const skillApi = {
   },
 };
 
+export const jobApi = {
+  // Admin: Get jobs with pagination and filtering
+  getAdminJobs: async (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    departmentId?: string;
+    sortField?: string;
+    sortOrder?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page.toString());
+    if (params.limit) query.append('limit', params.limit.toString());
+    if (params.search) query.append('search', params.search);
+    if (params.departmentId) query.append('departmentId', params.departmentId);
+    if (params.sortField) query.append('sortField', params.sortField);
+    if (params.sortOrder) query.append('sortOrder', params.sortOrder);
+
+    return fetchApi<{
+      jobs: any[];
+      pagination: {
+        currentPage: number;
+        totalPages: number;
+        totalItems: number;
+        itemsPerPage: number;
+      };
+    }>(`/admin/jobs?${query.toString()}`, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Admin: Create job
+  createJob: async (data: { 
+    name: string; 
+    departmentId: string; 
+    skillIds?: Array<{ id: string; isRequired: boolean }> 
+  }) => {
+    return fetchApi<{ message: string; job: any }>('/admin/jobs', {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Admin: Update job
+  updateJob: async (id: string, data: {
+    name?: string;
+    departmentId?: string;
+    skillIds?: Array<{ id: string; isRequired: boolean }>;
+  }) => {
+    return fetchApi<{ message: string; job: any }>(`/admin/jobs/${id}`, {
+      method: 'PUT',
+      headers: createHeaders(),
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Admin: Delete job
+  deleteJob: async (id: string) => {
+    return fetchApi<{ message: string }>(`/admin/jobs/${id}`, {
+      method: 'DELETE',
+      headers: createHeaders(),
+    });
+  },
+};
+
+// User promotion API
+export const promotionApi = {
+  // Check if user can be promoted
+  checkUserPromotion: async (userId: string) => {
+    return fetchApi<{
+      canPromote: boolean;
+      nextJob?: {
+        id: string;
+        name: string;
+      };
+      currentJob: {
+        id: string;
+        name: string;
+      };
+      requiredSkills: Array<{
+        id: string;
+        name: string;
+        category: string;
+        completed: boolean;
+      }>;
+      completedSkills: Array<{
+        id: string;
+        name: string;
+        category: string;
+        status: string;
+        score?: number;
+      }>;
+      message?: string;
+      isMaxLevel?: boolean;
+    }>(`/admin/users/${userId}/promotion-check`, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Promote user to next job level
+  promoteUser: async (userId: string) => {
+    return fetchApi<{
+      message: string;
+      user: {
+        id: string;
+        name: string;
+        employeeId: string;
+        previousJob: string;
+        newJob: string;
+        department?: string;
+      };
+    }>(`/admin/users/${userId}/promote`, {
+      method: 'POST',
+      headers: createHeaders(),
+    });
+  },
+};
+
 // Utility functions
 export const setAuthToken = (token: string) => {
   if (typeof window !== 'undefined') {

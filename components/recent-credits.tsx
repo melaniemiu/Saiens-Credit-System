@@ -34,7 +34,7 @@ export function RecentCredits() {
     <Card>
       <CardHeader>
         <CardTitle>最近 Credit 活動</CardTitle>
-        <CardDescription>您最近的 Credit 收發記錄</CardDescription>
+        <CardDescription>您最近的 Credit 表彰記錄</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -51,7 +51,7 @@ export function RecentCredits() {
                     </>
                   ) : (
                     <>
-                      您發送了 Credit 給 <span className="font-semibold">{credit.to}</span>
+                      您給予了 Credit 給 <span className="font-semibold">{credit.to}</span>
                     </>
                   )}
                 </p>
