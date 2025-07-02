@@ -29,6 +29,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM('考卷考核', '實作考核'),
       allowNull: false,
       comment: 'Assessment method: 考卷考核 (exam) or 實作考核 (practical)'
+    },
+    syllabus: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Exam outline/syllabus content for the skill (考試大綱)'
     }
   }, {
     timestamps: true,

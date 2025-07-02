@@ -11,7 +11,7 @@ exports.getUserSkills = async (req, res, next) => {
       include: [
         {
           model: Skill,
-          attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod']
+          attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus']
         }
       ],
       order: [
@@ -71,7 +71,7 @@ exports.getJobSkills = async (req, res, next) => {
       include: [
         {
           model: Skill,
-          attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod']
+          attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus']
         }
       ],
       order: [
@@ -146,7 +146,7 @@ exports.getSuggestedSkills = async (req, res, next) => {
       include: [
         {
           model: Skill,
-          attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod']
+          attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus']
         }
       ],
       limit: 4 // Limit to 4 suggestions for UI
@@ -208,7 +208,7 @@ exports.updateUserSkill = async (req, res, next) => {
       include: [
         {
           model: Skill,
-          attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod']
+          attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus']
         }
       ]
     });
@@ -381,6 +381,7 @@ exports.createSkill = async (req, res, next) => {
       isRequired = false, 
       learningMethod, 
       assessmentMethod,
+      syllabus,
       departmentIds = []
     } = req.body;
 
@@ -405,7 +406,8 @@ exports.createSkill = async (req, res, next) => {
       category,
       isRequired,
       learningMethod,
-      assessmentMethod
+      assessmentMethod,
+      syllabus
     });
 
     // Associate with departments if provided
@@ -452,6 +454,7 @@ exports.updateSkill = async (req, res, next) => {
       isRequired, 
       learningMethod, 
       assessmentMethod,
+      syllabus,
       departmentIds
     } = req.body;
 
@@ -480,7 +483,8 @@ exports.updateSkill = async (req, res, next) => {
       category: category || skill.category,
       isRequired: isRequired !== undefined ? isRequired : skill.isRequired,
       learningMethod: learningMethod || skill.learningMethod,
-      assessmentMethod: assessmentMethod || skill.assessmentMethod
+      assessmentMethod: assessmentMethod || skill.assessmentMethod,
+      syllabus: syllabus !== undefined ? syllabus : skill.syllabus
     });
 
     // Update department associations if provided

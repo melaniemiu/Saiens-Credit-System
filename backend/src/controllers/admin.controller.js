@@ -590,10 +590,14 @@ exports.checkUserPromotion = async (req, res, next) => {
     });
 
     if (!currentJob.nextJobId) {
-      return res.status(400).json({ 
-        message: "No next job level available for this position",
+      return res.status(200).json({ 
+        message: "User is already at the highest job level",
         canPromote: false,
-        isMaxLevel: true
+        isMaxLevel: true,
+        currentJob: {
+          id: currentJob.id,
+          name: currentJob.name
+        }
       });
     }
 

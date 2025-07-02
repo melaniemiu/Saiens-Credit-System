@@ -1315,7 +1315,7 @@ export default function AdminPage() {
                 <div className="space-y-1">
                   <Label className="text-sm font-medium">目前職位</Label>
                   <div className="p-2 bg-gray-50 rounded-md text-sm">
-                    {promotionData.currentJob.name}
+                    {promotionData.currentJob?.name || '未指派'}
                   </div>
                 </div>
                 <div className="space-y-1">

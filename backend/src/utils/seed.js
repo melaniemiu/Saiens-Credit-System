@@ -1,6 +1,7 @@
 const dotenv = require("dotenv");
 dotenv.config();
 const { sequelize, Department, User, Job, Skill, JobSkill, UserSkill, SkillDepartment } = require("../models");
+const { parseSkillsCsv } = require("./parse-skills-csv");
 // Seeds the database with initial data
 async function seed() {
   try {
@@ -65,7 +66,7 @@ async function seed() {
       jobs = await Job.findAll();
     } else {
       // Create specific engineering jobs based on CSV document
-      const engineeringJobs = ["新手村", "助理工程師", "正式工程師", "資深工程師"];
+      const engineeringJobs = ["新手村", "初階助理工程師", "進階助理工程師", "正式工程師", "資深工程師"];
       const engineeringDeptId = deptMap["工程部"];
       
       for (const jobName of engineeringJobs) {
@@ -76,6 +77,25 @@ async function seed() {
         jobs.push(job);
         jobMap[jobName] = job.id;
         console.log(`Created job: ${jobName}, ID: ${job.id}, Department: 工程部`);
+      }
+      
+      // Add logistics jobs based on CSV
+      const logisticsDept = await Department.create({ 
+        name: "物流部", 
+        description: "負責物流管理與配送" 
+      });
+      departments.push(logisticsDept);
+      deptMap["物流部"] = logisticsDept.id;
+      
+      const logisticsJobs = ["助理物流", "正式物流", "物流主管"];
+      for (const jobName of logisticsJobs) {
+        const job = await Job.create({ 
+          name: jobName, 
+          departmentId: logisticsDept.id 
+        });
+        jobs.push(job);
+        jobMap[jobName] = job.id;
+        console.log(`Created job: ${jobName}, ID: ${job.id}, Department: 物流部`);
       }
 
       // Create jobs for other departments with generic variants
@@ -112,15 +132,26 @@ async function seed() {
     // Set up job hierarchy (nextJobId relationships)
     console.log("Setting up job hierarchy...");
     
-    // Engineering progression: 新手村 → 助理工程師 → 正式工程師 → 資深工程師
-    if (jobMap["新手村"] && jobMap["助理工程師"]) {
-      await Job.update({ nextJobId: jobMap["助理工程師"] }, { where: { id: jobMap["新手村"] } });
+    // Engineering progression: 新手村 → 初階助理工程師 → 進階助理工程師 → 正式工程師 → 資深工程師
+    if (jobMap["新手村"] && jobMap["初階助理工程師"]) {
+      await Job.update({ nextJobId: jobMap["初階助理工程師"] }, { where: { id: jobMap["新手村"] } });
     }
-    if (jobMap["助理工程師"] && jobMap["正式工程師"]) {
-      await Job.update({ nextJobId: jobMap["正式工程師"] }, { where: { id: jobMap["助理工程師"] } });
+    if (jobMap["初階助理工程師"] && jobMap["進階助理工程師"]) {
+      await Job.update({ nextJobId: jobMap["進階助理工程師"] }, { where: { id: jobMap["初階助理工程師"] } });
+    }
+    if (jobMap["進階助理工程師"] && jobMap["正式工程師"]) {
+      await Job.update({ nextJobId: jobMap["正式工程師"] }, { where: { id: jobMap["進階助理工程師"] } });
     }
     if (jobMap["正式工程師"] && jobMap["資深工程師"]) {
       await Job.update({ nextJobId: jobMap["資深工程師"] }, { where: { id: jobMap["正式工程師"] } });
+    }
+    
+    // Logistics progression: 助理物流 → 正式物流 → 物流主管
+    if (jobMap["助理物流"] && jobMap["正式物流"]) {
+      await Job.update({ nextJobId: jobMap["正式物流"] }, { where: { id: jobMap["助理物流"] } });
+    }
+    if (jobMap["正式物流"] && jobMap["物流主管"]) {
+      await Job.update({ nextJobId: jobMap["物流主管"] }, { where: { id: jobMap["正式物流"] } });
     }
     
     // Other departments progression: 初心者 → 玩家 → 大師
@@ -153,70 +184,12 @@ async function seed() {
       );
       skills = await Skill.findAll();
     } else {
-      // Skills data based exactly on the CSV
-      const skillsData = [
-        // 新手村 skills
-        { name: "山恩DNA 公司介紹與文化", category: "山恩DNA", isRequired: true, learningMethod: "實體", assessmentMethod: "考卷考核" },
-        { name: "山恩DNA 基本工作流程", category: "山恩DNA", isRequired: true, learningMethod: "實體", assessmentMethod: "考卷考核" },
-        { name: "產品知識 基本產品知識", category: "產品知識", isRequired: true, learningMethod: "實體", assessmentMethod: "考卷考核" },
-        { name: "產品知識 石材的特性", category: "產品知識", isRequired: true, learningMethod: "線上", assessmentMethod: "考卷考核" },
-        { name: "工具使用 機具認識", category: "工具使用", isRequired: true, learningMethod: "線上", assessmentMethod: "考卷考核" },
-        { name: "安裝知識 加工方法", category: "安裝知識", isRequired: true, learningMethod: "線上", assessmentMethod: "考卷考核" },
-        { name: "安全操作 個人防護裝備的使用", category: "安全操作", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
-        { name: "安全操作 基本安全操作規範", category: "安全操作", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
-        { name: "安裝技術 安裝前保護措施", category: "安裝技術", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
-        { name: "安裝技術 石材表面的檢查和清潔", category: "安裝技術", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
-        { name: "安裝技術 安裝後檢查和驗收", category: "安裝技術", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
-        { name: "安全操作 石材存放與保護", category: "安全操作", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
-        { name: "安全操作 石材的檢查與搬運技巧", category: "安全操作", isRequired: false, learningMethod: "線上", assessmentMethod: "實作考核" },
-        { name: "工具使用 機具使用", category: "工具使用", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "安裝技術 圖面解讀", category: "安裝技術", isRequired: true, learningMethod: "實體", assessmentMethod: "考卷考核" },
-        
-        // 助理工程師 skills
-        { name: "工單操作教學", category: "工單操作教學", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "工具使用 砂輪機", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "工具使用 電鑽", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "工具使用 跳鋸機", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "工具使用 雕刻機", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "工具使用 磨邊機", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "工具使用 大電鋸", category: "工具使用", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "安裝技術 矽利康技巧", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "安裝技術 檯面設定（水平＆垂直）", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "安裝技術 接縫銜接（切割＆研磨修整）", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "安裝技術 側落 45 度接（背切修整）", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "安全操作 石材的檢查與搬運技巧", category: "安全操作", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "現場作業 案場作業流程", category: "現場作業", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "現場作業 與其他工種的協作", category: "現場作業", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "一字型工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "中島+雙側落工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        
-        // 正式工程師 skills
-        { name: "安裝技術 接縫膠調色準確度", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "安裝技術 基礎水電知識", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "安裝技術 接縫平接（切割＆研磨修整）", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "安裝技術 開插座孔", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "安裝技術 鑽龍頭孔", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "安裝技術 裝修包覆", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "安裝技術 複雜安裝項目", category: "安裝技術", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "品質控制 石材修復與保養", category: "品質控制", isRequired: false, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "領導力與溝通 管理工具與管理思維", category: "領導力與溝通", isRequired: false, learningMethod: "線上", assessmentMethod: "考卷考核" },
-        { name: "領導力與溝通 有效溝通與問題解決", category: "領導力與溝通", isRequired: false, learningMethod: "線上", assessmentMethod: "考卷考核" },
-        { name: "平接切邊", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "水磨（包括熱彎安裝）", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "L型工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "ㄇ字型工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "側落", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "高背", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "牆面工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "維修美容工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        
-        // 資深工程師 skills
-        { name: "地板工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" },
-        { name: "木作全包覆工程", category: "工程項目", isRequired: true, learningMethod: "實體", assessmentMethod: "實作考核" }
-      ];
-
-      skills = await Skill.bulkCreate(skillsData);
-      console.log(`Created ${skills.length} skills`);
+      console.log("Parsing skills from CSV file...");
+      const { skills: csvSkills } = parseSkillsCsv();
+      
+      console.log(`Parsed ${csvSkills.length} skills from CSV`);
+      skills = await Skill.bulkCreate(csvSkills);
+      console.log(`Created ${skills.length} skills with syllabus content`);
     }
 
     // Build skill map
@@ -236,90 +209,45 @@ async function seed() {
     if (existingJobSkillCount === 0 || forceDrop) {
       console.log("Creating job-skill associations...");
       
-      // Map CSV data to job titles in our system - exactly as in CSV
-      const jobSkillMappings = [
-        // 新手村 skills - exactly from CSV
-        { jobName: "新手村", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "產品知識 基本產品知識", "產品知識 石材的特性", 
-          "工具使用 機具認識", "安裝知識 加工方法", "安全操作 個人防護裝備的使用", "安全操作 基本安全操作規範",
-          "安裝技術 安裝前保護措施", "安裝技術 石材表面的檢查和清潔", "安裝技術 安裝後檢查和驗收", 
-          "安全操作 石材存放與保護", "安全操作 石材的檢查與搬運技巧", "工具使用 機具使用", "安裝技術 圖面解讀"
-        ]},
-        // 助理工程師 skills - exactly from CSV
-        { jobName: "助理工程師", skills: [
-          "工單操作教學", "工具使用 砂輪機", "工具使用 電鑽", "工具使用 跳鋸機", "工具使用 雕刻機", 
-          "工具使用 磨邊機", "工具使用 大電鋸", "安裝技術 矽利康技巧", "安裝技術 檯面設定（水平＆垂直）",
-          "安裝技術 接縫銜接（切割＆研磨修整）", "安裝技術 側落 45 度接（背切修整）", "安全操作 石材的檢查與搬運技巧",
-          "現場作業 案場作業流程", "現場作業 與其他工種的協作", "一字型工程", "中島+雙側落工程"
-        ]},
-        // 正式工程師 skills - exactly from CSV
-        { jobName: "正式工程師", skills: [
-          "安裝技術 接縫膠調色準確度", "安裝技術 基礎水電知識", "安裝技術 接縫平接（切割＆研磨修整）", 
-          "安裝技術 開插座孔", "安裝技術 鑽龍頭孔", "安裝技術 裝修包覆", "安裝技術 複雜安裝項目",
-          "品質控制 石材修復與保養", "領導力與溝通 管理工具與管理思維", "領導力與溝通 有效溝通與問題解決",
-          "平接切邊", "水磨（包括熱彎安裝）", "L型工程", "ㄇ字型工程", "側落", "高背", "牆面工程", "維修美容工程"
-        ]},
-        // 資深工程師 skills - exactly from CSV
-        { jobName: "資深工程師", skills: [
-          "地板工程", "木作全包覆工程"
-        ]},
-        
-        // Non-engineering jobs get department-specific skills
+      // Get CSV mappings and combine with custom mappings for non-engineering jobs
+      const { jobSkillMappings: csvMappings } = parseSkillsCsv();
+      
+      // Add custom mappings for non-engineering jobs
+      const customMappings = {
         // 行銷部 jobs
-        { jobName: "行銷初心者", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"
-        ]},
-        { jobName: "行銷玩家", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維"
-        ]},
-        { jobName: "行銷大師", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維", "領導力與溝通 有效溝通與問題解決"
-        ]},
+        "行銷初心者": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"],
+        "行銷玩家": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維"],
+        "行銷大師": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維", "領導力與溝通 有效溝通與問題解決"],
         
         // 人資部 jobs
-        { jobName: "人資初心者", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"
-        ]},
-        { jobName: "人資玩家", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維"
-        ]},
-        { jobName: "人資大師", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維", "領導力與溝通 有效溝通與問題解決"
-        ]},
+        "人資初心者": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"],
+        "人資玩家": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維"],
+        "人資大師": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維", "領導力與溝通 有效溝通與問題解決"],
         
         // 財務部 jobs
-        { jobName: "財務初心者", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"
-        ]},
-        { jobName: "財務玩家", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"
-        ]},
-        { jobName: "財務大師", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"
-        ]},
+        "財務初心者": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"],
+        "財務玩家": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"],
+        "財務大師": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"],
         
         // 客服部 jobs
-        { jobName: "客服初心者", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"
-        ]},
-        { jobName: "客服玩家", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維"
-        ]},
-        { jobName: "客服大師", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維", "領導力與溝通 有效溝通與問題解決"
-        ]},
+        "客服初心者": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"],
+        "客服玩家": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維"],
+        "客服大師": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "領導力與溝通 管理工具與管理思維", "領導力與溝通 有效溝通與問題解決"],
         
         // 設計部 jobs
-        { jobName: "設計初心者", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"
-        ]},
-        { jobName: "設計玩家", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "產品知識 基本產品知識"
-        ]},
-        { jobName: "設計大師", skills: [
-          "山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "產品知識 基本產品知識", "產品知識 石材的特性"
-        ]}
-      ];
+        "設計初心者": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程"],
+        "設計玩家": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "產品知識 基本產品知識"],
+        "設計大師": ["山恩DNA 公司介紹與文化", "山恩DNA 基本工作流程", "產品知識 基本產品知識", "產品知識 石材的特性"]
+      };
+      
+      // Combine CSV mappings with custom mappings
+      const allMappings = { ...csvMappings, ...customMappings };
+      
+      // Convert to array format for processing
+      const jobSkillMappings = Object.entries(allMappings).map(([jobName, skills]) => ({
+        jobName,
+        skills
+      }));
 
       const jobSkillAssociations = [];
       
@@ -572,7 +500,7 @@ async function seed() {
       name: "黃建國",
       email: "jianguo.huang@example.com",
       departmentId: engineeringDept ? engineeringDept.id : null,
-      jobId: jobMap["助理工程師"] || null,
+      jobId: jobMap["初階助理工程師"] || null,
       role: "user",
       remainingDailyCredits: 5,
       dailyCreditLimit: 5, // Standard user limit
@@ -589,6 +517,7 @@ async function seed() {
       jobId: jobMap["設計玩家"] || null,
       role: "user",
       remainingDailyCredits: 5,
+      dailyCreditLimit: 5,
       dailyCreditResetDate: new Date(),
     });
     console.log("User 7 created with departmentId:", user7.departmentId, "jobId:", user7.jobId);
@@ -602,6 +531,7 @@ async function seed() {
       jobId: jobMap["新手村"] || null,
       role: "user",
       remainingDailyCredits: 5,
+      dailyCreditLimit: 5,
       dailyCreditResetDate: new Date(),
     });
     console.log("User 8 created with departmentId:", user8.departmentId, "jobId:", user8.jobId);
@@ -615,6 +545,7 @@ async function seed() {
       jobId: jobMap["行銷初心者"] || null,
       role: "user",
       remainingDailyCredits: 5,
+      dailyCreditLimit: 5,
       dailyCreditResetDate: new Date(),
     });
     console.log("User 9 created with departmentId:", user9.departmentId, "jobId:", user9.jobId);
@@ -628,6 +559,7 @@ async function seed() {
       jobId: jobMap["財務初心者"] || null,
       role: "user",
       remainingDailyCredits: 5,
+      dailyCreditLimit: 5,
       dailyCreditResetDate: new Date(),
     });
     console.log("User 10 created with departmentId:", user10.departmentId, "jobId:", user10.jobId);
@@ -682,7 +614,8 @@ async function seed() {
       
       // Define job progression orders for each department
       const jobProgressions = {
-        '工程部': ['新手村', '助理工程師', '正式工程師', '資深工程師'],
+        '工程部': ['新手村', '初階助理工程師', '進階助理工程師', '正式工程師', '資深工程師'],
+        '物流部': ['助理物流', '正式物流', '物流主管'],
         '行銷部': ['行銷初心者', '行銷玩家', '行銷大師'],
         '人資部': ['人資初心者', '人資玩家', '人資大師'],
         '財務部': ['財務初心者', '財務玩家', '財務大師'],

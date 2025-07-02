@@ -26,6 +26,7 @@ interface SkillProgress {
     isRequired: boolean
     learningMethod: string
     assessmentMethod: string
+    syllabus?: string
   }
 }
 
@@ -535,6 +536,19 @@ export function SkillRoadmap() {
                     </div>
                   </div>
                 </div>
+
+                {/* Syllabus Section */}
+                {selectedSkill.Skill.syllabus && (
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <BookOpen className="h-5 w-5" />
+                      考試大綱
+                    </h3>
+                    <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {selectedSkill.Skill.syllabus}
+                    </div>
+                  </div>
+                )}
 
                 {/* Progress Timeline */}
                 {(selectedSkill.startedAt || selectedSkill.completedAt || selectedSkill.certifiedAt) && (
