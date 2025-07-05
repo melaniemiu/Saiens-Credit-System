@@ -18,6 +18,9 @@ export default function SkillsPage() {
         </CardHeader>
       </Card>
 
+      {/* 技能路線圖 */}
+      <SkillRoadmap />
+
       {/* 技能發展指南 */}
       <Card>
         <CardHeader>
@@ -119,9 +122,6 @@ export default function SkillsPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* 技能路線圖 */}
-      <SkillRoadmap />
     </div>
   )
 }

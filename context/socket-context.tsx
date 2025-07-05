@@ -4,7 +4,9 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { useAuth } from './auth-context'
 import { useToast } from '@/hooks/use-toast'
+import { Button } from '@/components/ui/button'
 import { triggerConfettiIfNotShown, cleanupConfettiRecords, triggerPromotionConfettiIfNotShown } from '@/lib/confetti'
+import { skillApi } from '@/lib/api'
 
 interface CreditNotification {
   id: string
@@ -198,6 +200,47 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
           console.log(`⏭️ [CLIENT] Promotion confetti skipped (already shown) for: ${data.id}`)
         }
       }, 1000) // Slightly longer delay for promotion celebration
+    })
+
+    // Listen for evaluation request notifications (for evaluators)
+    socketInstance.on('evaluation-requested', (data) => {
+      console.log(`🎯 [CLIENT] Evaluation request received:`, data)
+      
+      // Show clickable toast notification with userSkillId
+      toast({
+        title: "📚 新的技能評估申請",
+        description: `${data.userName} 申請 "${data.skillName}" 技能評估，點擊查看詳細資訊`,
+        duration: 10000,
+        action: (
+          <Button 
+            size="sm"
+            onClick={() => {
+              // Dispatch custom event with userSkillId for simple data retrieval
+              const event = new CustomEvent('openEvaluationModal', { 
+                detail: { 
+                  userSkillId: data.userSkillId,
+                  skillName: data.skillName,
+                  userName: data.userName
+                }
+              })
+              window.dispatchEvent(event)
+            }}
+          >
+            查看評估
+          </Button>
+        )
+      })
+    })
+
+    // Listen for evaluation request confirmations (for requesters)
+    socketInstance.on('evaluation-request-submitted', (data) => {
+      console.log(`✅ [CLIENT] Evaluation request submitted:`, data)
+      
+      toast({
+        title: "📤 評估申請已送出",
+        description: `您的 "${data.skillName}" 技能評估申請已送出，共有 ${data.evaluatorCount} 位評估員將收到通知`,
+        duration: 6000,
+      })
     })
 
     // Clean up old confetti records on connection

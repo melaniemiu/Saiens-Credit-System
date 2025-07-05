@@ -4,7 +4,9 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/context/auth-context"
 import { SocketProvider } from "@/context/socket-context"
+import { EvaluationProvider } from "@/context/evaluation-context"
 import { LiffInit } from "@/components/liff-init"
+import { GlobalEvaluationModal } from "@/components/global-evaluation-modal"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -39,11 +41,14 @@ export default function RootLayout({
       <body className={`${inter.className} ${openSans.variable}`}>
         <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" disableTransitionOnChange>
           <AuthProvider>
-            <SocketProvider>
-              {/* LIFF initializer component */}
-              <LiffInit />
-              {children}
-            </SocketProvider>
+            <EvaluationProvider>
+              <SocketProvider>
+                {/* LIFF initializer component */}
+                <LiffInit />
+                {children}
+                <GlobalEvaluationModal />
+              </SocketProvider>
+            </EvaluationProvider>
           </AuthProvider>
           <Toaster />
         </ThemeProvider>

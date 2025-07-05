@@ -564,3 +564,246 @@ exports.deleteSkill = async (req, res, next) => {
     next(error);
   }
 };
+
+// Request evaluation for a skill
+exports.requestEvaluation = async (req, res, next) => {
+  try {
+    const { skillId } = req.params;
+    const userId = req.userId; // Set by auth middleware
+    
+    // Check if skill exists
+    const skill = await Skill.findByPk(skillId);
+    if (!skill) {
+      return res.status(404).json({ error: '找不到指定的技能' });
+    }
+    
+    // Check if user has this skill and it's ready for evaluation
+    const userSkill = await UserSkill.findOne({
+      where: { userId, skillId }
+    });
+    
+    if (!userSkill) {
+      return res.status(404).json({ error: '您還未開始學習此技能' });
+    }
+    
+    if (userSkill.status === 'not_started') {
+      return res.status(400).json({ error: '請先開始學習此技能' });
+    }
+    
+    if (userSkill.status === 'certified') {
+      return res.status(400).json({ error: '此技能已通過認證' });
+    }
+    
+    // Update user skill with evaluation request
+    await userSkill.update({
+      status: 'completed', // Mark as completed, waiting for evaluation
+      completedAt: new Date()
+    });
+    
+    // Get user info for notification
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'name', 'email']
+    });
+    
+    // TODO: Find and notify evaluators
+    // For now, we'll just send a notification to admin users
+    const evaluators = await User.findAll({
+      where: { role: 'admin' },
+      attributes: ['id', 'name', 'email']
+    });
+    
+    // Send socket notification to evaluators
+    const io = req.app.get('io');
+    if (io) {
+      // Notify all evaluators about the evaluation request
+      evaluators.forEach(evaluator => {
+        io.to(`user-${evaluator.id}`).emit('evaluation-requested', {
+          id: `${userId}-${skillId}-${Date.now()}`,
+          userSkillId: userSkill.id,
+          skillId: skillId,
+          skillName: skill.name,
+          userId: userId,
+          userName: user.name,
+          requestedAt: new Date().toISOString(),
+          evaluatorId: evaluator.id,
+          evaluatorName: evaluator.name
+        });
+      });
+      
+      // Also notify the user that their request was submitted
+      io.to(`user-${userId}`).emit('evaluation-request-submitted', {
+        skillId: skillId,
+        skillName: skill.name,
+        submittedAt: new Date().toISOString(),
+        evaluatorCount: evaluators.length
+      });
+    }
+    
+    return res.status(200).json({
+      message: '評估申請已送出，評估員將收到通知',
+      evaluationRequest: {
+        skillId: skillId,
+        skillName: skill.name,
+        userId: userId,
+        userName: user.name,
+        requestedAt: new Date(),
+        evaluators: evaluators.map(e => ({ id: e.id, name: e.name }))
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get skill and user details for evaluation by userSkillId (for evaluators)
+exports.getEvaluationDetailsByUserSkillId = async (req, res, next) => {
+  try {
+    const { userSkillId } = req.params;
+    const evaluatorId = req.userId; // Set by auth middleware
+    
+    // Check if the requester is an admin (evaluator)
+    const evaluator = await User.findByPk(evaluatorId);
+    if (!evaluator || evaluator.role !== 'admin') {
+      return res.status(403).json({ error: '只有管理員可以查看評估詳情' });
+    }
+    
+    // Get user skill with related skill and user data
+    const userSkill = await UserSkill.findByPk(userSkillId, {
+      attributes: ['id', 'status', 'startedAt', 'completedAt', 'certifiedAt', 'score', 'attempts', 'notes', 'userId', 'skillId'],
+      include: [
+        {
+          model: Skill,
+          attributes: ['id', 'name', 'category', 'learningMethod', 'assessmentMethod', 'syllabus']
+        },
+        {
+          model: User,
+          attributes: ['id', 'name', 'employeeId', 'email'],
+          include: [
+            {
+              model: Department,
+              attributes: ['id', 'name']
+            },
+            {
+              model: Job,
+              attributes: ['id', 'name']
+            }
+          ]
+        }
+      ]
+    });
+    
+    if (!userSkill) {
+      return res.status(404).json({ error: '找不到指定的技能記錄' });
+    }
+    
+    return res.status(200).json({
+      skill: userSkill.Skill,
+      user: userSkill.User,
+      userSkill: {
+        id: userSkill.id,
+        status: userSkill.status,
+        startedAt: userSkill.startedAt,
+        completedAt: userSkill.completedAt,
+        certifiedAt: userSkill.certifiedAt,
+        score: userSkill.score,
+        attempts: userSkill.attempts,
+        notes: userSkill.notes
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Submit evaluation result by userSkillId (for evaluators)
+exports.submitEvaluationByUserSkillId = async (req, res, next) => {
+  try {
+    const { userSkillId } = req.params;
+    const { result, score, feedback, evaluatedAt } = req.body;
+    const evaluatorId = req.userId; // Set by auth middleware
+    
+    // Check if the requester is an admin (evaluator)
+    const evaluator = await User.findByPk(evaluatorId);
+    if (!evaluator || evaluator.role !== 'admin') {
+      return res.status(403).json({ error: '只有管理員可以提交評估結果' });
+    }
+    
+    // Validate input
+    if (!result || !['pass', 'reject'].includes(result)) {
+      return res.status(400).json({ error: '評估結果必須是 pass 或 reject' });
+    }
+    
+    if (result === 'pass' && (!score || score < 60 || score > 100)) {
+      return res.status(400).json({ error: '通過評估的分數必須在 60-100 之間' });
+    }
+    
+    if (!feedback || feedback.trim().length === 0) {
+      return res.status(400).json({ error: '必須提供評估回饋' });
+    }
+    
+    // Get user skill with related data
+    const userSkill = await UserSkill.findByPk(userSkillId, {
+      include: [
+        {
+          model: Skill,
+          attributes: ['id', 'name']
+        },
+        {
+          model: User,
+          attributes: ['id', 'name']
+        }
+      ]
+    });
+    
+    if (!userSkill) {
+      return res.status(404).json({ error: '找不到指定的技能記錄' });
+    }
+    
+    if (userSkill.status === 'certified') {
+      return res.status(400).json({ error: '此技能已通過認證，無法重複評估' });
+    }
+    
+    // Update user skill based on evaluation result
+    const updateData = {
+      score: result === 'pass' ? score : 0,
+      attempts: userSkill.attempts + 1,
+      notes: feedback,
+      certifiedBy: evaluatorId,
+      certifiedAt: result === 'pass' ? new Date() : null,
+      status: result === 'pass' ? 'certified' : 'in_progress'
+    };
+    
+    await userSkill.update(updateData);
+    
+    // Send socket notification to the user about evaluation result
+    const io = req.app.get('io');
+    if (io) {
+      const notificationData = {
+        id: `${userSkill.userId}-${userSkill.skillId}-${Date.now()}`,
+        skillId: userSkill.skillId,
+        skillName: userSkill.Skill.name,
+        result: result,
+        score: updateData.score,
+        feedback: feedback,
+        evaluatorName: evaluator.name,
+        evaluatedAt: evaluatedAt || new Date().toISOString()
+      };
+      
+      io.to(`user-${userSkill.userId}`).emit('evaluation-completed', notificationData);
+    }
+    
+    return res.status(200).json({
+      message: result === 'pass' ? '評估通過，技能已認證' : '評估未通過，已提供改進建議',
+      userSkill: {
+        id: userSkill.id,
+        status: updateData.status,
+        score: updateData.score,
+        attempts: updateData.attempts,
+        certifiedAt: updateData.certifiedAt,
+        certifiedBy: updateData.certifiedBy
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

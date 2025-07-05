@@ -115,6 +115,30 @@ io.on("connection", (socket) => {
     console.log(`✅ [TEST] Test promotion notification sent to ${room}`);
   });
 
+  // Handle test evaluation request notifications from script
+  socket.on("evaluation-requested-test", ({ room, data }) => {
+    console.log(`🎯 [TEST] Test evaluation request notification for room: ${room}`);
+    const targetRoom = io.sockets.adapter.rooms.get(room);
+    const clientCount = targetRoom ? targetRoom.size : 0;
+    console.log(
+      `📡 [TEST] Broadcasting evaluation request to ${clientCount} client(s) in ${room}`
+    );
+    io.to(room).emit("evaluation-requested", data);
+    console.log(`✅ [TEST] Test evaluation request notification sent to ${room}`);
+  });
+
+  // Handle test evaluation request submission confirmations from script
+  socket.on("evaluation-request-submitted-test", ({ room, data }) => {
+    console.log(`📤 [TEST] Test evaluation request submission for room: ${room}`);
+    const targetRoom = io.sockets.adapter.rooms.get(room);
+    const clientCount = targetRoom ? targetRoom.size : 0;
+    console.log(
+      `📡 [TEST] Broadcasting evaluation submission to ${clientCount} client(s) in ${room}`
+    );
+    io.to(room).emit("evaluation-request-submitted", data);
+    console.log(`✅ [TEST] Test evaluation submission notification sent to ${room}`);
+  });
+
   socket.on("disconnect", (reason) => {
     console.log(
       `❌ [SOCKET] User disconnected: ${socket.id} (reason: ${reason})`

@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { skillApi } from "@/lib/api"
 import { useAuth } from "@/context/auth-context"
 import { useEffect, useState } from "react"
+import { toast } from "@/hooks/use-toast"
 import { CheckCircle, Clock, Play, Award, ArrowRight, Lock, BookOpen, X, Calendar, User, Target } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
@@ -82,72 +83,127 @@ export function SkillRoadmap() {
     setSelectedSkill(null)
   }
 
-  useEffect(() => {
-    const fetchRoadmapData = async () => {
-      try {
-        setIsLoading(true)
-        
-        // Fetch user's skill progress
-        const userSkillsResponse = await skillApi.getUserSkills()
-        const userSkills = userSkillsResponse.data?.userSkills || []
+  const fetchRoadmapData = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Fetch user's skill progress
+      const userSkillsResponse = await skillApi.getUserSkills()
+      const userSkills = userSkillsResponse.data?.userSkills || []
 
-        // Create a map of user progress by skill ID
-        const progressMap: Record<string, SkillProgress> = {}
-        userSkills.forEach((skill: SkillProgress) => {
-          progressMap[skill.skillId] = skill
-        })
+      // Create a map of user progress by skill ID
+      const progressMap: Record<string, SkillProgress> = {}
+      userSkills.forEach((skill: SkillProgress) => {
+        progressMap[skill.skillId] = skill
+      })
 
-        // Define job progression
-        const jobProgression = ['新手村', '助理工程師', '正式工程師', '資深工程師']
-        const currentUserJob = user?.Job?.name || ''
-        const currentJobIndex = jobProgression.indexOf(currentUserJob)
+      // Define job progression
+      const jobProgression = ['新手村', '助理工程師', '正式工程師', '資深工程師']
+      const currentUserJob = user?.Job?.name || ''
+      const currentJobIndex = jobProgression.indexOf(currentUserJob)
 
-        // Organize skills by job level using the jobLevel field from backend
-        const skillsByJobLevel: Record<string, SkillProgress[]> = {}
-        
-        // Group skills by their job level
-        userSkills.forEach((skill: SkillProgress) => {
-          const jobLevel = skill.jobLevel || 'Unknown'
-          if (!skillsByJobLevel[jobLevel]) {
-            skillsByJobLevel[jobLevel] = []
-          }
-          skillsByJobLevel[jobLevel].push(skill)
-        })
-
-        // Create levels array based on job progression
-        const levels: JobLevel[] = []
-        
-        for (let i = 0; i < jobProgression.length; i++) {
-          const jobName = jobProgression[i]
-          const skillsForLevel = skillsByJobLevel[jobName] || []
-
-          // Calculate completion status
-          const completedSkills = skillsForLevel.filter((skill: SkillProgress) => 
-            skill.status === 'completed' || skill.status === 'certified'
-          ).length
-          const totalSkills = skillsForLevel.length
-          const isCompleted = totalSkills > 0 && completedSkills === totalSkills
-          const isCurrentLevel = i === currentJobIndex
-          const isLocked = i > currentJobIndex + 1 // Can only see one level ahead
-
-          levels.push({
-            name: jobName,
-            skills: skillsForLevel,
-            isCompleted,
-            isCurrentLevel,
-            isLocked
-          })
+      // Organize skills by job level using the jobLevel field from backend
+      const skillsByJobLevel: Record<string, SkillProgress[]> = {}
+      
+      // Group skills by their job level
+      userSkills.forEach((skill: SkillProgress) => {
+        const jobLevel = skill.jobLevel || 'Unknown'
+        if (!skillsByJobLevel[jobLevel]) {
+          skillsByJobLevel[jobLevel] = []
         }
+        skillsByJobLevel[jobLevel].push(skill)
+      })
 
-        setJobLevels(levels)
+      // Create levels array based on job progression
+      const levels: JobLevel[] = []
+      
+      for (let i = 0; i < jobProgression.length; i++) {
+        const jobName = jobProgression[i]
+        const skillsForLevel = skillsByJobLevel[jobName] || []
 
-      } catch (err) {
-        console.error('Error fetching roadmap data:', err)
-        setError('無法載入技能路線圖')
-      } finally {
-        setIsLoading(false)
+        // Calculate completion status
+        const completedSkills = skillsForLevel.filter((skill: SkillProgress) => 
+          skill.status === 'completed' || skill.status === 'certified'
+        ).length
+        const totalSkills = skillsForLevel.length
+        const isCompleted = totalSkills > 0 && completedSkills === totalSkills
+        const isCurrentLevel = i === currentJobIndex
+        const isLocked = i > currentJobIndex + 1 // Can only see one level ahead
+
+        levels.push({
+          name: jobName,
+          skills: skillsForLevel,
+          isCompleted,
+          isCurrentLevel,
+          isLocked,
+        })
       }
+
+      setJobLevels(levels)
+      setError(null)
+    } catch (error) {
+      console.error('Error fetching roadmap data:', error)
+      setError('無法載入技能路線圖')
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+  const handleStartEvaluation = async (skill: SkillProgress) => {
+    try {
+      await skillApi.requestEvaluation(skill.skillId)
+      
+      toast({
+        title: "評估申請已送出",
+        description: `已為技能「${skill.Skill.name}」申請評估，評估員將收到通知。`,
+      })
+      
+      // Close modal
+      setIsModalOpen(false)
+      
+      // Refresh data to show updated status
+      await fetchRoadmapData()
+      
+    } catch (error) {
+      console.error('Error requesting evaluation:', error)
+      toast({
+        title: "申請失敗",
+        description: "評估申請失敗，請稍後再試。",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleStartLearning = async (skill: SkillProgress) => {
+    try {
+      // Update skill status to in_progress
+      await skillApi.updateSkillProgress(skill.skillId, { 
+        status: 'in_progress',
+        startedAt: new Date().toISOString()
+      })
+      
+      toast({
+        title: "開始學習",
+        description: `已開始學習技能「${skill.Skill.name}」`,
+      })
+      
+      // Close modal
+      setIsModalOpen(false)
+      
+      // Refresh data to show updated status
+      await fetchRoadmapData()
+      
+    } catch (error) {
+      console.error('Error starting learning:', error)
+      toast({
+        title: "操作失敗",
+        description: "開始學習失敗，請稍後再試。",
+        variant: "destructive",
+      })
+    }
+  }
+
+  useEffect(() => {
 
     if (user) {
       fetchRoadmapData()
@@ -590,6 +646,34 @@ export function SkillRoadmap() {
                 )}
 
               </div>
+
+              {/* Action Buttons */}
+              <div className="mt-6 border-t pt-4">
+                <div className="flex gap-3">
+                  {/* Start Evaluation Button */}
+                  {(selectedSkill.status === 'completed' || selectedSkill.status === 'in_progress') && (
+                    <button
+                      onClick={() => handleStartEvaluation(selectedSkill)}
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                    >
+                      <Award className="h-4 w-4" />
+                      申請評估
+                    </button>
+                  )}
+                  
+                  {/* Start Learning Button */}
+                  {selectedSkill.status === 'not_started' && (
+                    <button
+                      onClick={() => handleStartLearning(selectedSkill)}
+                      className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                    >
+                      <BookOpen className="h-4 w-4" />
+                      開始學習
+                    </button>
+                  )}
+                </div>
+              </div>
+
               </div>
             </div>
           )}

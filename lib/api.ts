@@ -597,11 +597,36 @@ export const skillApi = {
   },
 
   // Update user skill progress
-  updateSkillProgress: async (skillId: string, data: { status: string; score?: number; notes?: string }) => {
+  updateSkillProgress: async (skillId: string, data: { status?: string; score?: number; notes?: string; startedAt?: string }) => {
     return fetchApi<{ message: string; userSkill: any }>(`/skills/${skillId}/progress`, {
       method: 'PUT',
       headers: createHeaders(),
       body: JSON.stringify(data),
+    });
+  },
+
+  // Request evaluation for a skill
+  requestEvaluation: async (skillId: string) => {
+    return fetchApi<{ message: string; evaluationRequest: any }>(`/skills/${skillId}/request-evaluation`, {
+      method: 'POST',
+      headers: createHeaders(),
+    });
+  },
+
+  // Submit evaluation result by userSkillId (for evaluators)
+  submitEvaluationByUserSkillId: async (userSkillId: string, evaluationData: { result: string; score: number; feedback: string; evaluatedAt: string }) => {
+    return fetchApi<{ message: string; userSkill: any }>(`/skills/evaluate/${userSkillId}`, {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify(evaluationData),
+    });
+  },
+
+  // Get evaluation details by userSkillId (for evaluators)
+  getEvaluationDetailsByUserSkillId: async (userSkillId: string) => {
+    return fetchApi<{ skill: any; userSkill: any; user: any }>(`/skills/evaluation-details/${userSkillId}`, {
+      method: 'GET',
+      headers: createHeaders(),
     });
   },
 
