@@ -565,16 +565,18 @@ export const departmentApi = {
 
 export const skillApi = {
   // Get user's skill progress
-  getUserSkills: async () => {
-    return fetchApi<{ userSkills: any[] }>('/skills/user', {
+  getUserSkills: async (bypassCache: boolean = false) => {
+    const url = bypassCache ? `/skills/user?_t=${Date.now()}` : '/skills/user';
+    return fetchApi<{ userSkills: any[] }>(url, {
       method: 'GET',
       headers: createHeaders(),
     });
   },
 
   // Get skills available for user's job
-  getJobSkills: async () => {
-    return fetchApi<{ job: any; skillsWithProgress: any[] }>('/skills/job', {
+  getJobSkills: async (bypassCache: boolean = false) => {
+    const url = bypassCache ? `/skills/job?_t=${Date.now()}` : '/skills/job';
+    return fetchApi<{ job: any; skillsWithProgress: any[] }>(url, {
       method: 'GET',
       headers: createHeaders(),
     });

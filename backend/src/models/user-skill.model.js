@@ -40,7 +40,17 @@ module.exports = (sequelize, DataTypes) => {
     certifiedAt: {
       type: DataTypes.DATE,
       allowNull: true,
-      comment: 'When the user passed the certification/assessment'
+      comment: 'When the user passed the certification/assessment (deprecated, use evaluatedAt)'
+    },
+    evaluationRequestedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: 'When the user requested evaluation for this skill'
+    },
+    evaluatedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: 'When the skill was evaluated'
     },
     score: {
       type: DataTypes.INTEGER,
@@ -69,7 +79,16 @@ module.exports = (sequelize, DataTypes) => {
         model: 'users',
         key: 'id'
       },
-      comment: 'ID of the user who certified this skill (supervisor/admin)'
+      comment: 'ID of the user who certified this skill (deprecated, use evaluatedBy)'
+    },
+    evaluatedBy: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'users',
+        key: 'id'
+      },
+      comment: 'ID of the user who evaluated this skill (evaluator/admin)'
     }
   }, {
     timestamps: true,

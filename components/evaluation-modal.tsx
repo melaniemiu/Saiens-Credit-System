@@ -43,7 +43,8 @@ interface EvaluationData {
     status: string
     startedAt: string
     completedAt: string
-    certifiedAt?: string
+    evaluatedAt?: string
+    evaluationRequestedAt?: string
     score?: number
     attempts: number
     notes?: string
@@ -115,6 +116,15 @@ export function EvaluationModal({ isOpen, onClose, evaluationRequest }: Evaluati
       toast({
         title: "分數無效",
         description: "分數不能超過 100 分",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!feedback.trim()) {
+      toast({
+        title: "請提供回饋",
+        description: "提交評估時必須提供回饋意見",
         variant: "destructive",
       })
       return
@@ -326,9 +336,9 @@ export function EvaluationModal({ isOpen, onClose, evaluationRequest }: Evaluati
                     <span className="text-sm text-gray-500">目前狀態</span>
                     <div className="font-medium">
                       <Badge variant="outline">
-                        {evaluationData.userSkill.status === 'completed' ? '等待評估' : 
-                         evaluationData.userSkill.status === 'in_progress' ? '學習中' :
-                         evaluationData.userSkill.status === 'certified' ? '已認證' : '未開始'}
+                        {evaluationData.userSkill.status === 'completed' && evaluationData.userSkill.score && evaluationData.userSkill.score >= 60 ? '已通過' :
+                         evaluationData.userSkill.status === 'completed' ? '等待評估' : 
+                         evaluationData.userSkill.status === 'in_progress' ? '學習中' : '未開始'}
                       </Badge>
                     </div>
                   </div>

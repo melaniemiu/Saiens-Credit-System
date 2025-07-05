@@ -13,11 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 interface SkillProgress {
   id: string
   skillId: string
-  status: 'not_started' | 'in_progress' | 'completed' | 'certified'
+  status: 'not_started' | 'in_progress' | 'completed'
   score?: number
   startedAt?: string
   completedAt?: string
-  certifiedAt?: string
+  evaluatedAt?: string
+  evaluationRequestedAt?: string
   attempts?: number
   jobLevel?: string
   Skill: {
@@ -39,10 +40,11 @@ interface JobLevel {
   isLocked: boolean
 }
 
-const getStatusIcon = (status: string, size = "h-4 w-4") => {
+const getStatusIcon = (status: string, score?: number, size = "h-4 w-4") => {
+  if (status === 'completed' && score && score >= 60) {
+    return <Award className={`${size} text-yellow-500`} />
+  }
   switch (status) {
-    case 'certified':
-      return <Award className={`${size} text-yellow-500`} />
     case 'completed':
       return <CheckCircle className={`${size} text-green-500`} />
     case 'in_progress':
@@ -52,10 +54,11 @@ const getStatusIcon = (status: string, size = "h-4 w-4") => {
   }
 }
 
-const getStatusColor = (status: string) => {
+const getStatusColor = (status: string, score?: number) => {
+  if (status === 'completed' && score && score >= 60) {
+    return 'border-yellow-500 bg-yellow-50'
+  }
   switch (status) {
-    case 'certified':
-      return 'border-yellow-500 bg-yellow-50'
     case 'completed':
       return 'border-green-500 bg-green-50'
     case 'in_progress':
@@ -87,31 +90,62 @@ export function SkillRoadmap() {
     try {
       setIsLoading(true)
       
-      // Fetch user's skill progress
+      // Get skills for user's current job with progress information
+      const jobSkillsResponse = await skillApi.getJobSkills()
+      const currentJobSkills = jobSkillsResponse.data?.skillsWithProgress || []
+      
+      // Also get user's overall skill progress to show skills from other levels
       const userSkillsResponse = await skillApi.getUserSkills()
       const userSkills = userSkillsResponse.data?.userSkills || []
 
-      // Create a map of user progress by skill ID
-      const progressMap: Record<string, SkillProgress> = {}
-      userSkills.forEach((skill: SkillProgress) => {
-        progressMap[skill.skillId] = skill
-      })
+      // Debug logging
+      console.log('🔍 [ROADMAP] Current job skills:', currentJobSkills.length)
+      console.log('🔍 [ROADMAP] User skills:', userSkills.length)
+      console.log('🔍 [ROADMAP] User job:', user?.Job?.name)
 
       // Define job progression
       const jobProgression = ['新手村', '助理工程師', '正式工程師', '資深工程師']
       const currentUserJob = user?.Job?.name || ''
       const currentJobIndex = jobProgression.indexOf(currentUserJob)
 
-      // Organize skills by job level using the jobLevel field from backend
+      // Organize skills by job level 
       const skillsByJobLevel: Record<string, SkillProgress[]> = {}
       
-      // Group skills by their job level
+      // Add current job skills (these will always be shown)
+      if (currentJobSkills.length > 0) {
+        skillsByJobLevel[currentUserJob] = currentJobSkills.map(jobSkill => ({
+          id: jobSkill.userProgress?.id || `${jobSkill.skillId}-${Date.now()}`,
+          skillId: jobSkill.skillId,
+          status: jobSkill.userProgress?.status || 'not_started',
+          score: jobSkill.userProgress?.score,
+          startedAt: jobSkill.userProgress?.startedAt,
+          completedAt: jobSkill.userProgress?.completedAt,
+          evaluatedAt: jobSkill.userProgress?.evaluatedAt,
+          evaluationRequestedAt: jobSkill.userProgress?.evaluationRequestedAt,
+          attempts: jobSkill.userProgress?.attempts || 0,
+          jobLevel: currentUserJob,
+          Skill: {
+            id: jobSkill.Skill.id,
+            name: jobSkill.Skill.name,
+            category: jobSkill.Skill.category,
+            isRequired: jobSkill.isRequired,
+            learningMethod: jobSkill.Skill.learningMethod,
+            assessmentMethod: jobSkill.Skill.assessmentMethod,
+            syllabus: jobSkill.Skill.syllabus,
+          }
+        }))
+      }
+      
+      // Group other skills by their job level (from UserSkill records)
       userSkills.forEach((skill: SkillProgress) => {
         const jobLevel = skill.jobLevel || 'Unknown'
-        if (!skillsByJobLevel[jobLevel]) {
-          skillsByJobLevel[jobLevel] = []
+        // Skip if this skill is already in current job skills
+        if (jobLevel !== currentUserJob) {
+          if (!skillsByJobLevel[jobLevel]) {
+            skillsByJobLevel[jobLevel] = []
+          }
+          skillsByJobLevel[jobLevel].push(skill)
         }
-        skillsByJobLevel[jobLevel].push(skill)
       })
 
       // Create levels array based on job progression
@@ -123,7 +157,7 @@ export function SkillRoadmap() {
 
         // Calculate completion status
         const completedSkills = skillsForLevel.filter((skill: SkillProgress) => 
-          skill.status === 'completed' || skill.status === 'certified'
+          skill.status === 'completed' && skill.score && skill.score >= 60
         ).length
         const totalSkills = skillsForLevel.length
         const isCompleted = totalSkills > 0 && completedSkills === totalSkills
@@ -139,11 +173,14 @@ export function SkillRoadmap() {
         })
       }
 
+      // Debug logging for final result
+      console.log('🔍 [ROADMAP] Final levels:', levels.map(l => ({ name: l.name, skillCount: l.skills.length })))
+
       setJobLevels(levels)
       setError(null)
     } catch (error) {
       console.error('Error fetching roadmap data:', error)
-      setError('無法載入技能路線圖')
+      setError('載入技能路線圖失敗，請稍後重試')
     } finally {
       setIsLoading(false)
     }
@@ -152,18 +189,12 @@ export function SkillRoadmap() {
   const handleStartEvaluation = async (skill: SkillProgress) => {
     try {
       await skillApi.requestEvaluation(skill.skillId)
-      
       toast({
         title: "評估申請已送出",
         description: `已為技能「${skill.Skill.name}」申請評估，評估員將收到通知。`,
       })
-      
-      // Close modal
       setIsModalOpen(false)
-      
-      // Refresh data to show updated status
       await fetchRoadmapData()
-      
     } catch (error) {
       console.error('Error requesting evaluation:', error)
       toast({
@@ -204,11 +235,34 @@ export function SkillRoadmap() {
   }
 
   useEffect(() => {
-
     if (user) {
       fetchRoadmapData()
     }
   }, [user])
+
+  // Listen for evaluation completion events to refresh roadmap
+  useEffect(() => {
+    const handleRefreshRoadmap = (event: CustomEvent) => {
+      console.log('🔄 [ROADMAP] Refreshing roadmap due to evaluation completion:', event.detail)
+      fetchRoadmapDataWithCacheBust()
+    }
+
+    window.addEventListener('refreshSkillRoadmap', handleRefreshRoadmap as EventListener)
+    
+    return () => {
+      window.removeEventListener('refreshSkillRoadmap', handleRefreshRoadmap as EventListener)
+    }
+  }, [])
+
+  const fetchRoadmapDataWithCacheBust = async () => {
+    console.log('🔍 [ROADMAP] Cache bust requested, waiting briefly then calling regular fetch')
+    
+    // Add a small delay to ensure backend changes are committed
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // Call the regular fetch which handles all the logic properly
+    return fetchRoadmapData()
+  }
 
   if (isLoading) {
     return (
@@ -222,9 +276,10 @@ export function SkillRoadmap() {
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="space-y-3">
                 <Skeleton className="h-8 w-32" />
-                <div className="grid grid-cols-2 gap-2">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
+                <div className="grid grid-cols-3 gap-4">
+                  {[1, 2, 3].map((j) => (
+                    <Skeleton key={j} className="h-20 w-20 rounded-full mx-auto" />
+                  ))}
                 </div>
               </div>
             ))}
@@ -263,15 +318,15 @@ export function SkillRoadmap() {
           <div className="grid grid-cols-4 gap-4 text-xs">
             <div className="text-center">
               <div className="text-yellow-600 font-semibold">
-                {jobLevels.reduce((sum, level) => sum + level.skills.filter(s => s.status === 'certified').length, 0)}
+                {jobLevels.reduce((sum, level) => sum + level.skills.filter(s => s.status === 'completed' && s.score && s.score >= 60).length, 0)}
               </div>
-              <div className="text-gray-500">已認證</div>
+              <div className="text-gray-500">已通過</div>
             </div>
             <div className="text-center">
               <div className="text-green-600 font-semibold">
-                {jobLevels.reduce((sum, level) => sum + level.skills.filter(s => s.status === 'completed').length, 0)}
+                {jobLevels.reduce((sum, level) => sum + level.skills.filter(s => s.status === 'completed' && (!s.score || s.score < 60)).length, 0)}
               </div>
-              <div className="text-gray-500">已完成</div>
+              <div className="text-gray-500">等待評估</div>
             </div>
             <div className="text-center">
               <div className="text-blue-600 font-semibold">
@@ -348,8 +403,8 @@ export function SkillRoadmap() {
                             return a.Skill.name.localeCompare(b.Skill.name) // Then by name
                           })
                           .map((skill, skillIndex) => {
-                          const isCompleted = skill.status === 'completed' || skill.status === 'certified'
-                          const isInProgress = skill.status === 'in_progress'
+                          const isCompleted = skill.status === 'completed' && skill.score && skill.score >= 60
+                          const isInProgress = skill.status === 'in_progress' || (skill.status === 'completed' && (!skill.score || skill.score < 60))
                           const isLocked = skill.status === 'not_started'
                           
                           return (
@@ -418,8 +473,6 @@ export function SkillRoadmap() {
                                   )}
                                 </div>
                               </div>
-                              
-                              
                             </div>
                           )
                         })}
@@ -438,247 +491,212 @@ export function SkillRoadmap() {
                       </div>
                     </div>
                   )}
-
-                  {/* Vertical connection to next level */}
-                  {levelIndex < jobLevels.length - 1 && (
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-4">
-                      <svg width="20" height="75" viewBox="0 0 20 75" className="drop-shadow-lg">
-                        <defs>
-                          <linearGradient id={`vertical-gradient-${levelIndex}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.9" />
-                            <stop offset="30%" stopColor="#f59e0b" stopOpacity="0.8" />
-                            <stop offset="70%" stopColor="#d97706" stopOpacity="0.6" />
-                            <stop offset="100%" stopColor="#92400e" stopOpacity="0.4" />
-                          </linearGradient>
-                          <filter id={`vertical-glow-${levelIndex}`} x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                            <feMerge> 
-                              <feMergeNode in="coloredBlur"/>
-                              <feMergeNode in="SourceGraphic"/>
-                            </feMerge>
-                          </filter>
-                          <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
-                        </defs>
-                        <path 
-                          d="M 10 5 L 10 38 M 5 30 L 10 38 L 15 30" 
-                          stroke={`url(#vertical-gradient-${levelIndex})`}
-                          strokeWidth="4" 
-                          fill="none"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          filter={`url(#vertical-glow-${levelIndex})`}
-                        >
-                          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite"/>
-                        </path>
-                        
-                        {/* Additional glowing effects */}
-                        <circle cx="10" cy="20" r="2" fill="#fbbf24" opacity="0.8">
-                          <animate attributeName="r" values="1;3;1" dur="2s" repeatCount="indefinite"/>
-                          <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2s" repeatCount="indefinite"/>
-                        </circle>
-                      </svg>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
           </div>
         </div>
+
+        {/* Skill Detail Modal */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="max-w-lg p-0 overflow-hidden border-0 shadow-soft-2xl rounded-lg max-h-[80vh]">
+            {selectedSkill && (
+              <div className="overflow-y-auto max-h-[80vh]">
+                <div className="p-6">
+                  <DialogHeader>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center ${
+                        selectedSkill.status === 'completed' && selectedSkill.score && selectedSkill.score >= 60
+                          ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 border-yellow-300'
+                          : selectedSkill.status === 'in_progress'
+                          ? 'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-300'
+                          : 'bg-gradient-to-br from-gray-400 to-gray-600 border-gray-300'
+                      }`}>
+                        <div className="text-white">
+                          {selectedSkill.Skill.isRequired ? (
+                            <Award className="h-6 w-6" />
+                          ) : (
+                            <BookOpen className="h-6 w-6" />
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2 text-left">
+                          {selectedSkill.Skill.name}
+                          {selectedSkill.Skill.isRequired && (
+                            <Badge className="bg-red-500 text-white">必</Badge>
+                          )}
+                          {!selectedSkill.Skill.isRequired && (
+                            <Badge className="bg-blue-500 text-white">選</Badge>
+                          )}
+                        </DialogTitle>
+                      </div>
+                    </div>
+                  </DialogHeader>
+
+                  <div className="space-y-6 mt-6">
+                    {/* Status Section */}
+                    <div className="border rounded-lg p-4 bg-gray-50">
+                      <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <Target className="h-5 w-5" />
+                        學習狀態
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-sm text-gray-500">目前狀態</span>
+                          <div className="flex items-center gap-2 mt-1">
+                            {getStatusIcon(selectedSkill.status, selectedSkill.score, "h-4 w-4")}
+                            <span className="font-medium capitalize">
+                              {selectedSkill.status === 'not_started' && '未開始'}
+                              {selectedSkill.status === 'in_progress' && selectedSkill.evaluationRequestedAt && !selectedSkill.evaluatedAt && '評估申請中'}
+                              {selectedSkill.status === 'in_progress' && !selectedSkill.evaluationRequestedAt && '學習中'}
+                              {selectedSkill.status === 'completed' && selectedSkill.score && selectedSkill.score >= 60 && '已通過'}
+                              {selectedSkill.status === 'completed' && selectedSkill.evaluationRequestedAt && !selectedSkill.evaluatedAt && '評估申請中'}
+                              {selectedSkill.status === 'completed' && (!selectedSkill.score || selectedSkill.score < 60) && !selectedSkill.evaluationRequestedAt && '等待評估'}
+                            </span>
+                          </div>
+                        </div>
+                        {selectedSkill.score && selectedSkill.score > 0 && (
+                          <div>
+                            <span className="text-sm text-gray-500">評估分數</span>
+                            <div className="mt-1">
+                              <Badge variant="outline" className="font-bold">
+                                {selectedSkill.score} 分
+                              </Badge>
+                            </div>
+                          </div>
+                        )}
+                        {selectedSkill.attempts > 0 && (
+                          <div>
+                            <span className="text-sm text-gray-500">嘗試次數</span>
+                            <div className="mt-1">
+                              <span className="font-medium">{selectedSkill.attempts} 次</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Learning Details */}
+                    <div className="border rounded-lg p-4">
+                      <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <BookOpen className="h-5 w-5" />
+                        學習詳情
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-sm text-gray-500">學習方式</span>
+                          <div className="mt-1">
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              {selectedSkill.Skill.learningMethod}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-sm text-gray-500">評估方式</span>
+                          <div className="mt-1">
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              {selectedSkill.Skill.assessmentMethod}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Syllabus Section */}
+                    {selectedSkill.Skill.syllabus && (
+                      <div className="border rounded-lg p-4">
+                        <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                          <BookOpen className="h-5 w-5" />
+                          考試大綱
+                        </h3>
+                        <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                          {selectedSkill.Skill.syllabus}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Progress Timeline */}
+                    {(selectedSkill.startedAt || selectedSkill.completedAt || selectedSkill.evaluationRequestedAt || selectedSkill.evaluatedAt) && (
+                      <div className="border rounded-lg p-4">
+                        <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                          <Calendar className="h-5 w-5" />
+                          學習時程
+                        </h3>
+                        <div className="space-y-2">
+                          {selectedSkill.startedAt && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <span className="text-gray-500">開始時間:</span>
+                              <span className="font-medium">
+                                {new Date(selectedSkill.startedAt).toLocaleDateString('zh-TW')}
+                              </span>
+                            </div>
+                          )}
+                          {selectedSkill.completedAt && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span className="text-gray-500">完成時間:</span>
+                              <span className="font-medium">
+                                {new Date(selectedSkill.completedAt).toLocaleDateString('zh-TW')}
+                              </span>
+                            </div>
+                          )}
+                          {selectedSkill.evaluationRequestedAt && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                              <span className="text-gray-500">申請評估:</span>
+                              <span className="font-medium">
+                                {new Date(selectedSkill.evaluationRequestedAt).toLocaleDateString('zh-TW')}
+                              </span>
+                            </div>
+                          )}
+                          {selectedSkill.evaluatedAt && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                              <span className="text-gray-500">評估時間:</span>
+                              <span className="font-medium">
+                                {new Date(selectedSkill.evaluatedAt).toLocaleDateString('zh-TW')}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="mt-6 border-t pt-4">
+                    <div className="flex gap-3">
+                      {/* Start Evaluation Button - Only show for completed/in_progress, NOT passed (completed with score >= 60), NOT already requested */}
+                      {((selectedSkill.status === 'completed' && (!selectedSkill.score || selectedSkill.score < 60) && !selectedSkill.evaluationRequestedAt) || (selectedSkill.status === 'in_progress' && !selectedSkill.evaluationRequestedAt)) && (
+                        <button
+                          onClick={() => handleStartEvaluation(selectedSkill)}
+                          className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                        >
+                          <Award className="h-4 w-4" />
+                          申請評估
+                        </button>
+                      )}
+                      
+                      {/* Start Learning Button */}
+                      {selectedSkill.status === 'not_started' && (
+                        <button
+                          onClick={() => handleStartLearning(selectedSkill)}
+                          className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                        >
+                          <BookOpen className="h-4 w-4" />
+                          開始學習
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </SoftCardContent>
-
-      {/* Skill Detail Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-lg p-0 overflow-hidden border-0 shadow-soft-2xl rounded-lg max-h-[80vh]">
-          {selectedSkill && (
-            <div className="overflow-y-auto max-h-[80vh]">
-              <div className="p-6">
-                <DialogHeader>
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center ${
-                    selectedSkill.status === 'completed' || selectedSkill.status === 'certified'
-                      ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 border-yellow-300'
-                      : selectedSkill.status === 'in_progress'
-                      ? 'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-300'
-                      : 'bg-gradient-to-br from-gray-400 to-gray-600 border-gray-300'
-                  }`}>
-                    <div className="text-white">
-                      {selectedSkill.Skill.isRequired ? (
-                        <Award className="h-6 w-6" />
-                      ) : (
-                        <BookOpen className="h-6 w-6" />
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <DialogTitle className="text-xl font-bold flex items-center gap-2 text-left">
-                      {selectedSkill.Skill.name}
-                      {selectedSkill.Skill.isRequired && (
-                        <Badge className="bg-red-500 text-white">必</Badge>
-                      )}
-                      {!selectedSkill.Skill.isRequired && (
-                        <Badge className="bg-blue-500 text-white">選</Badge>
-                      )}
-                    </DialogTitle>
-                    {/* <DialogDescription className="text-gray-600">
-                      {selectedSkill.Skill.category}
-                    </DialogDescription> */}
-                  </div>
-                </div>
-              </DialogHeader>
-
-              <div className="space-y-6 mt-6">
-                {/* Status Section */}
-                <div className="border rounded-lg p-4 bg-gray-50">
-                  <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <Target className="h-5 w-5" />
-                    學習狀態
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-sm text-gray-500">目前狀態</span>
-                      <div className="flex items-center gap-2 mt-1">
-                        {getStatusIcon(selectedSkill.status, "h-4 w-4")}
-                        <span className="font-medium capitalize">
-                          {selectedSkill.status === 'not_started' && '未開始'}
-                          {selectedSkill.status === 'in_progress' && '學習中'}
-                          {selectedSkill.status === 'completed' && '已完成'}
-                          {selectedSkill.status === 'certified' && '已認證'}
-                        </span>
-                      </div>
-                    </div>
-                    {selectedSkill.score && selectedSkill.score > 0 && (
-                      <div>
-                        <span className="text-sm text-gray-500">評估分數</span>
-                        <div className="mt-1">
-                          <Badge variant="outline" className="font-bold">
-                            {selectedSkill.score} 分
-                          </Badge>
-                        </div>
-                      </div>
-                    )}
-                    {selectedSkill.attempts > 0 && (
-                      <div>
-                        <span className="text-sm text-gray-500">嘗試次數</span>
-                        <div className="mt-1">
-                          <span className="font-medium">{selectedSkill.attempts} 次</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Learning Details */}
-                <div className="border rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <BookOpen className="h-5 w-5" />
-                    學習詳情
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-sm text-gray-500">學習方式</span>
-                      <div className="mt-1">
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          {selectedSkill.Skill.learningMethod}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">評估方式</span>
-                      <div className="mt-1">
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          {selectedSkill.Skill.assessmentMethod}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Syllabus Section */}
-                {selectedSkill.Skill.syllabus && (
-                  <div className="border rounded-lg p-4">
-                    <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                      <BookOpen className="h-5 w-5" />
-                      考試大綱
-                    </h3>
-                    <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {selectedSkill.Skill.syllabus}
-                    </div>
-                  </div>
-                )}
-
-                {/* Progress Timeline */}
-                {(selectedSkill.startedAt || selectedSkill.completedAt || selectedSkill.certifiedAt) && (
-                  <div className="border rounded-lg p-4">
-                    <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                      <Calendar className="h-5 w-5" />
-                      學習時程
-                    </h3>
-                    <div className="space-y-2">
-                      {selectedSkill.startedAt && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="text-gray-500">開始時間:</span>
-                          <span className="font-medium">
-                            {new Date(selectedSkill.startedAt).toLocaleDateString('zh-TW')}
-                          </span>
-                        </div>
-                      )}
-                      {selectedSkill.completedAt && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span className="text-gray-500">完成時間:</span>
-                          <span className="font-medium">
-                            {new Date(selectedSkill.completedAt).toLocaleDateString('zh-TW')}
-                          </span>
-                        </div>
-                      )}
-                      {selectedSkill.certifiedAt && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                          <span className="text-gray-500">認證時間:</span>
-                          <span className="font-medium">
-                            {new Date(selectedSkill.certifiedAt).toLocaleDateString('zh-TW')}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-              </div>
-
-              {/* Action Buttons */}
-              <div className="mt-6 border-t pt-4">
-                <div className="flex gap-3">
-                  {/* Start Evaluation Button */}
-                  {(selectedSkill.status === 'completed' || selectedSkill.status === 'in_progress') && (
-                    <button
-                      onClick={() => handleStartEvaluation(selectedSkill)}
-                      className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                    >
-                      <Award className="h-4 w-4" />
-                      申請評估
-                    </button>
-                  )}
-                  
-                  {/* Start Learning Button */}
-                  {selectedSkill.status === 'not_started' && (
-                    <button
-                      onClick={() => handleStartLearning(selectedSkill)}
-                      className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                    >
-                      <BookOpen className="h-4 w-4" />
-                      開始學習
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </SoftCard>
   )
 }

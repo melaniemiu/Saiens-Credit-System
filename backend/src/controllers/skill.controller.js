@@ -590,15 +590,30 @@ exports.requestEvaluation = async (req, res, next) => {
       return res.status(400).json({ error: '請先開始學習此技能' });
     }
     
-    if (userSkill.status === 'certified') {
-      return res.status(400).json({ error: '此技能已通過認證' });
+    if (userSkill.status === 'completed' && userSkill.score && userSkill.score >= 60) {
+      return res.status(400).json({ error: '此技能已通過評估' });
+    }
+
+    if (userSkill.evaluationRequestedAt && !userSkill.evaluatedAt) {
+      return res.status(400).json({ error: '此技能已申請評估，請等待評估員回覆' });
     }
     
     // Update user skill with evaluation request
-    await userSkill.update({
-      status: 'completed', // Mark as completed, waiting for evaluation
-      completedAt: new Date()
-    });
+    const updateData = {
+      evaluationRequestedAt: new Date()
+    };
+
+    // Only set completedAt and status to 'completed' if user was actually in completed state
+    // If they're requesting evaluation from 'in_progress', keep them as 'in_progress'
+    if (userSkill.status === 'completed') {
+      // User already completed learning, just requesting evaluation
+      updateData.completedAt = userSkill.completedAt || new Date();
+    } else {
+      // User is requesting evaluation while still in progress
+      // Keep status as 'in_progress', don't set completedAt
+    }
+
+    await userSkill.update(updateData);
     
     // Get user info for notification
     const user = await User.findByPk(userId, {
@@ -759,8 +774,8 @@ exports.submitEvaluationByUserSkillId = async (req, res, next) => {
       return res.status(404).json({ error: '找不到指定的技能記錄' });
     }
     
-    if (userSkill.status === 'certified') {
-      return res.status(400).json({ error: '此技能已通過認證，無法重複評估' });
+    if (userSkill.status === 'completed' && userSkill.score && userSkill.score >= 60) {
+      return res.status(400).json({ error: '此技能已通過評估，無法重複評估' });
     }
     
     // Update user skill based on evaluation result
@@ -768,10 +783,16 @@ exports.submitEvaluationByUserSkillId = async (req, res, next) => {
       score: result === 'pass' ? score : 0,
       attempts: userSkill.attempts + 1,
       notes: feedback,
-      certifiedBy: evaluatorId,
-      certifiedAt: result === 'pass' ? new Date() : null,
-      status: result === 'pass' ? 'certified' : 'in_progress'
+      evaluatedBy: evaluatorId,
+      evaluatedAt: new Date(), // Always set evaluation date
+      evaluationRequestedAt: null, // Clear the request flag
+      status: result === 'pass' ? 'completed' : 'in_progress'
     };
+
+    // If passed, set completedAt if not already set
+    if (result === 'pass' && !userSkill.completedAt) {
+      updateData.completedAt = new Date();
+    }
     
     await userSkill.update(updateData);
     

@@ -243,6 +243,41 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       })
     })
 
+    // Listen for evaluation completion notifications (for skill owners)
+    socketInstance.on('evaluation-completed', (data) => {
+      console.log(`🎓 [CLIENT] Evaluation completed:`, data)
+      
+      const isPass = data.result === 'pass'
+      toast({
+        title: isPass ? "🎉 評估通過！" : "📝 評估結果",
+        description: isPass 
+          ? `恭喜！您的 "${data.skillName}" 技能評估已通過 (${data.score} 分)`
+          : `您的 "${data.skillName}" 技能評估未通過，請查看評估員回饋並繼續學習`,
+        duration: 8000,
+      })
+
+      // Trigger a custom event to refresh roadmap data
+      const refreshEvent = new CustomEvent('refreshSkillRoadmap', { 
+        detail: { 
+          skillId: data.skillId,
+          result: data.result,
+          score: data.score
+        }
+      })
+      window.dispatchEvent(refreshEvent)
+      
+      // Trigger confetti if passed
+      if (isPass) {
+        setTimeout(() => {
+          const creditId = `evaluation-pass-${data.skillId}-${Date.now()}`
+          const confettiTriggered = triggerConfettiIfNotShown(creditId)
+          if (confettiTriggered) {
+            console.log(`🎊 [CLIENT] Evaluation pass confetti triggered for: ${data.skillName}`)
+          }
+        }, 500)
+      }
+    })
+
     // Clean up old confetti records on connection
     cleanupConfettiRecords()
 
