@@ -15,6 +15,7 @@ import { Plus, Search, Edit, Trash2, Briefcase, Building2, Brain, Users } from "
 import { useToast } from "@/hooks/use-toast"
 import { jobApi, departmentApi, skillApi } from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
+import CSVImportDialog from "@/components/csv-import-dialog"
 
 interface Department {
   id: string
@@ -304,10 +305,17 @@ export function AdminJobList() {
                 <SelectItem value="DESC">降序</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={() => setIsCreateDialogOpen(true)} className="w-full sm:w-auto">
-              <Plus className="mr-2 h-4 w-4" />
-              新增職位
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setIsCreateDialogOpen(true)} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                新增職位
+              </Button>
+              <CSVImportDialog 
+                type="jobs" 
+                title="職位"
+                onImportComplete={fetchJobs}
+              />
+            </div>
           </div>
 
           {/* 職位列表 - Desktop */}

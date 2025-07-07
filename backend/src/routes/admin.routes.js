@@ -41,4 +41,7 @@ router.delete('/jobs/:id', jobController.deleteJob);
 router.get('/users/:userId/promotion-check', adminController.checkUserPromotion);
 router.post('/users/:userId/promote', adminController.promoteUser);
 
+// Get jobs for department (for user assignment)
+router.get('/departments/:departmentId/jobs', adminController.getJobsForDepartment);
+
 module.exports = router;

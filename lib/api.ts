@@ -495,6 +495,24 @@ export const adminApi = {
       headers: createHeaders(),
     });
   },
+
+  // Get jobs for a specific department (admin only)
+  getJobsForDepartment: async (departmentId: string) => {
+    return fetchApi<{
+      jobs: Array<{
+        id: string;
+        name: string;
+        level: number;
+        department: {
+          id: string;
+          name: string;
+        };
+      }>;
+    }>(`/admin/departments/${departmentId}/jobs`, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
 };
 
 // Department API
@@ -627,6 +645,37 @@ export const skillApi = {
   // Get evaluation details by userSkillId (for evaluators)
   getEvaluationDetailsByUserSkillId: async (userSkillId: string) => {
     return fetchApi<{ skill: any; userSkill: any; user: any }>(`/skills/evaluation-details/${userSkillId}`, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Admin: Get all pending evaluations
+  getPendingEvaluations: async (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    departmentId?: string;
+    sortField?: string;
+    sortOrder?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page.toString());
+    if (params.limit) query.append('limit', params.limit.toString());
+    if (params.search) query.append('search', params.search);
+    if (params.departmentId) query.append('departmentId', params.departmentId);
+    if (params.sortField) query.append('sortField', params.sortField);
+    if (params.sortOrder) query.append('sortOrder', params.sortOrder);
+
+    return fetchApi<{
+      evaluations: any[];
+      pagination: {
+        currentPage: number;
+        totalPages: number;
+        totalItems: number;
+        itemsPerPage: number;
+      };
+    }>(`/skills/pending-evaluations?${query.toString()}`, {
       method: 'GET',
       headers: createHeaders(),
     });
@@ -860,12 +909,125 @@ export const getAuthToken = (): string | null => {
   return null;
 };
 
+// CSV Import API
+export const csvApi = {
+  // Import users from CSV
+  importUsers: async (file: File) => {
+    const formData = new FormData();
+    formData.append('csv', file);
+    
+    const response = await fetch(`${API_BASE_URL}/csv-import/users`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getAuthToken()}`
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Upload failed');
+    }
+
+    return response.json();
+  },
+
+  // Import skills from CSV
+  importSkills: async (file: File) => {
+    const formData = new FormData();
+    formData.append('csv', file);
+    
+    const response = await fetch(`${API_BASE_URL}/csv-import/skills`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getAuthToken()}`
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Upload failed');
+    }
+
+    return response.json();
+  },
+
+  // Import departments from CSV
+  importDepartments: async (file: File) => {
+    const formData = new FormData();
+    formData.append('csv', file);
+    
+    const response = await fetch(`${API_BASE_URL}/csv-import/departments`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getAuthToken()}`
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Upload failed');
+    }
+
+    return response.json();
+  },
+
+  // Import jobs from CSV
+  importJobs: async (file: File) => {
+    const formData = new FormData();
+    formData.append('csv', file);
+    
+    const response = await fetch(`${API_BASE_URL}/csv-import/jobs`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getAuthToken()}`
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Upload failed');
+    }
+
+    return response.json();
+  },
+
+  // Download example CSV
+  downloadExample: async (type: 'users' | 'skills' | 'departments' | 'jobs') => {
+    const response = await fetch(`${API_BASE_URL}/csv-import/example/${type}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${getAuthToken()}`
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Download failed');
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${type}-example.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+};
+
 export default {
   authApi,
   userApi,
   creditApi,
   departmentApi,
   skillApi,
+  csvApi,
   setAuthToken,
   removeAuthToken,
 };

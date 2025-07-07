@@ -14,6 +14,7 @@ const userRoutes = require("./routes/user.routes");
 const departmentRoutes = require("./routes/department.routes");
 const adminRoutes = require("./routes/admin.routes");
 const skillRoutes = require("./routes/skill.routes");
+const csvImportRoutes = require("./routes/csv-import.routes");
 
 // Initialize express app
 const app = express();
@@ -66,6 +67,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/skills", skillRoutes);
+app.use("/api/csv-import", csvImportRoutes);
 
 // Make io available to routes
 app.set("io", io);

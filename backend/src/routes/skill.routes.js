@@ -15,5 +15,6 @@ router.put('/:skillId/progress', skillController.updateUserSkill);
 router.post('/:skillId/request-evaluation', skillController.requestEvaluation);
 router.get('/evaluation-details/:userSkillId', skillController.getEvaluationDetailsByUserSkillId);
 router.post('/evaluate/:userSkillId', skillController.submitEvaluationByUserSkillId);
+router.get('/pending-evaluations', skillController.getPendingEvaluations);
 
 module.exports = router;

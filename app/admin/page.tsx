@@ -5,6 +5,8 @@ import { AdminNavbar } from "@/components/admin-navbar"
 import { AdminDepartmentList } from "@/components/admin-department-list"
 import { AdminSkillList } from "@/components/admin-skill-list"
 import { AdminJobList } from "@/components/admin-job-list"
+import { AdminEvaluationList } from "@/components/admin-evaluation-list"
+import CSVImportDialog from "@/components/csv-import-dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -80,6 +82,7 @@ interface UserFormData {
   employeeId: string
   role: 'user' | 'admin'
   departmentId: string
+  jobId?: string
 }
 
 // Helper component for sortable table headers
@@ -123,7 +126,7 @@ function SortableTableHead({
 
 export default function AdminPage() {
   // Sidebar state
-  const [activeSection, setActiveSection] = useState<'users' | 'credits' | 'departments' | 'skills' | 'jobs'>('users')
+  const [activeSection, setActiveSection] = useState<'users' | 'credits' | 'departments' | 'skills' | 'jobs' | 'evaluations'>('users')
 
   // Users state
   const [users, setUsers] = useState<User[]>([])
@@ -150,7 +153,8 @@ export default function AdminPage() {
     email: '',
     employeeId: '',
     role: 'user',
-    departmentId: ''
+    departmentId: '',
+    jobId: 'none'
   })
   const [createUserErrors, setCreateUserErrors] = useState<Partial<UserFormData>>({})
 
@@ -168,6 +172,7 @@ export default function AdminPage() {
 
   // Common state
   const [departments, setDepartments] = useState<Department[]>([])
+  const [availableJobs, setAvailableJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -185,11 +190,19 @@ export default function AdminPage() {
   useEffect(() => {
     if (activeSection === 'users') {
       fetchUsers()
-    } else {
+    } else if (activeSection === 'credits') {
       fetchCredits()
     }
+    // For other sections (evaluations, departments, skills, jobs), data is managed by their respective components
   }, [activeSection, userPage, userSearchTerm, userDepartmentFilter, userRoleFilter, userSortField, userSortOrder,
       creditPage, creditSearchTerm, creditDepartmentFilter, creditDateRange, creditSortField, creditSortOrder])
+
+  // Load jobs when edit dialog opens
+  useEffect(() => {
+    if (isEditDialogOpen && selectedUser) {
+      fetchJobsForDepartment(selectedUser.department.id)
+    }
+  }, [isEditDialogOpen, selectedUser])
 
   const fetchDepartments = async () => {
     try {
@@ -204,6 +217,23 @@ export default function AdminPage() {
         description: "無法載入部門資料",
         variant: "destructive",
       })
+    }
+  }
+
+  const fetchJobsForDepartment = async (departmentId: string) => {
+    if (!departmentId || departmentId === 'all') {
+      setAvailableJobs([])
+      return
+    }
+
+    try {
+      const response = await adminApi.getJobsForDepartment(departmentId)
+      if (response.data?.jobs) {
+        setAvailableJobs(response.data.jobs)
+      }
+    } catch (error) {
+      console.error("Failed to fetch jobs:", error)
+      setAvailableJobs([])
     }
   }
 
@@ -282,7 +312,8 @@ export default function AdminPage() {
         email: '',
         employeeId: '',
         role: 'user',
-        departmentId: ''
+        departmentId: '',
+        jobId: 'none'
       })
       setCreateUserErrors({})
       fetchUsers()
@@ -481,6 +512,7 @@ export default function AdminPage() {
               <h1 className="text-2xl font-bold">
                 {activeSection === 'users' && '使用者管理'}
                 {activeSection === 'credits' && 'Credit 管理'}
+                {activeSection === 'evaluations' && '技能評估管理'}
                 {activeSection === 'departments' && '部門管理'}
                 {activeSection === 'skills' && '技能管理'}
                 {activeSection === 'jobs' && '職位管理'}
@@ -494,8 +526,8 @@ export default function AdminPage() {
                 <CardContent className="px-4 sm:px-6 pb-6">
                   <div className="space-y-4">
                     {/* 搜尋和篩選 */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-                      <div className="sm:col-span-2 lg:col-span-1">
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                         <div className="relative">
                           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                           <Input
@@ -505,34 +537,41 @@ export default function AdminPage() {
                             className="pl-10 w-full"
                           />
                         </div>
+                        <Select value={userDepartmentFilter} onValueChange={setUserDepartmentFilter}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="選擇部門" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">所有部門</SelectItem>
+                            {departments.map((dept) => (
+                              <SelectItem key={dept.id} value={dept.id}>
+                                {dept.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="選擇角色" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">所有角色</SelectItem>
+                            <SelectItem value="user">一般使用者</SelectItem>
+                            <SelectItem value="admin">管理員</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <Select value={userDepartmentFilter} onValueChange={setUserDepartmentFilter}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="選擇部門" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">所有部門</SelectItem>
-                          {departments.map((dept) => (
-                            <SelectItem key={dept.id} value={dept.id}>
-                              {dept.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="選擇角色" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">所有角色</SelectItem>
-                          <SelectItem value="user">一般使用者</SelectItem>
-                          <SelectItem value="admin">管理員</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button onClick={() => setIsCreateDialogOpen(true)} className="w-full sm:w-auto">
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        新增使用者
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button onClick={() => setIsCreateDialogOpen(true)} className="flex items-center gap-2">
+                          <UserPlus className="h-4 w-4" />
+                          新增使用者
+                        </Button>
+                        <CSVImportDialog 
+                          type="users" 
+                          title="使用者"
+                          onImportComplete={fetchUsers}
+                        />
+                      </div>
                     </div>
 
                     {/* 使用者列表 */}
@@ -781,6 +820,10 @@ export default function AdminPage() {
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {activeSection === 'evaluations' && (
+              <AdminEvaluationList />
             )}
 
             {activeSection === 'credits' && (
@@ -1057,7 +1100,11 @@ export default function AdminPage() {
               return
             }
 
-            handleCreateUser(createUserForm)
+            const formData = {
+              ...createUserForm,
+              jobId: createUserForm.jobId === 'none' ? null : createUserForm.jobId
+            }
+            handleCreateUser(formData)
           }}>
             <div className="space-y-4">
               <div>
@@ -1135,10 +1182,11 @@ export default function AdminPage() {
                 <Select
                   value={createUserForm.departmentId}
                   onValueChange={(value) => {
-                    setCreateUserForm({ ...createUserForm, departmentId: value })
+                    setCreateUserForm({ ...createUserForm, departmentId: value, jobId: 'none' })
                     if (createUserErrors.departmentId) {
                       setCreateUserErrors({ ...createUserErrors, departmentId: '' })
                     }
+                    fetchJobsForDepartment(value)
                   }}
                 >
                   <SelectTrigger id="create-department" className={createUserErrors.departmentId ? "border-red-500" : ""}>
@@ -1156,6 +1204,30 @@ export default function AdminPage() {
                   <p className="text-sm text-red-500 mt-1">{createUserErrors.departmentId}</p>
                 )}
               </div>
+              <div>
+                <Label htmlFor="create-job">職位</Label>
+                <Select
+                  value={createUserForm.jobId}
+                  onValueChange={(value) => {
+                    setCreateUserForm({ ...createUserForm, jobId: value })
+                    if (createUserErrors.jobId) {
+                      setCreateUserErrors({ ...createUserErrors, jobId: '' })
+                    }
+                  }}
+                >
+                  <SelectTrigger id="create-job">
+                    <SelectValue placeholder="選擇職位 (可選)" />
+                  </SelectTrigger>
+                  <SelectContent className="z-[10000]">
+                    <SelectItem value="none">無職位</SelectItem>
+                    {availableJobs.map((job) => (
+                      <SelectItem key={job.id} value={job.id}>
+                        {job.name} (Level {job.level})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={() => {
@@ -1166,7 +1238,8 @@ export default function AdminPage() {
                   email: '',
                   employeeId: '',
                   role: 'user',
-                  departmentId: ''
+                  departmentId: '',
+                  jobId: 'none'
                 })
                 setCreateUserErrors({})
               }}>
@@ -1191,12 +1264,14 @@ export default function AdminPage() {
             <form onSubmit={(e) => {
               e.preventDefault()
               const formData = new FormData(e.currentTarget)
+              const jobId = formData.get('jobId') as string
               handleUpdateUser({
                 name: formData.get('name') as string,
                 email: formData.get('email') as string,
                 employeeId: formData.get('employeeId') as string,
                 role: formData.get('role') as 'user' | 'admin',
                 departmentId: formData.get('departmentId') as string,
+                jobId: jobId === 'none' ? null : jobId,
               })
             }}>
               <div className="space-y-4">
@@ -1226,7 +1301,13 @@ export default function AdminPage() {
                 </div>
                 <div>
                   <Label htmlFor="edit-department">部門</Label>
-                  <Select name="departmentId" defaultValue={selectedUser.department.id}>
+                  <Select 
+                    name="departmentId" 
+                    defaultValue={selectedUser.department.id}
+                    onValueChange={(value) => {
+                      fetchJobsForDepartment(value)
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -1234,6 +1315,22 @@ export default function AdminPage() {
                       {departments.map((dept) => (
                         <SelectItem key={dept.id} value={dept.id}>
                           {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-job">職位</Label>
+                  <Select name="jobId" defaultValue={selectedUser.job?.id || 'none'}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="選擇職位 (可選)" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[10000]">
+                      <SelectItem value="none">無職位</SelectItem>
+                      {availableJobs.map((job) => (
+                        <SelectItem key={job.id} value={job.id}>
+                          {job.name} (Level {job.level})
                         </SelectItem>
                       ))}
                     </SelectContent>

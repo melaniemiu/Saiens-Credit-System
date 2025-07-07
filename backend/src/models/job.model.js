@@ -10,6 +10,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       unique: true
     },
+    level: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Job level for career progression (1=entry, higher=senior)'
+    },
     departmentId: {
       type: DataTypes.UUID,
       allowNull: true,

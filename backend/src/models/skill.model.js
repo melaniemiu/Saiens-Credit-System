@@ -21,14 +21,14 @@ module.exports = (sequelize, DataTypes) => {
       comment: 'Whether this skill is required (必修) or optional (選修)'
     },
     learningMethod: {
-      type: DataTypes.ENUM('實體', '線上'),
+      type: DataTypes.STRING,
       allowNull: false,
-      comment: 'Learning method: 實體 (physical) or 線上 (online)'
+      comment: 'Learning method from CSV data (flexible values)'
     },
     assessmentMethod: {
-      type: DataTypes.ENUM('考卷考核', '實作考核'),
+      type: DataTypes.STRING,
       allowNull: false,
-      comment: 'Assessment method: 考卷考核 (exam) or 實作考核 (practical)'
+      comment: 'Assessment method from CSV data (flexible values)'
     },
     syllabus: {
       type: DataTypes.TEXT,

@@ -192,7 +192,7 @@ exports.createUser = async (req, res, next) => {
 exports.updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, email, employeeId, role, departmentId } = req.body;
+    const { name, email, employeeId, role, departmentId, jobId } = req.body;
 
     const user = await User.findByPk(id);
 
@@ -226,20 +226,48 @@ exports.updateUser = async (req, res, next) => {
       }
     }
 
+    // Validate job assignment if provided
+    if (jobId) {
+      const job = await Job.findByPk(jobId);
+      if (!job) {
+        return res.status(400).json({
+          message: "Invalid job selected",
+        });
+      }
+      
+      // Optionally validate that job belongs to the same department
+      if (departmentId && job.departmentId !== departmentId) {
+        return res.status(400).json({
+          message: "Selected job does not belong to the selected department",
+        });
+      }
+    }
+
     // Update the user
-    await user.update({
+    const updateData = {
       name,
       email,
       employeeId,
       role,
       departmentId,
-    });
+    };
 
-    // Fetch the updated user with department
+    // Only update jobId if it's provided (could be null to unassign)
+    if (jobId !== undefined) {
+      updateData.jobId = jobId || null;
+    }
+
+    await user.update(updateData);
+
+    // Fetch the updated user with department and job
     const updatedUser = await User.findByPk(id, {
       include: [
         {
           model: Department,
+          attributes: ["id", "name"],
+        },
+        {
+          model: Job,
           attributes: ["id", "name"],
         },
       ],
@@ -743,6 +771,58 @@ exports.promoteUser = async (req, res, next) => {
       }
     });
 
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get jobs for a department
+exports.getJobsForDepartment = async (req, res, next) => {
+  try {
+    const { departmentId } = req.params;
+
+    if (!departmentId || departmentId === 'all') {
+      // Return all jobs if no specific department
+      const jobs = await Job.findAll({
+        include: [
+          {
+            model: Department,
+            attributes: ['id', 'name']
+          }
+        ],
+        order: [['level', 'ASC'], ['name', 'ASC']]
+      });
+
+      return res.status(200).json({
+        jobs: jobs.map(job => ({
+          id: job.id,
+          name: job.name,
+          level: job.level,
+          department: job.Department
+        }))
+      });
+    }
+
+    // Get jobs for specific department
+    const jobs = await Job.findAll({
+      where: { departmentId },
+      include: [
+        {
+          model: Department,
+          attributes: ['id', 'name']
+        }
+      ],
+      order: [['level', 'ASC'], ['name', 'ASC']]
+    });
+
+    return res.status(200).json({
+      jobs: jobs.map(job => ({
+        id: job.id,
+        name: job.name,
+        level: job.level,
+        department: job.Department
+      }))
+    });
   } catch (error) {
     next(error);
   }

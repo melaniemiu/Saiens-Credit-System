@@ -16,6 +16,7 @@ import { Plus, Search, Edit, Trash2, Brain, Building2, BookOpen, CheckCircle, Us
 import { useToast } from "@/hooks/use-toast"
 import { skillApi, departmentApi } from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
+import CSVImportDialog from "@/components/csv-import-dialog"
 
 interface Department {
   id: string
@@ -27,8 +28,8 @@ interface Skill {
   name: string
   category: string
   isRequired: boolean
-  learningMethod: '實體' | '線上'
-  assessmentMethod: '考卷考核' | '實作考核'
+  learningMethod: string
+  assessmentMethod: string
   departments: Department[]
   departmentCount: number
   jobCount: number
@@ -40,8 +41,8 @@ interface SkillFormData {
   name: string
   category: string
   isRequired: boolean
-  learningMethod: '實體' | '線上' | ''
-  assessmentMethod: '考卷考核' | '實作考核' | ''
+  learningMethod: string
+  assessmentMethod: string
   departmentIds: string[]
 }
 
@@ -289,10 +290,17 @@ export function AdminSkillList() {
                 <SelectItem value="DESC">降序</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={() => setIsCreateDialogOpen(true)} className="w-full sm:w-auto">
-              <Plus className="mr-2 h-4 w-4" />
-              新增技能
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setIsCreateDialogOpen(true)} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                新增技能
+              </Button>
+              <CSVImportDialog 
+                type="skills" 
+                title="技能"
+                onImportComplete={fetchSkills}
+              />
+            </div>
           </div>
 
           {/* 技能列表 - Desktop */}

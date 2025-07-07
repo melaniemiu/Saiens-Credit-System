@@ -828,3 +828,129 @@ exports.submitEvaluationByUserSkillId = async (req, res, next) => {
     next(error);
   }
 };
+
+// Get all pending evaluations for admin
+exports.getPendingEvaluations = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 20, search, departmentId, sortField = 'evaluationRequestedAt', sortOrder = 'DESC' } = req.query;
+    
+    // Check if the requester is an admin
+    const evaluator = await User.findByPk(req.userId);
+    if (!evaluator || evaluator.role !== 'admin') {
+      return res.status(403).json({ error: '只有管理員可以查看評估列表' });
+    }
+    
+    // Build where clause for filtering pending evaluations
+    const whereClause = {
+      evaluationRequestedAt: {
+        [Op.not]: null
+      },
+      evaluatedAt: null // Not yet evaluated
+    };
+    
+    // Build include clause for user and skill associations
+    const includeClause = [
+      {
+        model: User,
+        attributes: ['id', 'name', 'employeeId'],
+        include: [
+          {
+            model: Department,
+            attributes: ['id', 'name']
+          }
+        ],
+        where: departmentId ? { departmentId } : undefined
+      },
+      {
+        model: Skill,
+        attributes: ['id', 'name', 'category', 'learningMethod', 'assessmentMethod', 'syllabus']
+      }
+    ];
+    
+    // Add search functionality
+    if (search) {
+      includeClause[0].where = {
+        ...includeClause[0].where,
+        [Op.or]: [
+          { name: { [Op.iLike]: `%${search}%` } },
+          { employeeId: { [Op.iLike]: `%${search}%` } }
+        ]
+      };
+      
+      includeClause[1].where = {
+        [Op.or]: [
+          { name: { [Op.iLike]: `%${search}%` } },
+          { category: { [Op.iLike]: `%${search}%` } }
+        ]
+      };
+    }
+    
+    // Calculate offset
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Validate sort field
+    const allowedSortFields = ['evaluationRequestedAt', 'userName', 'skillName', 'category'];
+    const validSortField = allowedSortFields.includes(sortField) ? sortField : 'evaluationRequestedAt';
+    
+    // Build order clause
+    let orderClause = [];
+    if (validSortField === 'userName') {
+      orderClause = [[User, 'name', sortOrder]];
+    } else if (validSortField === 'skillName') {
+      orderClause = [[Skill, 'name', sortOrder]];
+    } else if (validSortField === 'category') {
+      orderClause = [[Skill, 'category', sortOrder]];
+    } else {
+      orderClause = [[validSortField, sortOrder]];
+    }
+    
+    // Get pending evaluations with pagination
+    const { count, rows: pendingEvaluations } = await UserSkill.findAndCountAll({
+      where: whereClause,
+      include: includeClause,
+      order: orderClause,
+      limit: parseInt(limit),
+      offset: offset,
+      distinct: true
+    });
+    
+    // Calculate pagination info
+    const totalPages = Math.ceil(count / parseInt(limit));
+    
+    // Format response
+    const formattedEvaluations = pendingEvaluations.map(userSkill => ({
+      id: userSkill.id,
+      userSkillId: userSkill.id,
+      userId: userSkill.User.id,
+      userName: userSkill.User.name,
+      userEmployeeId: userSkill.User.employeeId,
+      userDepartment: userSkill.User.Department.name,
+      skillId: userSkill.Skill.id,
+      skillName: userSkill.Skill.name,
+      skillCategory: userSkill.Skill.category,
+      learningMethod: userSkill.Skill.learningMethod,
+      assessmentMethod: userSkill.Skill.assessmentMethod,
+      syllabus: userSkill.Skill.syllabus,
+      status: userSkill.status,
+      score: userSkill.score,
+      attempts: userSkill.attempts,
+      startedAt: userSkill.startedAt,
+      completedAt: userSkill.completedAt,
+      evaluationRequestedAt: userSkill.evaluationRequestedAt,
+      notes: userSkill.notes
+    }));
+    
+    return res.status(200).json({
+      evaluations: formattedEvaluations,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages,
+        totalItems: count,
+        itemsPerPage: parseInt(limit)
+      }
+    });
+    
+  } catch (error) {
+    next(error);
+  }
+};

@@ -3,33 +3,55 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Add evaluationRequestedAt field to track when evaluation was requested
-    await queryInterface.addColumn('user_skills', 'evaluationRequestedAt', {
-      type: Sequelize.DATE,
-      allowNull: true,
-      comment: 'When the user requested evaluation for this skill'
-    });
+    try {
+      // Check if table exists
+      const tableExists = await queryInterface.describeTable('user_skills').catch(() => null);
+      if (!tableExists) {
+        console.log('⚠️  user_skills table does not exist, skipping migration');
+        return;
+      }
 
-    // Add evaluatedBy field to replace certifiedBy
-    await queryInterface.addColumn('user_skills', 'evaluatedBy', {
-      type: Sequelize.UUID,
-      allowNull: true,
-      references: {
-        model: 'users',
-        key: 'id'
-      },
-      comment: 'ID of the user who evaluated this skill (evaluator/admin)'
-    });
+      const tableDescription = await queryInterface.describeTable('user_skills');
 
-    // Add evaluatedAt field to replace certifiedAt
-    await queryInterface.addColumn('user_skills', 'evaluatedAt', {
-      type: Sequelize.DATE,
-      allowNull: true,
-      comment: 'When the skill was evaluated'
-    });
+      // Add evaluationRequestedAt field if it doesn't exist
+      if (!tableDescription.evaluationRequestedAt) {
+        console.log('🔧 Adding evaluationRequestedAt field');
+        await queryInterface.addColumn('user_skills', 'evaluationRequestedAt', {
+          type: Sequelize.DATE,
+          allowNull: true,
+          comment: 'When the user requested evaluation for this skill'
+        });
+      }
 
-    // Note: We'll keep the status enum as is for now since changing enums in PostgreSQL is complex
-    // The 'certified' status will simply not be used in the application logic
+      // Add evaluatedBy field if it doesn't exist
+      if (!tableDescription.evaluatedBy) {
+        console.log('🔧 Adding evaluatedBy field');
+        await queryInterface.addColumn('user_skills', 'evaluatedBy', {
+          type: Sequelize.UUID,
+          allowNull: true,
+          references: {
+            model: 'users',
+            key: 'id'
+          },
+          comment: 'ID of the user who evaluated this skill (evaluator/admin)'
+        });
+      }
+
+      // Add evaluatedAt field if it doesn't exist
+      if (!tableDescription.evaluatedAt) {
+        console.log('🔧 Adding evaluatedAt field');
+        await queryInterface.addColumn('user_skills', 'evaluatedAt', {
+          type: Sequelize.DATE,
+          allowNull: true,
+          comment: 'When the skill was evaluated'
+        });
+      }
+
+      console.log('✅ Migration completed: add-evaluation-requested-field');
+    } catch (error) {
+      console.error('❌ Migration failed:', error);
+      throw error;
+    }
   },
 
   async down(queryInterface, Sequelize) {
