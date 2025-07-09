@@ -3,9 +3,6 @@
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, XCircle, Award, BookOpen, User, Calendar, Target, Star } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
@@ -58,8 +55,6 @@ interface EvaluationModalProps {
 }
 
 export function EvaluationModal({ isOpen, onClose, evaluationRequest }: EvaluationModalProps) {
-  const [score, setScore] = useState("")
-  const [feedback, setFeedback] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [evaluationData, setEvaluationData] = useState<EvaluationData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -74,8 +69,6 @@ export function EvaluationModal({ isOpen, onClose, evaluationRequest }: Evaluati
   // Reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setScore("")
-      setFeedback("")
       setEvaluationData(null)
     }
   }, [isOpen])
@@ -103,46 +96,10 @@ export function EvaluationModal({ isOpen, onClose, evaluationRequest }: Evaluati
   if (!evaluationRequest) return null
 
   const handlePass = async () => {
-    if (!score || parseInt(score) < 60) {
-      toast({
-        title: "分數不足",
-        description: "通過評估需要分數至少 60 分",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (parseInt(score) > 100) {
-      toast({
-        title: "分數無效",
-        description: "分數不能超過 100 分",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!feedback.trim()) {
-      toast({
-        title: "請提供回饋",
-        description: "提交評估時必須提供回饋意見",
-        variant: "destructive",
-      })
-      return
-    }
-
     await handleEvaluation("pass")
   }
 
   const handleReject = async () => {
-    if (!feedback.trim()) {
-      toast({
-        title: "請提供回饋",
-        description: "拒絕評估時必須提供改進建議",
-        variant: "destructive",
-      })
-      return
-    }
-
     await handleEvaluation("reject")
   }
 
@@ -154,8 +111,8 @@ export function EvaluationModal({ isOpen, onClose, evaluationRequest }: Evaluati
       
       const evaluationSubmissionData = {
         result,
-        score: result === "pass" ? parseInt(score) : 0,
-        feedback: feedback.trim(),
+        score: result === "pass" ? 100 : 0, // Simple pass/fail scoring
+        feedback: "", // No feedback required
         evaluatedAt: new Date().toISOString()
       }
 
@@ -164,8 +121,8 @@ export function EvaluationModal({ isOpen, onClose, evaluationRequest }: Evaluati
       toast({
         title: result === "pass" ? "評估通過" : "評估未通過",
         description: result === "pass" 
-          ? `${evaluationRequest.userName} 的 "${evaluationRequest.skillName}" 技能評估已通過 (${score} 分)`
-          : `${evaluationRequest.userName} 的 "${evaluationRequest.skillName}" 技能評估未通過，已提供改進建議`,
+          ? `${evaluationRequest.userName} 的 "${evaluationRequest.skillName}" 技能評估已通過`
+          : `${evaluationRequest.userName} 的 "${evaluationRequest.skillName}" 技能評估未通過`,
       })
 
       onClose()
@@ -362,39 +319,20 @@ export function EvaluationModal({ isOpen, onClose, evaluationRequest }: Evaluati
                 </h3>
                 
                 <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="score" className="text-sm font-medium">
-                      評估分數 (0-100)
-                    </Label>
-                    <Input
-                      id="score"
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={score}
-                      onChange={(e) => setScore(e.target.value)}
-                      placeholder="請輸入評估分數 (60分以上為通過)"
-                      className="mt-1"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      60 分以上為通過，未達 60 分視為未通過
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 text-lg mb-4">
+                      請選擇評估結果
                     </p>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="feedback" className="text-sm font-medium">
-                      評估回饋
-                    </Label>
-                    <Textarea
-                      id="feedback"
-                      value={feedback}
-                      onChange={(e) => setFeedback(e.target.value)}
-                      placeholder="請提供詳細的評估回饋，包括優點和改進建議..."
-                      className="mt-1 min-h-[100px]"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      請提供具體的回饋以幫助學員改進
-                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 border-2 border-green-200 rounded-lg bg-green-50">
+                        <div className="text-green-600 font-medium text-lg">通過</div>
+                        <div className="text-sm text-green-500 mt-1">技能達到要求標準</div>
+                      </div>
+                      <div className="p-4 border-2 border-red-200 rounded-lg bg-red-50">
+                        <div className="text-red-600 font-medium text-lg">未通過</div>
+                        <div className="text-sm text-red-500 mt-1">需要繼續練習</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -403,7 +341,7 @@ export function EvaluationModal({ isOpen, onClose, evaluationRequest }: Evaluati
               <div className="flex gap-3 pt-4 border-t">
                 <Button
                   onClick={handlePass}
-                  disabled={isSubmitting || !score}
+                  disabled={isSubmitting}
                   className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700"
                 >
                   {isSubmitting ? (

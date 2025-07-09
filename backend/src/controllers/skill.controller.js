@@ -832,14 +832,6 @@ exports.submitEvaluationByUserSkillId = async (req, res, next) => {
       return res.status(400).json({ error: '評估結果必須是 pass 或 reject' });
     }
     
-    if (result === 'pass' && (!score || score < 60 || score > 100)) {
-      return res.status(400).json({ error: '通過評估的分數必須在 60-100 之間' });
-    }
-    
-    if (!feedback || feedback.trim().length === 0) {
-      return res.status(400).json({ error: '必須提供評估回饋' });
-    }
-    
     // Get user skill with related data
     const userSkill = await UserSkill.findByPk(userSkillId, {
       include: [
@@ -864,9 +856,9 @@ exports.submitEvaluationByUserSkillId = async (req, res, next) => {
     
     // Update user skill based on evaluation result
     const updateData = {
-      score: result === 'pass' ? score : 0,
+      score: result === 'pass' ? 100 : 0, // Simple pass/fail scoring
       attempts: userSkill.attempts + 1,
-      notes: feedback,
+      notes: feedback || '', // Optional feedback
       evaluatedBy: evaluatorId,
       evaluatedAt: new Date(), // Always set evaluation date
       // Don't clear evaluationRequestedAt - keep it for audit trail

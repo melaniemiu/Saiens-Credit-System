@@ -639,42 +639,28 @@ export function SkillRoadmap() {
                       </div>
                     )}
 
-                    {/* Evaluator Feedback Section */}
-                    {selectedSkill.notes && selectedSkill.evaluatedAt && (
+                    {/* Evaluation Result Section */}
+                    {selectedSkill.evaluatedAt && (
                       <div className="mt-4 p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500">
                         <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                           <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-1l-4 4z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          評估回饋
+                          評估結果
                         </h3>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 text-sm">
-                            <span className="text-gray-500">評估結果:</span>
-                            <span className={`font-medium px-2 py-1 rounded-full text-xs ${
-                              selectedSkill.score >= 60 
+                            <span className="text-gray-500">結果:</span>
+                            <span className={`font-medium px-3 py-1 rounded-full text-sm ${
+                              selectedSkill.status === 'completed' && selectedSkill.score >= 60
                                 ? 'bg-green-100 text-green-700' 
                                 : 'bg-red-100 text-red-700'
                             }`}>
-                              {selectedSkill.score >= 60 ? '通過' : '未通過'}
+                              {selectedSkill.status === 'completed' && selectedSkill.score >= 60 ? '通過' : '未通過'}
                             </span>
-                            {selectedSkill.score > 0 && (
-                              <span className="text-gray-500">
-                                ({selectedSkill.score}分)
-                              </span>
-                            )}
                           </div>
-                          <div className="text-sm">
-                            <span className="text-gray-500">評估意見:</span>
-                            <div className="mt-1 p-2 bg-white rounded border text-gray-700 whitespace-pre-wrap">
-                              {selectedSkill.notes}
-                            </div>
-                          </div>
-                          <div className="text-xs text-gray-500 space-y-1">
-                            <div>評估時間: {new Date(selectedSkill.evaluatedAt).toLocaleString('zh-TW')}</div>
-                            {selectedSkill.evaluator && (
-                              <div>評估者: {selectedSkill.evaluator.name}</div>
-                            )}
+                          <div className="text-xs text-gray-500">
+                            評估時間: {new Date(selectedSkill.evaluatedAt).toLocaleString('zh-TW')}
                           </div>
                         </div>
                       </div>
@@ -684,8 +670,9 @@ export function SkillRoadmap() {
                   {/* Action Buttons */}
                   <div className="mt-6 border-t pt-4">
                     <div className="flex gap-3">
-                      {/* Start Evaluation Button - Only show for completed/in_progress, NOT passed (completed with score >= 60), NOT already requested */}
-                      {((selectedSkill.status === 'completed' && (!selectedSkill.score || selectedSkill.score < 60) && !selectedSkill.evaluationRequestedAt) || (selectedSkill.status === 'in_progress' && !selectedSkill.evaluationRequestedAt)) && (
+                      {/* Start Evaluation Button - Show when skill is ready for evaluation and not currently pending */}
+                      {((selectedSkill.status === 'completed' && (!selectedSkill.score || selectedSkill.score < 60)) || selectedSkill.status === 'in_progress') && 
+                       (!selectedSkill.evaluationRequestedAt || (selectedSkill.evaluationRequestedAt && selectedSkill.evaluatedAt && selectedSkill.evaluatedAt >= selectedSkill.evaluationRequestedAt)) && (
                         <button
                           onClick={() => handleStartEvaluation(selectedSkill)}
                           className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
