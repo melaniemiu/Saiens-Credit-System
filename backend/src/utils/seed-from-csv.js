@@ -213,9 +213,26 @@ async function createJobSkillRelationships() {
       }
       
       // 4. General skills based on job level (deterministic selection)
-      const generalSkills = skills.filter(skill => 
-        skill.category === '產品知識' || skill.category === '工具使用' || skill.category === '安全操作'
-      );
+      // Only add general skills that haven't been explicitly assigned to departments
+      const generalSkills = skills.filter(skill => {
+        // Exclude department-specific skills from general pool
+        if (skill.name === '法規遵循管理') return false; // Legal only
+        if (skill.name === '品質管理系統') return false; // QA only  
+        if (skill.name === '資訊安全管理') return false; // IT only
+        if (skill.name === '數位行銷策略') return false; // Marketing only
+        if (skill.name === '財務分析與預算規劃') return false; // Finance only
+        if (skill.name === '客戶關係管理') return false; // Customer service (core skill)
+        if (skill.name === '敏捷開發方法論') return false; // R&D only
+        if (skill.name === '資料庫設計與管理') return false; // R&D/IT only
+        if (skill.name === '雲端平台架構') return false; // R&D/IT only
+        if (skill.name === '團隊領導與激勵') return false; // Leadership (level-based)
+        if (skill.name === '專案管理認證') return false; // Project management (level-based)
+        if (skill.name === '市場趨勢分析') return false; // Marketing/Strategy only
+        if (skill.name === '業務流程優化') return false; // Operations/Strategy/Management only
+        
+        // Only include truly general skills
+        return skill.category === '產品知識' || skill.category === '工具使用';
+      });
       
       // Add general skills based on job level and department hash for consistency
       const jobHash = (job.name + job.departmentId).split('').reduce((a, b) => a + b.charCodeAt(0), 0);
