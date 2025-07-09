@@ -94,8 +94,10 @@ db.Skill.belongsToMany(db.User, {
 db.UserSkill.belongsTo(db.User, { foreignKey: 'userId' });
 db.UserSkill.belongsTo(db.Skill, { foreignKey: 'skillId' });
 db.UserSkill.belongsTo(db.User, { as: 'certifier', foreignKey: 'certifiedBy' });
+db.UserSkill.belongsTo(db.User, { as: 'evaluator', foreignKey: 'evaluatedBy' });
 db.User.hasMany(db.UserSkill, { foreignKey: 'userId' });
 db.User.hasMany(db.UserSkill, { as: 'certifiedSkills', foreignKey: 'certifiedBy' });
+db.User.hasMany(db.UserSkill, { as: 'evaluatedSkills', foreignKey: 'evaluatedBy' });
 db.Skill.hasMany(db.UserSkill, { foreignKey: 'skillId' });
 
 // Department and Skill many-to-many relationship through SkillDepartment

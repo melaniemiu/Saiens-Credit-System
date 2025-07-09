@@ -13,6 +13,12 @@ exports.getUserSkills = async (req, res, next) => {
         {
           model: Skill,
           attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus']
+        },
+        {
+          model: User,
+          as: 'evaluator',
+          attributes: ['id', 'name'],
+          required: false
         }
       ],
       order: [
