@@ -122,159 +122,153 @@ async function createJobSkillRelationships() {
     
     // Create relationships based on job categories and skill types
     const relationships = [];
-    const usedJobSkillPairs = new Set(); // Track used combinations to prevent duplicates
+    const departmentSkillUsage = new Map(); // Track skill usage per department
     
-    // Define deterministic skill assignments based on job characteristics
-    const getSkillsForJob = (job) => {
-      const relevantSkills = [];
-      
-      // 1. Core skills for all jobs (山恩DNA)
-      const coreSkills = skills.filter(skill => skill.category === '山恩DNA');
-      relevantSkills.push(...coreSkills);
-      
-      // 2. Department-specific skills
-      if (job.name.includes('行銷')) {
-        relevantSkills.push(...skills.filter(skill => 
-          skill.name.includes('行銷') || skill.name.includes('市場') || skill.name === '數位行銷策略'
-        ));
+    // Group jobs by department for processing
+    const jobsByDepartment = jobs.reduce((acc, job) => {
+      if (!acc[job.departmentId]) {
+        acc[job.departmentId] = [];
       }
-      if (job.name.includes('財務') || job.name.includes('會計')) {
-        relevantSkills.push(...skills.filter(skill => 
-          skill.name.includes('財務') || skill.name.includes('分析') || skill.name === '財務分析與預算規劃'
-        ));
-      }
-      if (job.name.includes('工程師') || job.name.includes('研發')) {
-        relevantSkills.push(...skills.filter(skill => 
-          skill.name.includes('開發') || skill.name.includes('敏捷') || skill.name.includes('雲端') || 
-          skill.name.includes('資料庫') || skill.name === '敏捷開發方法論' || skill.name === '資料庫設計與管理' ||
-          skill.name === '雲端平台架構'
-        ));
-      }
-      if (job.name.includes('管理') || job.name.includes('主管')) {
-        relevantSkills.push(...skills.filter(skill => 
-          skill.name.includes('管理') || skill.name.includes('領導') || skill.name === '業務流程優化' ||
-          skill.name === '團隊領導與激勵'
-        ));
-      }
-      if (job.name.includes('客服')) {
-        relevantSkills.push(...skills.filter(skill => 
-          skill.name.includes('客戶') || skill.name.includes('溝通') || skill.name === '客戶關係管理'
-        ));
-      }
-      if (job.name.includes('品管') || job.name.includes('品質')) {
-        relevantSkills.push(...skills.filter(skill => 
-          skill.name.includes('品質') || skill.name === '品質管理系統'
-        ));
-      }
-      if (job.name.includes('法務')) {
-        relevantSkills.push(...skills.filter(skill => 
-          skill.name.includes('法規') || skill.name === '法規遵循管理'
-        ));
-      }
-      if (job.name.includes('IT') || job.name.includes('資訊')) {
-        relevantSkills.push(...skills.filter(skill => 
-          skill.name.includes('資訊') || skill.name.includes('雲端') || skill.name.includes('資料庫') ||
-          skill.name === '資訊安全管理' || skill.name === '雲端平台架構' || skill.name === '資料庫設計與管理'
-        ));
-      }
-      // Add missing departments
-      if (job.name.includes('營運')) {
-        relevantSkills.push(...skills.filter(skill => 
-          skill.name.includes('流程') || skill.name.includes('營運') || skill.name === '業務流程優化'
-        ));
-      }
-      if (job.name.includes('人資') || job.name.includes('招募')) {
-        relevantSkills.push(...skills.filter(skill => 
-          skill.name.includes('人資') || skill.name.includes('招募') || skill.name === '團隊領導與激勵'
-        ));
-      }
-      if (job.name.includes('策略')) {
-        relevantSkills.push(...skills.filter(skill => 
-          skill.name.includes('策略') || skill.name.includes('分析') || skill.name === '市場趨勢分析' ||
-          skill.name === '業務流程優化'
-        ));
-      }
-      if (job.name.includes('系統管理')) {
-        relevantSkills.push(...skills.filter(skill => 
-          skill.name.includes('系統') || skill.name.includes('資訊') || skill.name === '資訊安全管理'
-        ));
-      }
-      
-      // 3. Level-based skills
-      if (job.level >= 3) {
-        relevantSkills.push(...skills.filter(skill => 
-          skill.name.includes('領導') || skill.name === '團隊領導與激勵'
-        ));
-      }
-      if (job.level >= 2) {
-        relevantSkills.push(...skills.filter(skill => 
-          skill.name.includes('專案') || skill.name === '專案管理認證'
-        ));
-      }
-      
-      // 4. General skills based on job level (deterministic selection)
-      // Only add general skills that haven't been explicitly assigned to departments
-      const generalSkills = skills.filter(skill => {
-        // Exclude department-specific skills from general pool
-        if (skill.name === '法規遵循管理') return false; // Legal only
-        if (skill.name === '品質管理系統') return false; // QA only  
-        if (skill.name === '資訊安全管理') return false; // IT only
-        if (skill.name === '數位行銷策略') return false; // Marketing only
-        if (skill.name === '財務分析與預算規劃') return false; // Finance only
-        if (skill.name === '客戶關係管理') return false; // Customer service (core skill)
-        if (skill.name === '敏捷開發方法論') return false; // R&D only
-        if (skill.name === '資料庫設計與管理') return false; // R&D/IT only
-        if (skill.name === '雲端平台架構') return false; // R&D/IT only
-        if (skill.name === '團隊領導與激勵') return false; // Leadership (level-based)
-        if (skill.name === '專案管理認證') return false; // Project management (level-based)
-        if (skill.name === '市場趨勢分析') return false; // Marketing/Strategy only
-        if (skill.name === '業務流程優化') return false; // Operations/Strategy/Management only
-        
-        // Only include truly general skills
-        return skill.category === '產品知識' || skill.category === '工具使用';
-      });
-      
-      // Add general skills based on job level and department hash for consistency
-      const jobHash = (job.name + job.departmentId).split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-      generalSkills.forEach((skill, index) => {
-        const shouldInclude = (jobHash + index) % 3 === 0; // Deterministic based on job and skill
-        if (shouldInclude) {
-          relevantSkills.push(skill);
-        }
-      });
-      
-      // Remove duplicates
-      const uniqueSkills = relevantSkills.filter((skill, index, self) => 
-        index === self.findIndex(s => s.id === skill.id)
-      );
-      
-      return uniqueSkills;
-    };
+      acc[job.departmentId].push(job);
+      return acc;
+    }, {});
     
-    for (const job of jobs) {
-      const relevantSkills = getSkillsForJob(job);
+    // Process each department separately to ensure skills only appear once per department
+    for (const [departmentId, departmentJobs] of Object.entries(jobsByDepartment)) {
+      // Sort jobs by level within department
+      const sortedJobs = departmentJobs.sort((a, b) => a.level - b.level);
+      const usedSkillsInDepartment = new Set();
       
-      // Create job-skill relationships
-      for (const skill of relevantSkills) {
-        const pairKey = `${job.id}-${skill.id}`;
+      for (const job of sortedJobs) {
+        const relevantSkills = [];
         
-        // Skip if this job-skill pair already exists
-        if (usedJobSkillPairs.has(pairKey)) {
-          continue;
+        // 1. Department-specific skills (only assign to lowest level job in department)
+        if (job.level === 1) {
+          if (job.name.includes('行銷')) {
+            relevantSkills.push(...skills.filter(skill => 
+              skill.name === '數位行銷策略' || skill.name === '市場趨勢分析'
+            ));
+          }
+          if (job.name.includes('財務') || job.name.includes('會計')) {
+            relevantSkills.push(...skills.filter(skill => 
+              skill.name === '財務分析與預算規劃'
+            ));
+          }
+          if (job.name.includes('工程師') || job.name.includes('研發')) {
+            relevantSkills.push(...skills.filter(skill => 
+              skill.name === '敏捷開發方法論' || skill.name === '資料庫設計與管理' ||
+              skill.name === '雲端平台架構'
+            ));
+          }
+          if (job.name.includes('客服')) {
+            relevantSkills.push(...skills.filter(skill => 
+              skill.name === '客戶關係管理'
+            ));
+          }
+          if (job.name.includes('品管') || job.name.includes('品質')) {
+            relevantSkills.push(...skills.filter(skill => 
+              skill.name === '品質管理系統'
+            ));
+          }
+          if (job.name.includes('法務')) {
+            relevantSkills.push(...skills.filter(skill => 
+              skill.name === '法規遵循管理'
+            ));
+          }
+          if (job.name.includes('IT') || job.name.includes('資訊')) {
+            relevantSkills.push(...skills.filter(skill => 
+              skill.name === '資訊安全管理' || skill.name === '雲端平台架構' || skill.name === '資料庫設計與管理'
+            ));
+          }
+          if (job.name.includes('營運')) {
+            relevantSkills.push(...skills.filter(skill => 
+              skill.name === '業務流程優化'
+            ));
+          }
+          if (job.name.includes('人資') || job.name.includes('招募')) {
+            relevantSkills.push(...skills.filter(skill => 
+              skill.name === '團隊領導與激勵'
+            ));
+          }
+          if (job.name.includes('策略')) {
+            relevantSkills.push(...skills.filter(skill => 
+              skill.name === '市場趨勢分析' || skill.name === '業務流程優化'
+            ));
+          }
+          if (job.name.includes('系統管理')) {
+            relevantSkills.push(...skills.filter(skill => 
+              skill.name === '資訊安全管理'
+            ));
+          }
         }
         
-        usedJobSkillPairs.add(pairKey);
+        // 2. Level-based skills (only assign to specific level per department)
+        if (job.level === 2) {
+          relevantSkills.push(...skills.filter(skill => 
+            skill.name === '專案管理認證'
+          ));
+        }
+        if (job.level === 3) {
+          relevantSkills.push(...skills.filter(skill => 
+            skill.name === '團隊領導與激勵'
+          ));
+        }
         
-        // Determine if skill is required (deterministic)
-        const isRequired = skill.category === '山恩DNA' || 
-                          skill.category === '安全操作' || 
-                          (job.level <= 2 && skill.category === '產品知識');
+        // 3. Core skills (山恩DNA) - only assign to specific jobs to avoid repetition
+        if (job.level === 1) {
+          // Assign different core skills to different departments
+          if (job.name.includes('行銷') || job.name.includes('策略')) {
+            relevantSkills.push(...skills.filter(skill => 
+              skill.name === '商業簡報技巧'
+            ));
+          }
+          if (job.name.includes('客服') || job.name.includes('人資')) {
+            relevantSkills.push(...skills.filter(skill => 
+              skill.name === '跨部門溝通協調'
+            ));
+          }
+          // Don't assign 客戶關係管理 as core skill - it's department-specific
+        }
         
-        relationships.push({
-          jobId: job.id,
-          skillId: skill.id,
-          isRequired: isRequired
+        // 4. General skills (only truly general ones, distributed across jobs)
+        const generalSkills = skills.filter(skill => {
+          // Only include truly general skills that haven't been assigned
+          return skill.category === '產品知識' || skill.category === '工具使用';
         });
+        
+        // Assign general skills deterministically but avoid duplicates within department
+        const jobHash = (job.name + job.departmentId + job.level).split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+        generalSkills.forEach((skill, index) => {
+          const shouldInclude = (jobHash + index) % 4 === 0; // Less frequent assignment
+          if (shouldInclude && !usedSkillsInDepartment.has(skill.id)) {
+            relevantSkills.push(skill);
+          }
+        });
+        
+        // Remove duplicates and skills already used in this department
+        const uniqueSkills = relevantSkills.filter((skill, index, self) => 
+          index === self.findIndex(s => s.id === skill.id) && 
+          !usedSkillsInDepartment.has(skill.id)
+        );
+        
+        // Add skills to department usage tracker
+        uniqueSkills.forEach(skill => {
+          usedSkillsInDepartment.add(skill.id);
+        });
+        
+        // Create job-skill relationships
+        for (const skill of uniqueSkills) {
+          // Determine if skill is required (deterministic)
+          const isRequired = skill.category === '山恩DNA' || 
+                            skill.category === '安全操作' || 
+                            (job.level <= 2 && skill.category === '產品知識');
+          
+          relationships.push({
+            jobId: job.id,
+            skillId: skill.id,
+            isRequired: isRequired
+          });
+        }
       }
     }
     
