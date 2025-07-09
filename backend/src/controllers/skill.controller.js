@@ -51,6 +51,83 @@ exports.getUserSkills = async (req, res, next) => {
   }
 };
 
+// Get department-based job progression for skill roadmap
+exports.getDepartmentProgression = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    
+    // Get user's job and department
+    const user = await User.findByPk(userId, {
+      include: [
+        { model: Job, attributes: ['id', 'name', 'level', 'nextJobId'] },
+        { model: Department, attributes: ['id', 'name'] }
+      ]
+    });
+    
+    if (!user || !user.Job || !user.Department) {
+      return res.status(404).json({ message: 'User job or department not found' });
+    }
+    
+    // Get all jobs in the same department, ordered by level
+    const departmentJobs = await Job.findAll({
+      where: { departmentId: user.Department.id },
+      order: [['level', 'ASC']],
+      include: [
+        {
+          model: JobSkill,
+          include: [
+            {
+              model: Skill,
+              attributes: ['id', 'name', 'category', 'learningMethod', 'assessmentMethod', 'syllabus']
+            }
+          ]
+        }
+      ]
+    });
+    
+    // Get user's progress for all skills in department
+    const allSkillIds = departmentJobs.flatMap(job => 
+      job.JobSkills?.map(js => js.skillId) || []
+    );
+    const userProgress = await UserSkill.findAll({
+      where: { 
+        userId,
+        skillId: { [Op.in]: allSkillIds }
+      }
+    });
+    
+    // Create progress map for quick lookup
+    const progressMap = {};
+    userProgress.forEach(up => {
+      progressMap[up.skillId] = up;
+    });
+    
+    // Format the response with job progression
+    const jobProgression = departmentJobs.map(job => {
+      const skillsWithProgress = job.JobSkills?.map(jobSkill => ({
+        ...jobSkill.toJSON(),
+        userProgress: progressMap[jobSkill.skillId] || null
+      })) || [];
+      
+      return {
+        id: job.id,
+        name: job.name,
+        level: job.level,
+        isCurrentJob: job.id === user.Job.id,
+        skillsWithProgress
+      };
+    });
+    
+    return res.status(200).json({ 
+      department: user.Department.name,
+      currentJob: user.Job.name,
+      jobProgression
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Get skills available for user's job
 exports.getJobSkills = async (req, res, next) => {
   try {

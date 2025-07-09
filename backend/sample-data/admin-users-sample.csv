@@ -1,5 +1,5 @@
-name,email,employeeId,departmentName,role
-系統管理員,admin@company.com,ADMIN001,系統管理部,admin
-人資管理員,hr.admin@company.com,ADMIN002,人才發展部,admin
-財務管理員,finance.admin@company.com,ADMIN003,財務會計部,admin
-技術管理員,tech.admin@company.com,ADMIN004,資訊科技部,admin
+name,email,employeeId,departmentName,jobName,role
+系統管理員,admin@company.com,ADMIN001,系統管理部,系統管理主管,admin
+人資管理員,hr.admin@company.com,ADMIN002,人才發展部,人資主管,admin
+財務管理員,finance.admin@company.com,ADMIN003,財務會計部,財務經理,admin
+技術管理員,tech.admin@company.com,ADMIN004,資訊科技部,IT主管,admin

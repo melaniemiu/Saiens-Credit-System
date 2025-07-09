@@ -170,7 +170,7 @@ exports.importSkills = async (req, res, next) => {
 
         if (existingSkill) {
           results.duplicates++;
-          results.errors.push(`Row ${rowNum}: Skill '${skillData.name}' already exists`);
+          // Skip existing skills instead of treating as error
           continue;
         }
 
@@ -246,7 +246,7 @@ exports.importDepartments = async (req, res, next) => {
 
         if (existingDept) {
           results.duplicates++;
-          results.errors.push(`Row ${rowNum}: Department '${deptData.name}' already exists`);
+          // Skip existing departments instead of treating as error
           continue;
         }
 
@@ -340,7 +340,7 @@ exports.importJobs = async (req, res, next) => {
 
         if (existingJob) {
           results.duplicates++;
-          results.errors.push(`Row ${rowNum}: Job '${jobData.name}' already exists in '${row.departmentName}'`);
+          // Skip existing jobs instead of treating as error
           continue;
         }
 

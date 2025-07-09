@@ -90,30 +90,20 @@ export function SkillRoadmap() {
     try {
       setIsLoading(true)
       
-      // Get skills for user's current job with progress information
-      const jobSkillsResponse = await skillApi.getJobSkills()
-      const currentJobSkills = jobSkillsResponse.data?.skillsWithProgress || []
-      
-      // Also get user's overall skill progress to show skills from other levels
-      const userSkillsResponse = await skillApi.getUserSkills()
-      const userSkills = userSkillsResponse.data?.userSkills || []
+      // Get department-based job progression with skill progress
+      const progressionResponse = await skillApi.getDepartmentProgression()
+      const { department, currentJob, jobProgression } = progressionResponse.data || {}
 
       // Debug logging
-      console.log('🔍 [ROADMAP] Current job skills:', currentJobSkills.length)
-      console.log('🔍 [ROADMAP] User skills:', userSkills.length)
-      console.log('🔍 [ROADMAP] User job:', user?.Job?.name)
+      console.log('🔍 [ROADMAP] Department:', department)
+      console.log('🔍 [ROADMAP] Current job:', currentJob)
+      console.log('🔍 [ROADMAP] Job progression:', jobProgression)
 
-      // Define job progression
-      const jobProgression = ['新手村', '助理工程師', '正式工程師', '資深工程師']
-      const currentUserJob = user?.Job?.name || ''
-      const currentJobIndex = jobProgression.indexOf(currentUserJob)
-
-      // Organize skills by job level 
-      const skillsByJobLevel: Record<string, SkillProgress[]> = {}
+      // Create levels array based on department job progression
+      const levels: JobLevel[] = []
       
-      // Add current job skills (these will always be shown)
-      if (currentJobSkills.length > 0) {
-        skillsByJobLevel[currentUserJob] = currentJobSkills.map(jobSkill => ({
+      jobProgression?.forEach((job: any) => {
+        const skillsForLevel = job.skillsWithProgress?.map((jobSkill: any) => ({
           id: jobSkill.userProgress?.id || `${jobSkill.skillId}-${Date.now()}`,
           skillId: jobSkill.skillId,
           status: jobSkill.userProgress?.status || 'not_started',
@@ -123,7 +113,7 @@ export function SkillRoadmap() {
           evaluatedAt: jobSkill.userProgress?.evaluatedAt,
           evaluationRequestedAt: jobSkill.userProgress?.evaluationRequestedAt,
           attempts: jobSkill.userProgress?.attempts || 0,
-          jobLevel: currentUserJob,
+          jobLevel: job.name,
           Skill: {
             id: jobSkill.Skill.id,
             name: jobSkill.Skill.name,
@@ -133,27 +123,7 @@ export function SkillRoadmap() {
             assessmentMethod: jobSkill.Skill.assessmentMethod,
             syllabus: jobSkill.Skill.syllabus,
           }
-        }))
-      }
-      
-      // Group other skills by their job level (from UserSkill records)
-      userSkills.forEach((skill: SkillProgress) => {
-        const jobLevel = skill.jobLevel || 'Unknown'
-        // Skip if this skill is already in current job skills
-        if (jobLevel !== currentUserJob) {
-          if (!skillsByJobLevel[jobLevel]) {
-            skillsByJobLevel[jobLevel] = []
-          }
-          skillsByJobLevel[jobLevel].push(skill)
-        }
-      })
-
-      // Create levels array based on job progression
-      const levels: JobLevel[] = []
-      
-      for (let i = 0; i < jobProgression.length; i++) {
-        const jobName = jobProgression[i]
-        const skillsForLevel = skillsByJobLevel[jobName] || []
+        })) || []
 
         // Calculate completion status
         const completedSkills = skillsForLevel.filter((skill: SkillProgress) => 
@@ -161,20 +131,25 @@ export function SkillRoadmap() {
         ).length
         const totalSkills = skillsForLevel.length
         const isCompleted = totalSkills > 0 && completedSkills === totalSkills
-        const isCurrentLevel = i === currentJobIndex
-        const isLocked = i > currentJobIndex + 1 // Can only see one level ahead
 
         levels.push({
-          name: jobName,
+          name: job.name,
           skills: skillsForLevel,
           isCompleted,
-          isCurrentLevel,
-          isLocked,
+          isCurrentLevel: job.isCurrentJob,
+          isLocked: false, // Show all job levels in department
         })
-      }
+      })
+
+      // Sort levels by job level (ascending)
+      levels.sort((a, b) => {
+        const aJob = jobProgression?.find((j: any) => j.name === a.name)
+        const bJob = jobProgression?.find((j: any) => j.name === b.name)
+        return (aJob?.level || 0) - (bJob?.level || 0)
+      })
 
       // Debug logging for final result
-      console.log('🔍 [ROADMAP] Final levels:', levels.map(l => ({ name: l.name, skillCount: l.skills.length })))
+      console.log('🔍 [ROADMAP] Final levels:', levels.map(l => ({ name: l.name, skillCount: l.skills.length, isCurrentLevel: l.isCurrentLevel })))
 
       setJobLevels(levels)
       setError(null)

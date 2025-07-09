@@ -11,6 +11,79 @@ const path = require('path');
 // Import controllers for CSV processing
 const csvImportController = require('../controllers/csv-import.controller');
 
+// Function to create job-skill relationships for demonstration
+async function createJobSkillRelationships() {
+  const { Job, Skill, JobSkill } = require('../models');
+  
+  try {
+    // Get all jobs and skills
+    const jobs = await Job.findAll();
+    const skills = await Skill.findAll();
+    
+    console.log(`📊 Found ${jobs.length} jobs and ${skills.length} skills`);
+    
+    // Create relationships based on job categories and skill types
+    const relationships = [];
+    
+    for (const job of jobs) {
+      // Determine which skills are relevant for this job based on department and level
+      const relevantSkills = skills.filter(skill => {
+        // Basic skills for all jobs
+        if (skill.category === '山恩DNA') return true;
+        
+        // Department-specific skills
+        if (job.name.includes('行銷') && skill.name.includes('行銷')) return true;
+        if (job.name.includes('財務') && skill.name.includes('財務')) return true;
+        if (job.name.includes('工程') && skill.name.includes('開發')) return true;
+        if (job.name.includes('管理') && skill.name.includes('管理')) return true;
+        if (job.name.includes('客服') && skill.name.includes('客戶')) return true;
+        
+        // Level-based skills
+        if (job.level >= 3 && skill.name.includes('領導')) return true;
+        if (job.level >= 2 && skill.name.includes('專案')) return true;
+        
+        // General skills for all positions
+        if (skill.category === '產品知識') return Math.random() > 0.5;
+        if (skill.category === '工具使用') return Math.random() > 0.3;
+        if (skill.category === '安全操作') return Math.random() > 0.7;
+        
+        return false;
+      });
+      
+      // Create job-skill relationships
+      for (const skill of relevantSkills) {
+        const isRequired = skill.category === '山恩DNA' || skill.category === '安全操作' || Math.random() > 0.6;
+        
+        relationships.push({
+          jobId: job.id,
+          skillId: skill.id,
+          isRequired: isRequired
+        });
+      }
+    }
+    
+    // Bulk create relationships
+    await JobSkill.bulkCreate(relationships, { 
+      ignoreDuplicates: true 
+    });
+    
+    console.log(`✅ Created ${relationships.length} job-skill relationships`);
+    
+    // Log summary by job
+    for (const job of jobs) {
+      const jobSkills = relationships.filter(r => r.jobId === job.id);
+      const required = jobSkills.filter(r => r.isRequired).length;
+      const optional = jobSkills.length - required;
+      
+      console.log(`   • ${job.name}: ${required} required, ${optional} optional skills`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Failed to create job-skill relationships:', error);
+    throw error;
+  }
+}
+
 async function seedFromCSV() {
   try {
     console.log('🌱 Starting CSV-based seeding...');
@@ -136,17 +209,21 @@ async function seedFromCSV() {
       }
     }
 
+    console.log('\n🔗 Creating job-skill relationships...');
+    await createJobSkillRelationships();
+    
     console.log('\n🎉 CSV-based seeding completed!');
     console.log('\n📋 What was seeded:');
     console.log('   • 10 departments with realistic Chinese names');
     console.log('   • 35+ job positions with career progression levels');
     console.log('   • 15 skills with flexible categories and methods');
     console.log('   • 20 users across different departments and roles');
+    console.log('   • Job-skill relationships for demonstration');
     
     console.log('\n💡 You can now:');
     console.log('   1. Start your application: npm run dev');
     console.log('   2. Login and access the admin dashboard');
-    console.log('   3. Explore the imported data structure');
+    console.log('   3. Explore the skill roadmap with proper job-skill relationships');
     
     process.exit(0);
   } catch (error) {

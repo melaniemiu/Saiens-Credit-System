@@ -600,6 +600,25 @@ export const skillApi = {
     });
   },
 
+  // Get department-based job progression for skill roadmap
+  getDepartmentProgression: async (bypassCache: boolean = false) => {
+    const url = bypassCache ? `/skills/department-progression?_t=${Date.now()}` : '/skills/department-progression';
+    return fetchApi<{ 
+      department: string; 
+      currentJob: string; 
+      jobProgression: Array<{
+        id: string;
+        name: string;
+        level: number;
+        isCurrentJob: boolean;
+        skillsWithProgress: any[];
+      }>;
+    }>(url, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
   // Get suggested skills (next job level)
   getSuggestedSkills: async () => {
     return fetchApi<{ nextJob: any; suggestedSkills: any[] }>('/skills/suggested', {

@@ -11,8 +11,11 @@ class CSVUtils {
       const results = [];
       const errors = [];
       
-      // Convert buffer to string and split into lines
-      const csvString = buffer.toString('utf8');
+      // Convert buffer to string and remove BOM if present
+      let csvString = buffer.toString('utf8');
+      if (csvString.charCodeAt(0) === 0xFEFF) {
+        csvString = csvString.slice(1);
+      }
       const lines = csvString.split('\n').filter(line => line.trim() !== '');
       
       if (lines.length === 0) {
@@ -232,36 +235,41 @@ class CSVUtils {
     return value ? value.toString().trim() : '';
   }
 
-  // Generate example CSV content
+  // Generate example CSV content from actual sample files
   static generateExampleCSV(type) {
-    const examples = {
-      users: [
-        'name,email,employeeId,departmentName,jobName,role',
-        '範例員工,example@company.com,EMP001,範例部門,範例職位,user',
-        '範例管理員,admin@company.com,EMP002,管理部門,管理職位,admin'
-      ].join('\n'),
-      
-      skills: [
-        'name,category,learningMethod,assessmentMethod,isRequired,syllabus',
-        '範例技能一,技能類別A,學習方法A,評估方法A,true,技能描述與學習大綱',
-        '範例技能二,技能類別B,學習方法B,評估方法B,false,技能描述與評估標準'
-      ].join('\n'),
-      
-      departments: [
-        'name,description,isActive',
-        '範例部門A,部門功能描述,true',
-        '範例部門B,部門功能描述,false'
-      ].join('\n'),
-      
-      jobs: [
-        'name,departmentName,level,nextJobName',
-        '初級職位,範例部門A,1,中級職位',
-        '中級職位,範例部門A,2,高級職位',
-        '高級職位,範例部門A,3,'
-      ].join('\n')
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Map type to actual sample file names
+    const fileMap = {
+      users: 'users-sample.csv',
+      skills: 'skills-sample.csv', 
+      departments: 'departments-sample.csv',
+      jobs: 'jobs-sample.csv'
     };
     
-    return examples[type] || '';
+    const fileName = fileMap[type];
+    if (!fileName) {
+      return '';
+    }
+    
+    try {
+      // Path to sample data directory
+      const sampleDataPath = path.join(__dirname, '../../sample-data', fileName);
+      
+      // Check if file exists
+      if (!fs.existsSync(sampleDataPath)) {
+        console.warn(`Sample file not found: ${sampleDataPath}`);
+        return '';
+      }
+      
+      // Read and return the file content
+      const content = fs.readFileSync(sampleDataPath, 'utf8');
+      return content.trim();
+    } catch (error) {
+      console.error(`Error reading sample file for ${type}:`, error);
+      return '';
+    }
   }
 }
 
