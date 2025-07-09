@@ -2,7 +2,7 @@ name,email,employeeId,departmentName,jobName,role
 陳雅婷,ya.chen@company.com,MKT001,行銷企劃部,行銷實習生,user
 林志豪,chih.lin@company.com,FIN001,財務會計部,會計助理,user
 黃美玲,mei.huang@company.com,CS001,客戶服務部,客服專員,user
-王建國,jian.wang@company.com,RD001,研發創新中心,技術主管,admin
+王建國,jian.wang@company.com,RD001,研發創新中心,研發助理,admin
 李淑芬,shu.li@company.com,OP001,營運管理部,營運專員,user
 張文華,wen.chang@company.com,LEG001,法務合規部,法務專員,user
 劉佳欣,jia.liu@company.com,HR001,人才發展部,人資主管,admin

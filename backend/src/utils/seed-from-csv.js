@@ -11,6 +11,104 @@ const path = require('path');
 // Import controllers for CSV processing
 const csvImportController = require('../controllers/csv-import.controller');
 
+// Function to create realistic skill progress for users at higher job levels
+async function createRealisticSkillProgress() {
+  const { User, Job, JobSkill, UserSkill } = require('../models');
+  
+  try {
+    // Get all users with their jobs
+    const users = await User.findAll({
+      include: [Job],
+      where: {
+        jobId: { [require('sequelize').Op.ne]: null }
+      }
+    });
+    
+    console.log(`📊 Found ${users.length} users with job assignments`);
+    
+    const userSkillRecords = [];
+    
+    for (const user of users) {
+      if (!user.Job || user.Job.level <= 1) {
+        // Skip users at entry level (level 1) or without jobs
+        continue;
+      }
+      
+      // Get all jobs in the same department with lower levels
+      const lowerLevelJobs = await Job.findAll({
+        where: {
+          departmentId: user.Job.departmentId,
+          level: { [require('sequelize').Op.lt]: user.Job.level }
+        }
+      });
+      
+      // Get skills for all lower-level jobs
+      const lowerLevelSkills = await JobSkill.findAll({
+        where: {
+          jobId: { [require('sequelize').Op.in]: lowerLevelJobs.map(j => j.id) }
+        }
+      });
+      
+      // Create skill progress records for lower-level job skills
+      for (const jobSkill of lowerLevelSkills) {
+        const isRequired = jobSkill.isRequired;
+        const completionRate = isRequired ? 0.95 : 0.70; // 95% for required, 70% for optional
+        
+        if (Math.random() < completionRate) {
+          const baseScore = isRequired ? 85 : 75; // Higher base score for required skills
+          const score = Math.min(100, baseScore + Math.floor(Math.random() * 15));
+          
+          // Create dates showing progression over time
+          const completionDate = new Date();
+          completionDate.setMonth(completionDate.getMonth() - Math.floor(Math.random() * 12));
+          
+          const startDate = new Date(completionDate);
+          startDate.setDate(startDate.getDate() - Math.floor(Math.random() * 30 + 7));
+          
+          userSkillRecords.push({
+            userId: user.id,
+            skillId: jobSkill.skillId,
+            status: 'completed',
+            score: score,
+            attempts: Math.floor(Math.random() * 2) + 1,
+            startDate: startDate,
+            completionDate: completionDate,
+            certificationDate: score >= 80 ? completionDate : null
+          });
+        }
+      }
+    }
+    
+    // Bulk create user skill records
+    if (userSkillRecords.length > 0) {
+      await UserSkill.bulkCreate(userSkillRecords, { 
+        ignoreDuplicates: true 
+      });
+      
+      console.log(`✅ Created ${userSkillRecords.length} realistic skill progress records`);
+      
+      // Log summary by user
+      const userSkillCounts = {};
+      for (const record of userSkillRecords) {
+        userSkillCounts[record.userId] = (userSkillCounts[record.userId] || 0) + 1;
+      }
+      
+      for (const user of users) {
+        const skillCount = userSkillCounts[user.id] || 0;
+        if (skillCount > 0) {
+          console.log(`   • ${user.name} (${user.Job.name}): ${skillCount} skills completed`);
+        }
+      }
+    } else {
+      console.log('ℹ️ No skill progress records needed (all users at entry level)');
+    }
+    
+  } catch (error) {
+    console.error('❌ Failed to create realistic skill progress:', error);
+    throw error;
+  }
+}
+
 // Function to create job-skill relationships for demonstration
 async function createJobSkillRelationships() {
   const { Job, Skill, JobSkill } = require('../models');
@@ -88,18 +186,11 @@ async function seedFromCSV() {
   try {
     console.log('🌱 Starting CSV-based seeding...');
     
-    // Check if we should force sync (drop all tables)
-    const forceDrop = process.argv.includes("--force");
-
-    if (forceDrop) {
-      console.log("⚠️ WARNING: Dropping all tables and recreating schema...");
-      await sequelize.sync({ force: true });
-      console.log("✅ Database synced and recreated");
-    } else {
-      console.log("📋 Using existing database schema (no force sync)");
-      await sequelize.sync({ force: false });
-      console.log("✅ Database synced without dropping tables");
-    }
+    // For fresh-start-with-data, we assume the database was already reset
+    // by reset-database.js, so we just need to sync without force
+    console.log("📋 Syncing database schema...");
+    await sequelize.sync({ force: false });
+    console.log("✅ Database synced successfully");
 
     // Path to our sample CSV files
     const sampleDataPath = path.join(__dirname, '../../sample-data');
@@ -211,6 +302,9 @@ async function seedFromCSV() {
 
     console.log('\n🔗 Creating job-skill relationships...');
     await createJobSkillRelationships();
+    
+    console.log('\n👤 Creating realistic skill progress for higher-level users...');
+    await createRealisticSkillProgress();
     
     console.log('\n🎉 CSV-based seeding completed!');
     console.log('\n📋 What was seeded:');
