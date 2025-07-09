@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle, Award, BookOpen, User, Calendar, Target, Star } from "lucide-react"
+import { Award, BookOpen, User, Calendar, Target, Star } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { skillApi } from "@/lib/api"
 
@@ -324,52 +324,34 @@ export function EvaluationModal({ isOpen, onClose, evaluationRequest }: Evaluati
                       請選擇評估結果
                     </p>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 border-2 border-green-200 rounded-lg bg-green-50">
-                        <div className="text-green-600 font-medium text-lg">通過</div>
-                        <div className="text-sm text-green-500 mt-1">技能達到要求標準</div>
-                      </div>
-                      <div className="p-4 border-2 border-red-200 rounded-lg bg-red-50">
-                        <div className="text-red-600 font-medium text-lg">未通過</div>
-                        <div className="text-sm text-red-500 mt-1">需要繼續練習</div>
-                      </div>
+                      <button
+                        onClick={handlePass}
+                        disabled={isSubmitting}
+                        className="p-6 border-2 border-green-200 rounded-lg bg-green-50 hover:bg-green-100 hover:border-green-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <div className="text-green-600 font-medium text-xl">通過</div>
+                        <div className="text-sm text-green-500 mt-2">技能達到要求標準</div>
+                      </button>
+                      <button
+                        onClick={handleReject}
+                        disabled={isSubmitting}
+                        className="p-6 border-2 border-red-200 rounded-lg bg-red-50 hover:bg-red-100 hover:border-red-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <div className="text-red-600 font-medium text-xl">未通過</div>
+                        <div className="text-sm text-red-500 mt-2">需要繼續練習</div>
+                      </button>
                     </div>
+                    {isSubmitting && (
+                      <div className="mt-4 text-gray-500 text-sm">
+                        正在提交評估結果...
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 border-t">
-                <Button
-                  onClick={handlePass}
-                  disabled={isSubmitting}
-                  className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700"
-                >
-                  {isSubmitting ? (
-                    "處理中..."
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      通過評估
-                    </>
-                  )}
-                </Button>
-                
-                <Button
-                  onClick={handleReject}
-                  disabled={isSubmitting}
-                  variant="outline"
-                  className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
-                >
-                  {isSubmitting ? (
-                    "處理中..."
-                  ) : (
-                    <>
-                      <XCircle className="h-4 w-4 mr-2" />
-                      未通過
-                    </>
-                  )}
-                </Button>
-                
+              {/* Cancel Button */}
+              <div className="flex justify-center pt-4 border-t">
                 <Button
                   onClick={onClose}
                   disabled={isSubmitting}
