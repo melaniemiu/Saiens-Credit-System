@@ -1,5 +1,6 @@
 const { Skill, UserSkill, Job, JobSkill, User, Department, SkillDepartment } = require('../models');
-const { Op } = require('sequelize');
+const { Op, sequelize } = require('sequelize');
+const { sequelize: dbInstance } = require('../models');
 
 // Get user's skill progress with job level organization
 exports.getUserSkills = async (req, res, next) => {
@@ -862,7 +863,7 @@ exports.submitEvaluationByUserSkillId = async (req, res, next) => {
       notes: feedback,
       evaluatedBy: evaluatorId,
       evaluatedAt: new Date(), // Always set evaluation date
-      evaluationRequestedAt: null, // Clear the request flag
+      // Don't clear evaluationRequestedAt - keep it for audit trail
       status: result === 'pass' ? 'completed' : 'in_progress'
     };
 
@@ -922,7 +923,15 @@ exports.getPendingEvaluations = async (req, res, next) => {
       evaluationRequestedAt: {
         [Op.not]: null
       },
-      evaluatedAt: null // Not yet evaluated
+      // Show evaluations that haven't been evaluated OR where the request is more recent than the evaluation
+      [Op.or]: [
+        { evaluatedAt: null }, // Never evaluated
+        {
+          evaluatedAt: {
+            [Op.lt]: dbInstance.col('evaluationRequestedAt') // Evaluation is older than request (re-request)
+          }
+        }
+      ]
     };
     
     // Build include clause for user and skill associations
