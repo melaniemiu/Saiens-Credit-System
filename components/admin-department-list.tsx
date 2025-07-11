@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Plus, Search, Edit, Trash2, Building2, Users, Brain } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { departmentApi } from "@/lib/api"
+import { apiClient } from "@/lib/api-client"
 import { Skeleton } from "@/components/ui/skeleton"
 import CSVImportDialog from "@/components/csv-import-dialog"
 
@@ -56,7 +56,7 @@ export function AdminDepartmentList() {
   const fetchDepartments = async () => {
     try {
       setLoading(true)
-      const response = await departmentApi.getAdminDepartments({
+      const response = await apiClient.getAdminDepartments({
         page,
         limit: 10,
         search: searchTerm,
@@ -108,7 +108,7 @@ export function AdminDepartmentList() {
 
   const handleCreate = async () => {
     try {
-      const response = await departmentApi.createDepartment(formData)
+      const response = await apiClient.createDepartment(formData)
       
       toast({
         title: "成功",
@@ -141,7 +141,7 @@ export function AdminDepartmentList() {
     if (!editingDepartment) return
 
     try {
-      const response = await departmentApi.updateDepartment(editingDepartment.id, formData)
+      const response = await apiClient.updateDepartment(editingDepartment.id, formData)
       
       toast({
         title: "成功",
@@ -163,7 +163,7 @@ export function AdminDepartmentList() {
 
   const handleDelete = async (departmentId: string) => {
     try {
-      const response = await departmentApi.deleteDepartment(departmentId)
+      const response = await apiClient.deleteDepartment(departmentId)
       
       toast({
         title: "成功",

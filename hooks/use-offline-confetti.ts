@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useAuth } from '@/context/auth-context'
-import { creditApi } from '@/lib/api'
+import { apiClient } from '@/lib/api-client'
 import { triggerConfettiIfNotShown } from '@/lib/confetti'
 import { useToast } from '@/hooks/use-toast'
 
@@ -23,7 +23,7 @@ export const useOfflineConfetti = () => {
         const checkTime = lastChecked ? new Date(lastChecked) : new Date(Date.now() - 24 * 60 * 60 * 1000) // Default to 24h ago
         
         // Fetch recent credits received
-        const response = await creditApi.getReceivedCredits(1, 50) // Get more credits to catch offline ones
+        const response = await apiClient.getReceivedCredits(1, 50) // Get more credits to catch offline ones
         
         if (response.data?.credits) {
           const recentCredits = response.data.credits.filter(credit => 

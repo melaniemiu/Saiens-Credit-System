@@ -4,6 +4,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { AuthUser, getLineUserProfile, isAuthenticated, getCurrentUser, setCurrentUser, logout as authLogout, clearAuthStorage } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { authApi, userApi, setAuthToken, removeAuthToken, getAuthToken } from '@/lib/api'
+import { apiClient } from '@/lib/api-client'
+import { API_CONFIG } from '@/config/api-config'
+import { debugMockAuth } from '@/lib/mock-auth-debug'
 import { useToast } from '@/hooks/use-toast'
 import liff from '@line/liff'
 
@@ -42,15 +45,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Define initAuth function outside of useEffect so it can be reused
   const initAuth = async () => {
     try {
+        debugMockAuth.log("initAuth started")
+        debugMockAuth.checkState()
+
         // Skip auth initialization on binding pages
         if (isOnBindingPage()) {
-          console.log("On binding page, skipping auth context initialization");
+          debugMockAuth.log("On binding page, skipping auth context initialization")
           setLoading(false);
           return;
         }
 
         setLoading(true)
 
+        // **MOCK MODE: Skip LINE authentication entirely**
+        if (API_CONFIG.useMockApi) {
+          debugMockAuth.log("Auto-authenticating with mock user")
+          
+          // Check if already authenticated
+          if (isAuthenticated()) {
+            const storedUser = getCurrentUser()
+            if (storedUser) {
+              debugMockAuth.log("Using stored mock user", storedUser.name)
+              setUser(storedUser)
+              setLoading(false)
+              return
+            }
+          }
+          
+          // Auto-login with mock user
+          try {
+            const response = await apiClient.getCurrentUser()
+            if (response.data?.user) {
+              const mockUser: AuthUser = {
+                id: response.data.user.id,
+                name: response.data.user.name,
+                email: response.data.user.email,
+                picture: response.data.user.profilePicture,
+                role: response.data.user.role,
+                department: response.data.user.department?.name,
+                employeeId: response.data.user.employeeId,
+                creditsReceived: response.data.user.creditsReceived,
+                creditsSent: response.data.user.creditsSent,
+                remainingDailyCredits: response.data.user.remainingDailyCredits,
+                Job: response.data.user.job,
+              }
+
+              setCurrentUser(mockUser)
+              setUser(mockUser)
+              
+              // Set a mock token for consistency
+              setAuthToken('mock-jwt-token-' + Date.now())
+              
+              debugMockAuth.log("Auto-authenticated as", mockUser.name)
+            }
+          } catch (err) {
+            debugMockAuth.error('Mock auth initialization error', err)
+            setError('Failed to initialize mock authentication')
+          }
+          setLoading(false)
+          return
+        }
+
+        // **REAL MODE: Original LINE authentication flow**
         // Check if user is already authenticated
         if (isAuthenticated()) {
           // First try to get stored user
@@ -59,8 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (storedUser) {
             setUser(storedUser)
 
-            // Validate with backend
-            const response = await userApi.getCurrentUser()
+            // Validate with backend (but use unified API client)
+            const response = await apiClient.getCurrentUser()
             if (response.data?.user) {
               const backendUser: AuthUser = {
                 id: response.data.user.id,
@@ -68,12 +124,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 email: response.data.user.email,
                 picture: response.data.user.profilePicture,
                 role: response.data.user.role,
-                department: response.data.user.Department?.name,
+                department: response.data.user.Department?.name || response.data.user.department?.name,
                 employeeId: response.data.user.employeeId,
                 creditsReceived: response.data.user.creditsReceived,
                 creditsSent: response.data.user.creditsSent,
                 remainingDailyCredits: response.data.user.remainingDailyCredits,
-                Job: response.data.user.Job,
+                Job: response.data.user.Job || response.data.user.job,
               }
 
               setCurrentUser(backendUser)
@@ -130,6 +186,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth()
   }, [])
 
+  // Listen for mock user switching events
+  useEffect(() => {
+    if (!API_CONFIG.useMockApi) return
+
+    const handleMockUserSwitch = (event: CustomEvent) => {
+      debugMockAuth.log('Mock user switch event received', event.detail)
+      const { user } = event.detail
+      setUser(user)
+      debugMockAuth.log('Updated auth context user to', user.name)
+    }
+
+    window.addEventListener('mockUserSwitched', handleMockUserSwitch as EventListener)
+    
+    return () => {
+      window.removeEventListener('mockUserSwitched', handleMockUserSwitch as EventListener)
+    }
+  }, [])
+
   // Watch for token changes in storage (specifically for LIFF browser case and binding)
   useEffect(() => {
     // Only run this for LIFF browser redirect case
@@ -167,6 +241,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true)
 
+      // **MOCK MODE: Use mock API instead of real backend**
+      if (API_CONFIG.useMockApi) {
+        console.log("🎭 Mock mode: Refreshing user with mock API");
+        
+        const response = await apiClient.getCurrentUser()
+        if (response.data?.user) {
+          const mockUser: AuthUser = {
+            id: response.data.user.id,
+            name: response.data.user.name,
+            email: response.data.user.email,
+            picture: response.data.user.profilePicture,
+            role: response.data.user.role,
+            department: response.data.user.department?.name,
+            employeeId: response.data.user.employeeId,
+            creditsReceived: response.data.user.creditsReceived,
+            creditsSent: response.data.user.creditsSent,
+            remainingDailyCredits: response.data.user.remainingDailyCredits,
+            Job: response.data.user.job,
+          }
+
+          setUser(mockUser)
+          setCurrentUser(mockUser)
+        }
+        setLoading(false)
+        return
+      }
+
+      // **REAL MODE: Use real backend API**
       // Add a flag to the request to bypass cache
       const response = await userApi.getCurrentUser(true)
 
@@ -206,6 +308,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Skip login on binding pages
       if (isOnBindingPage()) {
         console.log("On binding page, skipping login process");
+        return;
+      }
+
+      // **MOCK MODE: Skip LINE login entirely**
+      if (API_CONFIG.useMockApi) {
+        console.log("🎭 Mock mode: Already authenticated, redirecting to dashboard");
+        window.location.href = '/dashboard';
         return;
       }
 

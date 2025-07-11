@@ -18,7 +18,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "@/hooks/use-toast"
-import { adminApi, departmentApi, promotionApi } from "@/lib/api"
+import { apiClient } from "@/lib/api-client"
 import { triggerPromotionConfetti } from "@/lib/confetti"
 import { DateRange } from "react-day-picker"
 import { CalendarIcon, Download, Search, UserPlus, Edit, Trash2, User, ArrowUpDown, ArrowUp, ArrowDown, TrendingUp, Award, CheckCircle, XCircle } from "lucide-react"
@@ -206,7 +206,7 @@ export default function AdminPage() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await departmentApi.getDepartments()
+      const response = await apiClient.getDepartments()
       if (response.data?.departments) {
         setDepartments(response.data.departments)
       }
@@ -227,7 +227,7 @@ export default function AdminPage() {
     }
 
     try {
-      const response = await adminApi.getJobsForDepartment(departmentId)
+      const response = await apiClient.getJobsForDepartment(departmentId)
       if (response.data?.jobs) {
         setAvailableJobs(response.data.jobs)
       }
@@ -250,7 +250,7 @@ export default function AdminPage() {
       if (userDepartmentFilter && userDepartmentFilter !== "all") params.departmentId = userDepartmentFilter
       if (userRoleFilter && userRoleFilter !== "all") params.role = userRoleFilter
 
-      const response = await adminApi.getUsers(params)
+      const response = await apiClient.getAdminUsers(params)
       if (response.data) {
         setUsers(response.data.users)
         setUserTotalPages(response.data.totalPages)
@@ -281,7 +281,7 @@ export default function AdminPage() {
       if (creditDateRange.from) params.startDate = format(creditDateRange.from, 'yyyy-MM-dd')
       if (creditDateRange.to) params.endDate = format(creditDateRange.to, 'yyyy-MM-dd')
 
-      const response = await adminApi.getCredits(params)
+      const response = await apiClient.getAllCredits(params)
       if (response.data) {
         setCredits(response.data.credits)
         setCreditTotalPages(response.data.totalPages)
@@ -300,7 +300,7 @@ export default function AdminPage() {
 
   const handleCreateUser = async (data: UserFormData) => {
     try {
-      await adminApi.createUser(data)
+      await apiClient.createUser(data)
       toast({
         title: "成功",
         description: "使用者已建立",
@@ -350,7 +350,7 @@ export default function AdminPage() {
   const handleUpdateUser = async (data: UserFormData) => {
     if (!selectedUser) return
     try {
-      await adminApi.updateUser(selectedUser.id, data)
+      await apiClient.updateUser(selectedUser.id, data)
       toast({
         title: "成功",
         description: "使用者已更新",
@@ -370,7 +370,7 @@ export default function AdminPage() {
   const handleDeleteUser = async () => {
     if (!selectedUser) return
     try {
-      await adminApi.deleteUser(selectedUser.id)
+      await apiClient.deleteUser(selectedUser.id)
       toast({
         title: "成功",
         description: "使用者已刪除",
@@ -416,7 +416,7 @@ export default function AdminPage() {
       if (creditDateRange.from) params.startDate = format(creditDateRange.from, 'yyyy-MM-dd')
       if (creditDateRange.to) params.endDate = format(creditDateRange.to, 'yyyy-MM-dd')
 
-      const response = await adminApi.exportCredits(params)
+      const response = await apiClient.exportCredits(params)
 
       // Create a blob with BOM for proper Chinese encoding
       const bom = new Uint8Array([0xEF, 0xBB, 0xBF])
@@ -450,7 +450,7 @@ export default function AdminPage() {
   const checkUserPromotion = async (userId: string) => {
     try {
       setPromotionLoading(true)
-      const response = await promotionApi.checkUserPromotion(userId)
+      const response = await apiClient.checkUserPromotion(userId)
       if (response.data) {
         setPromotionData(response.data)
         setIsPromotionDialogOpen(true)
@@ -472,7 +472,7 @@ export default function AdminPage() {
 
     try {
       setPromotionLoading(true)
-      const response = await promotionApi.promoteUser(selectedUser.id)
+      const response = await apiClient.promoteUser(selectedUser.id)
       if (response.data) {
         // Trigger confetti for admin who performed the promotion
         triggerPromotionConfetti()

@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, Search, Edit, Trash2, Brain, Building2, BookOpen, CheckCircle, Users } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { skillApi, departmentApi } from "@/lib/api"
+import { apiClient } from "@/lib/api-client"
 import { Skeleton } from "@/components/ui/skeleton"
 import CSVImportDialog from "@/components/csv-import-dialog"
 
@@ -74,7 +74,7 @@ export function AdminSkillList() {
   const fetchSkills = async () => {
     try {
       setLoading(true)
-      const response = await skillApi.getAdminSkills({
+      const response = await apiClient.getAdminSkills({
         page,
         limit: 10,
         search: searchTerm,
@@ -102,7 +102,7 @@ export function AdminSkillList() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await departmentApi.getDepartments()
+      const response = await apiClient.getDepartments()
       if (response.data) {
         setDepartments(response.data.departments)
       }
@@ -165,7 +165,7 @@ export function AdminSkillList() {
         return
       }
 
-      const response = await skillApi.createSkill(formData)
+      const response = await apiClient.createSkill(formData)
       
       toast({
         title: "成功",
@@ -201,7 +201,7 @@ export function AdminSkillList() {
     if (!editingSkill) return
 
     try {
-      const response = await skillApi.updateSkill(editingSkill.id, formData)
+      const response = await apiClient.updateSkill(editingSkill.id, formData)
       
       toast({
         title: "成功",
@@ -223,7 +223,7 @@ export function AdminSkillList() {
 
   const handleDelete = async (skillId: string) => {
     try {
-      const response = await skillApi.deleteSkill(skillId)
+      const response = await apiClient.deleteSkill(skillId)
       
       toast({
         title: "成功",

@@ -1,5 +1,17 @@
 export function parseJWT(token: string): any {
   try {
+    // Check if it's a mock token
+    if (token.startsWith('mock-jwt-token-')) {
+      // Return a mock payload for mock tokens
+      return {
+        exp: Math.floor(Date.now() / 1000) + 86400, // Expires in 24 hours
+        role: 'user',
+        userId: 'mock-user-1',
+        iat: Math.floor(Date.now() / 1000),
+        isMockToken: true
+      }
+    }
+
     // JWT has three parts separated by dots
     const parts = token.split('.')
     if (parts.length !== 3) {
@@ -29,6 +41,11 @@ export function parseJWT(token: string): any {
 
 export function isJWTExpired(token: string): boolean {
   try {
+    // Check if it's a mock token - mock tokens never expire
+    if (token.startsWith('mock-jwt-token-')) {
+      return false
+    }
+
     const payload = parseJWT(token)
     
     if (!payload || !payload.exp) {

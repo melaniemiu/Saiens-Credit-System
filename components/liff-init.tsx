@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast'
 import { setCurrentUser, isAuthenticated } from '@/lib/auth'
 import { setAuthToken } from '@/lib/api'
 import { initLiff, liff, isInLineBrowser } from '@/lib/liff-loader'
+import { API_CONFIG } from '@/config/api-config'
 
 export function LiffInit() {
   const [isInitialized, setIsInitialized] = useState(false)
@@ -51,6 +52,14 @@ export function LiffInit() {
   // Using the centralized LIFF loader instead of implementing initialization here
 
   useEffect(() => {
+    // **MOCK MODE: Skip LIFF initialization entirely**
+    if (API_CONFIG.useMockApi) {
+      console.log("🎭 Mock mode: Skipping LIFF initialization");
+      setIsLoading(false);
+      setIsInitialized(true);
+      return;
+    }
+
     // Check if we should skip LIFF initialization on this page
     if (shouldSkipAutoLogin()) {
       console.log("[LiffInit] On page that should skip auto-login, skipping LIFF initialization");

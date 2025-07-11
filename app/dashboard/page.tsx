@@ -5,7 +5,8 @@ import { CreditHistory } from "@/components/credit-history"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useEffect, useState, Suspense } from "react"
-import { userApi, setAuthToken } from "@/lib/api"
+import { setAuthToken } from "@/lib/api"
+import { apiClient } from "@/lib/api-client"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, Loader2, User, CreditCard, TrendingUp, Wallet } from "lucide-react"
@@ -158,7 +159,7 @@ function DashboardContent() {
       try {
         console.log("Dashboard - Fetching user data from API");
         setIsLoading(true);
-        const response = await userApi.getCurrentUser();
+        const response = await apiClient.getCurrentUser();
 
         if (response.data?.user) {
           console.log("Dashboard - User data fetched successfully");

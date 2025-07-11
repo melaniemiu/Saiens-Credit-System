@@ -1,6 +1,7 @@
 // API service for communicating with the backend
 import { API_URL } from '@/lib/env';
 import { apiCache } from '@/lib/cache';
+import { API_CONFIG } from '@/config/api-config';
 
 // API base URL from environment variable
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || API_URL || 'https://ss-backend.unayung.cc/api';
@@ -23,6 +24,11 @@ interface PaginatedResponse<T> {
 // Check if JWT token is expired
 function isTokenExpired(token: string): boolean {
   try {
+    // Mock tokens never expire
+    if (token.startsWith('mock-jwt-token-')) {
+      return false;
+    }
+
     const parts = token.split('.');
     if (parts.length !== 3) {
       return true;
@@ -71,6 +77,15 @@ async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
+  // **PREVENT REAL API CALLS IN MOCK MODE**
+  if (API_CONFIG.useMockApi) {
+    console.warn(`🎭 Mock mode: Blocking real API call to ${endpoint}. Use apiClient instead.`);
+    return {
+      error: 'Real API calls are disabled in mock mode. Use apiClient instead.',
+      status: 400,
+    };
+  }
+
   try {
     const url = `${API_BASE_URL}${endpoint}`;
 

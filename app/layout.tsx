@@ -7,6 +7,7 @@ import { SocketProvider } from "@/context/socket-context"
 import { EvaluationProvider } from "@/context/evaluation-context"
 import { LiffInit } from "@/components/liff-init"
 import { GlobalEvaluationModal } from "@/components/global-evaluation-modal"
+import { MockDevPanel } from "@/components/mock-dev-panel"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -47,6 +48,7 @@ export default function RootLayout({
                 <LiffInit />
                 {children}
                 <GlobalEvaluationModal />
+                <MockDevPanel />
               </SocketProvider>
             </EvaluationProvider>
           </AuthProvider>

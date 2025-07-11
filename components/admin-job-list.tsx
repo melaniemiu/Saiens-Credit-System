@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, Search, Edit, Trash2, Briefcase, Building2, Brain, Users } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { jobApi, departmentApi, skillApi } from "@/lib/api"
+import { apiClient } from "@/lib/api-client"
 import { Skeleton } from "@/components/ui/skeleton"
 import CSVImportDialog from "@/components/csv-import-dialog"
 
@@ -72,7 +72,7 @@ export function AdminJobList() {
   const fetchJobs = async () => {
     try {
       setLoading(true)
-      const response = await jobApi.getAdminJobs({
+      const response = await apiClient.getAdminJobs({
         page,
         limit: 10,
         search: searchTerm,
@@ -99,7 +99,7 @@ export function AdminJobList() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await departmentApi.getDepartments()
+      const response = await apiClient.getDepartments()
       if (response.data) {
         setDepartments(response.data.departments || [])
       }
@@ -110,7 +110,7 @@ export function AdminJobList() {
 
   const fetchSkills = async () => {
     try {
-      const response = await skillApi.getAdminSkills({ limit: 100 })
+      const response = await apiClient.getAdminSkills({ limit: 100 })
       if (response.data) {
         setSkills(response.data.skills || [])
       }
@@ -180,7 +180,7 @@ export function AdminJobList() {
         return
       }
 
-      const response = await jobApi.createJob(formData)
+      const response = await apiClient.createJob(formData)
       
       toast({
         title: "成功",
@@ -216,7 +216,7 @@ export function AdminJobList() {
     if (!editingJob) return
 
     try {
-      const response = await jobApi.updateJob(editingJob.id, formData)
+      const response = await apiClient.updateJob(editingJob.id, formData)
       
       toast({
         title: "成功",
@@ -238,7 +238,7 @@ export function AdminJobList() {
 
   const handleDelete = async (jobId: string) => {
     try {
-      const response = await jobApi.deleteJob(jobId)
+      const response = await apiClient.deleteJob(jobId)
       
       toast({
         title: "成功",

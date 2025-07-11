@@ -9,11 +9,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/hooks/use-toast"
-import { skillApi, departmentApi } from "@/lib/api"
+import { apiClient } from "@/lib/api-client"
 import { Search, ClipboardCheck, User, ArrowUpDown, ArrowUp, ArrowDown, Calendar, BookOpen } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { EvaluationModal } from "@/components/evaluation-modal"
+
+// Helper function to safely format dates
+const formatDate = (dateString: string | null | undefined, formatStr: string = 'MM/dd HH:mm'): string => {
+  if (!dateString) return '-'
+  try {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return '-'
+    return format(date, formatStr)
+  } catch {
+    return '-'
+  }
+}
 
 interface PendingEvaluation {
   id: string
@@ -122,7 +134,7 @@ export function AdminEvaluationList() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await departmentApi.getDepartments()
+      const response = await apiClient.getDepartments()
       if (response.data?.departments) {
         setDepartments(response.data.departments)
       }
@@ -143,7 +155,7 @@ export function AdminEvaluationList() {
       if (searchTerm) params.search = searchTerm
       if (departmentFilter && departmentFilter !== "all") params.departmentId = departmentFilter
 
-      const response = await skillApi.getPendingEvaluations(params)
+      const response = await apiClient.getPendingEvaluations(params)
       if (response.data) {
         setEvaluations(response.data.evaluations)
         setTotalPages(response.data.pagination.totalPages)
@@ -299,7 +311,7 @@ export function AdminEvaluationList() {
                             <TableCell>
                               <div className="flex items-center gap-2 text-sm">
                                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                                {format(new Date(evaluation.evaluationRequestedAt), 'MM/dd HH:mm')}
+                                {formatDate(evaluation.evaluationRequestedAt)}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -380,7 +392,7 @@ export function AdminEvaluationList() {
                           <div className="flex items-center gap-2 mb-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm text-muted-foreground">
-                              {format(new Date(evaluation.evaluationRequestedAt), 'MM/dd HH:mm')}
+                              {formatDate(evaluation.evaluationRequestedAt)}
                             </span>
                           </div>
                           <div className="font-medium text-lg mb-1">{evaluation.skillName}</div>
