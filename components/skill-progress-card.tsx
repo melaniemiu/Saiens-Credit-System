@@ -4,7 +4,7 @@ import { SoftCard, SoftCardHeader, SoftCardContent, SoftCardTitle, SoftCardDescr
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
-import { skillApi, userApi } from "@/lib/api"
+import { apiClient } from "@/lib/api-client"
 import { useEffect, useState } from "react"
 import { CheckCircle, Clock, Play, Award } from "lucide-react"
 
@@ -81,13 +81,13 @@ export function SkillProgressCard() {
         setIsLoading(true)
         
         // Fetch current user to get job level
-        const userResponse = await userApi.getCurrentUser()
+        const userResponse = await apiClient.getCurrentUser()
         const currentUser = userResponse.data?.user
         const userJobLevel = currentUser?.Job?.name || null
         setCurrentJobLevel(userJobLevel)
         
         // Fetch user's skill progress with job level info
-        const userSkillsResponse = await skillApi.getUserSkills()
+        const userSkillsResponse = await apiClient.getUserSkills()
         if (userSkillsResponse.data?.userSkills) {
           // Transform and organize by job level
           const transformedSkills = userSkillsResponse.data.userSkills.map((item: any) => ({
@@ -119,7 +119,7 @@ export function SkillProgressCard() {
         }
 
         // Fetch skill statistics
-        const statsResponse = await skillApi.getSkillStats()
+        const statsResponse = await apiClient.getSkillStats()
         if (statsResponse.data) {
           setStats({
             total: statsResponse.data.total,

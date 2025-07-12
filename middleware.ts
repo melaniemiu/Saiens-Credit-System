@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { isJWTExpired, parseJWT } from './lib/jwt-verify'
 
+// Check if mock mode is enabled
+function isMockMode(): boolean {
+  return process.env.NEXT_PUBLIC_USE_MOCK_API === 'true'
+}
+
 // Define which paths should be protected
 const PROTECTED_PATHS = [
   '/dashboard',
@@ -35,6 +40,12 @@ export function middleware(request: NextRequest) {
   const isProtectedPath = PROTECTED_PATHS.some(path => pathname.startsWith(path))
   const isAdminPath = ADMIN_PATHS.some(path => pathname.startsWith(path))
   const isPublicPath = PUBLIC_PATHS.some(path => pathname === path || pathname.startsWith(path))
+
+  // **MOCK MODE: Allow all access without authentication**
+  if (isMockMode()) {
+    console.log('🎭 Middleware: Mock mode enabled, allowing all access')
+    return NextResponse.next()
+  }
 
   // Check for redirect loop cookie
   const redirectCount = request.cookies.get('redirect_count')?.value

@@ -3,7 +3,7 @@
 import { SoftCard, SoftCardHeader, SoftCardContent, SoftCardTitle, SoftCardDescription } from "@/components/ui/soft-card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { skillApi } from "@/lib/api"
+import { apiClient } from "@/lib/api-client"
 import { useEffect, useState } from "react"
 import { BookOpen, Target } from "lucide-react"
 
@@ -32,11 +32,11 @@ export function SuggestedSkillsCard() {
         setIsLoading(true)
         
         // Get user's current skills with job level info
-        const userSkillsResponse = await skillApi.getUserSkills()
+        const userSkillsResponse = await apiClient.getUserSkills()
         const userSkills = userSkillsResponse.data?.userSkills || []
         
         // Get skills for user's current job level
-        const jobSkillsResponse = await skillApi.getJobSkills()
+        const jobSkillsResponse = await apiClient.getJobSkills()
         const jobSkillsData = jobSkillsResponse.data?.skillsWithProgress || []
         
         // Find unlearned skills from current job level

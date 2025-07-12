@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { creditApi } from "@/lib/api"
+import { apiClient } from "@/lib/api-client"
 import { Loader2, User, Clock, ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -46,7 +46,7 @@ export function CreditHistory() {
   const fetchReceivedCredits = async (page = 1) => {
     try {
       setIsLoadingReceived(true)
-      const response = await creditApi.getReceivedCredits(page, 5) // 5 items per page
+      const response = await apiClient.getReceivedCredits(page, 5) // 5 items per page
       if (response.data) {
         setReceivedCredits(response.data.credits)
         setReceivedTotalPages(response.data.totalPages)
@@ -62,7 +62,7 @@ export function CreditHistory() {
   const fetchGivenCredits = async (page = 1) => {
     try {
       setIsLoadingGiven(true)
-      const response = await creditApi.getSentCredits(page, 5) // 5 items per page
+      const response = await apiClient.getSentCredits(page, 5) // 5 items per page
 
       if (response.data) {
         setGivenCredits(response.data.credits)

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { useEffect, useState } from 'react'
-import { userApi } from '@/lib/api'
+import { apiClient } from '@/lib/api-client'
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface CreditStats {
@@ -21,7 +21,7 @@ export function CreditStats() {
     const fetchStats = async () => {
       try {
         setIsLoading(true)
-        const response = await userApi.getDailyStats()
+        const response = await apiClient.getDailyStats()
 
         if (response.data?.stats) {
           setStats(response.data.stats)

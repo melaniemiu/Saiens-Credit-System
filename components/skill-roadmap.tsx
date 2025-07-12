@@ -3,7 +3,7 @@
 import { SoftCard, SoftCardHeader, SoftCardContent, SoftCardTitle, SoftCardDescription } from "@/components/ui/soft-card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { skillApi } from "@/lib/api"
+import { apiClient } from "@/lib/api-client"
 import { useAuth } from "@/context/auth-context"
 import { useEffect, useState } from "react"
 import { toast } from "@/hooks/use-toast"
@@ -91,7 +91,7 @@ export function SkillRoadmap() {
       setIsLoading(true)
       
       // Get department-based job progression with skill progress
-      const progressionResponse = await skillApi.getDepartmentProgression()
+      const progressionResponse = await apiClient.getDepartmentProgression()
       const { department, currentJob, jobProgression } = progressionResponse.data || {}
 
       // Debug logging
@@ -163,7 +163,7 @@ export function SkillRoadmap() {
 
   const handleStartEvaluation = async (skill: SkillProgress) => {
     try {
-      await skillApi.requestEvaluation(skill.skillId)
+      await apiClient.requestEvaluation(skill.skillId)
       toast({
         title: "評估申請已送出",
         description: `已為技能「${skill.Skill.name}」申請評估，評估員將收到通知。`,
@@ -183,7 +183,7 @@ export function SkillRoadmap() {
   const handleStartLearning = async (skill: SkillProgress) => {
     try {
       // Update skill status to in_progress
-      await skillApi.updateSkillProgress(skill.skillId, { 
+      await apiClient.updateSkillProgress(skill.skillId, { 
         status: 'in_progress',
         startedAt: new Date().toISOString()
       })

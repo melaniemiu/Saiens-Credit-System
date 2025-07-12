@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { userApi, creditApi } from "@/lib/api"
+import { apiClient } from "@/lib/api-client"
 import { useAuth } from "@/context/auth-context"
 import { SoftCard, SoftCardContent, SoftCardHeader, SoftCardTitle, SoftCardDescription } from "@/components/ui/soft-card"
 import { triggerCreditGivenConfetti } from "@/lib/confetti"
@@ -45,7 +45,7 @@ export function GiveCreditForm() {
       }
 
       try {
-        const response = await userApi.getUsers();
+        const response = await apiClient.getUsersList();
 
         if (response.data?.users && isMounted) {
           const mappedEmployees = response.data.users.map(emp => {
@@ -142,14 +142,14 @@ export function GiveCreditForm() {
 
     try {
       if (selectedEmployeeIds.length === 1) {
-        await creditApi.giveCredit(selectedEmployeeIds[0], reason)
+        await apiClient.giveCredit(selectedEmployeeIds[0], reason)
         triggerCreditGivenConfetti()
         toast({
           title: "Credit 送出成功",
           description: "您已成功給予同事 Credit",
         })
       } else {
-        await creditApi.giveBulkCredit(selectedEmployeeIds, reason)
+        await apiClient.giveBulkCredit(selectedEmployeeIds, reason)
         triggerCreditGivenConfetti()
         toast({
           title: "Credit 送出成功",
@@ -157,7 +157,7 @@ export function GiveCreditForm() {
         })
       }
 
-      const response = await userApi.getCurrentUser();
+      const response = await apiClient.getCurrentUser();
 
       if (response.data?.remainingCredits !== undefined) {
         setRemainingCredits(response.data.remainingCredits);
