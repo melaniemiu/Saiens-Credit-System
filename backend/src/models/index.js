@@ -35,6 +35,7 @@ db.Skill = require('./skill.model')(sequelize, Sequelize);
 db.JobSkill = require('./job-skill.model')(sequelize, Sequelize);
 db.UserSkill = require('./user-skill.model')(sequelize, Sequelize);
 db.SkillDepartment = require('./skill-department.model')(sequelize, Sequelize);
+db.SkillPrerequisite = require('./skill-prerequisite.model')(sequelize, Sequelize);
 
 // Define associations using explicit foreign key
 db.User.belongsTo(db.Department, { foreignKey: 'departmentId' });
@@ -124,5 +125,25 @@ db.SkillDepartment.belongsTo(db.Department, { foreignKey: 'departmentId' });
 db.SkillDepartment.belongsTo(db.Skill, { foreignKey: 'skillId' });
 db.Department.hasMany(db.SkillDepartment, { foreignKey: 'departmentId' });
 db.Skill.hasMany(db.SkillDepartment, { foreignKey: 'skillId' });
+
+// Skill prerequisites self-referential many-to-many relationship through SkillPrerequisite
+db.Skill.belongsToMany(db.Skill, {
+  through: db.SkillPrerequisite,
+  as: 'prerequisites',
+  foreignKey: 'skillId',
+  otherKey: 'prerequisiteSkillId'
+});
+db.Skill.belongsToMany(db.Skill, {
+  through: db.SkillPrerequisite,
+  as: 'dependentSkills',
+  foreignKey: 'prerequisiteSkillId',
+  otherKey: 'skillId'
+});
+
+// Direct associations for SkillPrerequisite
+db.SkillPrerequisite.belongsTo(db.Skill, { as: 'skill', foreignKey: 'skillId' });
+db.SkillPrerequisite.belongsTo(db.Skill, { as: 'prerequisiteSkill', foreignKey: 'prerequisiteSkillId' });
+db.Skill.hasMany(db.SkillPrerequisite, { as: 'skillPrerequisites', foreignKey: 'skillId' });
+db.Skill.hasMany(db.SkillPrerequisite, { as: 'prerequisiteFor', foreignKey: 'prerequisiteSkillId' });
 
 module.exports = db;

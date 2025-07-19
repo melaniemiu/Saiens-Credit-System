@@ -788,6 +788,40 @@ export const skillApi = {
       headers: createHeaders(),
     });
   },
+
+  // Get skill prerequisites
+  getSkillPrerequisites: async (skillId: string) => {
+    return fetchApi<{ prerequisites: any[] }>(`/admin/skills/${skillId}/prerequisites`, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Add skill prerequisite
+  addSkillPrerequisite: async (skillId: string, data: { prerequisiteSkillId: string, isRequired?: boolean }) => {
+    return fetchApi<{ message: string }>(`/admin/skills/${skillId}/prerequisites`, {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Update skill prerequisite
+  updateSkillPrerequisite: async (skillId: string, prerequisiteSkillId: string, data: { isRequired: boolean }) => {
+    return fetchApi<{ message: string }>(`/admin/skills/${skillId}/prerequisites/${prerequisiteSkillId}`, {
+      method: 'PUT',
+      headers: createHeaders(),
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Remove skill prerequisite
+  removeSkillPrerequisite: async (skillId: string, prerequisiteSkillId: string) => {
+    return fetchApi<{ message: string }>(`/admin/skills/${skillId}/prerequisites/${prerequisiteSkillId}`, {
+      method: 'DELETE',
+      headers: createHeaders(),
+    });
+  },
 };
 
 // Skill Categories API

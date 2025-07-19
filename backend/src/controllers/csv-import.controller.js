@@ -159,7 +159,6 @@ exports.importSkills = async (req, res, next) => {
           category: CSVUtils.cleanString(row.category),
           learningMethod: CSVUtils.cleanString(row.learningMethod),
           assessmentMethod: CSVUtils.cleanString(row.assessmentMethod),
-          isRequired: CSVUtils.parseBoolean(row.isRequired),
           syllabus: CSVUtils.cleanString(row.syllabus) || null
         };
 

@@ -21,11 +21,11 @@ interface SkillProgress {
   evaluationRequestedAt?: string
   attempts?: number
   jobLevel?: string
+  isRequired: boolean // From job-skill relationship
   Skill: {
     id: string
     name: string
     category: string
-    isRequired: boolean
     learningMethod: string
     assessmentMethod: string
     syllabus?: string
@@ -372,9 +372,9 @@ export function SkillRoadmap() {
                       <div className="grid grid-cols-3 gap-8 justify-items-center w-full mx-auto" style={{width: '480px'}}>
                         {level.skills
                           .sort((a, b) => {
-                            // Sort by required status first (必修 first, then 選修)
-                            if (a.Skill.isRequired && !b.Skill.isRequired) return -1
-                            if (!a.Skill.isRequired && b.Skill.isRequired) return 1
+                            // Sort by required status first (job-level 必修 first, then 選修)
+                            if (a.isRequired && !b.isRequired) return -1
+                            if (!a.isRequired && b.isRequired) return 1
                             return a.Skill.name.localeCompare(b.Skill.name) // Then by name
                           })
                           .map((skill, skillIndex) => {
@@ -398,7 +398,7 @@ export function SkillRoadmap() {
                               }`}>
                                 {/* Skill Icon */}
                                 <div className="text-white">
-                                  {skill.Skill.isRequired ? (
+                                  {skill.isRequired ? (
                                     <Award className="h-8 w-8" />
                                   ) : (
                                     <BookOpen className="h-8 w-8" />
@@ -417,7 +417,7 @@ export function SkillRoadmap() {
                                       <Clock className="h-4 w-4 text-white" />
                                     </div>
                                   )}
-                                  {skill.Skill.isRequired && (
+                                  {skill.isRequired && (
                                     <div className="absolute -top-1 -left-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                                       <span className="text-white text-xs font-bold">必</span>
                                     </div>
@@ -488,7 +488,7 @@ export function SkillRoadmap() {
                           : 'bg-gradient-to-br from-gray-400 to-gray-600 border-gray-300'
                       }`}>
                         <div className="text-white">
-                          {selectedSkill.Skill.isRequired ? (
+                          {selectedSkill.isRequired ? (
                             <Award className="h-6 w-6" />
                           ) : (
                             <BookOpen className="h-6 w-6" />
@@ -498,10 +498,10 @@ export function SkillRoadmap() {
                       <div>
                         <DialogTitle className="text-xl font-bold flex items-center gap-2 text-left">
                           {selectedSkill.Skill.name}
-                          {selectedSkill.Skill.isRequired && (
+                          {selectedSkill.isRequired && (
                             <Badge className="bg-red-500 text-white">必</Badge>
                           )}
-                          {!selectedSkill.Skill.isRequired && (
+                          {!selectedSkill.isRequired && (
                             <Badge className="bg-blue-500 text-white">選</Badge>
                           )}
                         </DialogTitle>

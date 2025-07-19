@@ -1,4 +1,4 @@
-const { Skill, SkillCategory, UserSkill, Job, JobSkill, User, Department, SkillDepartment } = require('../models');
+const { Skill, SkillCategory, UserSkill, Job, JobSkill, User, Department, SkillDepartment, SkillPrerequisite } = require('../models');
 const { Op, sequelize } = require('sequelize');
 const { sequelize: dbInstance } = require('../models');
 
@@ -12,7 +12,7 @@ exports.getUserSkills = async (req, res, next) => {
       include: [
         {
           model: Skill,
-          attributes: ['id', 'name', 'categoryId', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus'],
+          attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
           include: [{
             model: SkillCategory,
             as: 'category',
@@ -165,7 +165,7 @@ exports.getJobSkills = async (req, res, next) => {
       include: [
         {
           model: Skill,
-          attributes: ['id', 'name', 'categoryId', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus'],
+          attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
           include: [{
             model: SkillCategory,
             as: 'category',
@@ -245,7 +245,7 @@ exports.getSuggestedSkills = async (req, res, next) => {
       include: [
         {
           model: Skill,
-          attributes: ['id', 'name', 'categoryId', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus'],
+          attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
           include: [{
             model: SkillCategory,
             as: 'category',
@@ -312,7 +312,7 @@ exports.updateUserSkill = async (req, res, next) => {
       include: [
         {
           model: Skill,
-          attributes: ['id', 'name', 'categoryId', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus'],
+          attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
           include: [{
             model: SkillCategory,
             as: 'category',
@@ -445,10 +445,21 @@ exports.getAdminSkills = async (req, res, next) => {
       includeClause[1].where = { id: departmentId };
     }
 
+    // Validate and handle sorting by fields
+    const validSortFields = ['name', 'category', 'learningMethod', 'assessmentMethod', 'createdAt', 'updatedAt'];
+    const actualSortField = validSortFields.includes(sortField) ? sortField : 'name';
+    
+    let orderClause;
+    if (actualSortField === 'category') {
+      orderClause = [['category', 'name', sortOrder.toUpperCase()]];
+    } else {
+      orderClause = [[actualSortField, sortOrder.toUpperCase()]];
+    }
+
     const { count, rows: skills } = await Skill.findAndCountAll({
       where: whereClause,
       include: includeClause,
-      order: [[sortField, sortOrder.toUpperCase()]],
+      order: orderClause,
       limit: parseInt(limit),
       offset,
       distinct: true
@@ -492,7 +503,6 @@ exports.createSkill = async (req, res, next) => {
       name, 
       category, // This can be categoryName for compatibility
       categoryName, // New field name from frontend
-      isRequired = false, 
       learningMethod, 
       assessmentMethod,
       syllabus,
@@ -524,7 +534,6 @@ exports.createSkill = async (req, res, next) => {
     const skill = await Skill.create({
       name,
       categoryId: categoryResult.id,
-      isRequired,
       learningMethod,
       assessmentMethod,
       syllabus
@@ -577,7 +586,6 @@ exports.updateSkill = async (req, res, next) => {
       name, 
       category, // This can be categoryName for compatibility 
       categoryName, // New field name from frontend
-      isRequired, 
       learningMethod, 
       assessmentMethod,
       syllabus,
@@ -620,7 +628,6 @@ exports.updateSkill = async (req, res, next) => {
     await skill.update({
       name: name || skill.name,
       categoryId: categoryId,
-      isRequired: isRequired !== undefined ? isRequired : skill.isRequired,
       learningMethod: learningMethod || skill.learningMethod,
       assessmentMethod: assessmentMethod || skill.assessmentMethod,
       syllabus: syllabus !== undefined ? syllabus : skill.syllabus
@@ -1104,6 +1111,128 @@ exports.getPendingEvaluations = async (req, res, next) => {
       }
     });
     
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get skill prerequisites
+exports.getSkillPrerequisites = async (req, res, next) => {
+  try {
+    const { skillId } = req.params;
+    
+    const skill = await Skill.findByPk(skillId, {
+      include: [
+        {
+          model: Skill,
+          as: 'prerequisites',
+          attributes: ['id', 'name'],
+          include: [{
+            model: SkillCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'color']
+          }],
+          through: { attributes: ['isRequired'] }
+        }
+      ]
+    });
+    
+    if (!skill) {
+      return res.status(404).json({ error: '找不到指定的技能' });
+    }
+    
+    res.json({ prerequisites: skill.prerequisites || [] });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Add skill prerequisite
+exports.addSkillPrerequisite = async (req, res, next) => {
+  try {
+    const { skillId } = req.params;
+    const { prerequisiteSkillId, isRequired = true } = req.body;
+    
+    if (!prerequisiteSkillId) {
+      return res.status(400).json({ error: '必須提供前置技能ID' });
+    }
+    
+    if (skillId === prerequisiteSkillId) {
+      return res.status(400).json({ error: '技能不能設定自己為前置技能' });
+    }
+    
+    // Check if both skills exist
+    const skill = await Skill.findByPk(skillId);
+    const prerequisiteSkill = await Skill.findByPk(prerequisiteSkillId);
+    
+    if (!skill) {
+      return res.status(404).json({ error: '找不到指定的技能' });
+    }
+    
+    if (!prerequisiteSkill) {
+      return res.status(404).json({ error: '找不到指定的前置技能' });
+    }
+    
+    // Check if prerequisite already exists
+    const existingPrerequisite = await SkillPrerequisite.findOne({
+      where: { skillId, prerequisiteSkillId }
+    });
+    
+    if (existingPrerequisite) {
+      return res.status(400).json({ error: '此前置技能已存在' });
+    }
+    
+    // Create prerequisite
+    await SkillPrerequisite.create({
+      skillId,
+      prerequisiteSkillId,
+      isRequired
+    });
+    
+    res.status(201).json({ message: '前置技能新增成功' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Remove skill prerequisite
+exports.removeSkillPrerequisite = async (req, res, next) => {
+  try {
+    const { skillId, prerequisiteSkillId } = req.params;
+    
+    const prerequisite = await SkillPrerequisite.findOne({
+      where: { skillId, prerequisiteSkillId }
+    });
+    
+    if (!prerequisite) {
+      return res.status(404).json({ error: '找不到指定的前置技能關係' });
+    }
+    
+    await prerequisite.destroy();
+    
+    res.json({ message: '前置技能移除成功' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Update skill prerequisite
+exports.updateSkillPrerequisite = async (req, res, next) => {
+  try {
+    const { skillId, prerequisiteSkillId } = req.params;
+    const { isRequired } = req.body;
+    
+    const prerequisite = await SkillPrerequisite.findOne({
+      where: { skillId, prerequisiteSkillId }
+    });
+    
+    if (!prerequisite) {
+      return res.status(404).json({ error: '找不到指定的前置技能關係' });
+    }
+    
+    await prerequisite.update({ isRequired });
+    
+    res.json({ message: '前置技能更新成功' });
   } catch (error) {
     next(error);
   }

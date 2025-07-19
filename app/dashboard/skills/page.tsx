@@ -29,9 +29,9 @@ export default function SkillsPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {/* Skill Type Icons */}
+            {/* Job Requirement Icons */}
             <div>
-              <h4 className="font-medium text-gray-800 mb-3">技能類型圖示</h4>
+              <h4 className="font-medium text-gray-800 mb-3">職位需求圖示</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center gap-3 p-4 bg-red-50 rounded-lg border border-red-200">
                   <div className="relative">
@@ -44,8 +44,8 @@ export default function SkillsPage() {
                     </div>
                   </div>
                   <div>
-                    <p className="font-medium text-red-800">必修技能</p>
-                    <p className="text-sm text-red-600">職位要求的核心技能，優先學習</p>
+                    <p className="font-medium text-red-800">職位必修技能</p>
+                    <p className="text-sm text-red-600">此職位要求的核心技能，優先學習</p>
                     <p className="text-xs text-gray-500 mt-1">顯示為金色圓圈 + 紅色「必」標記</p>
                   </div>
                 </div>
@@ -54,8 +54,8 @@ export default function SkillsPage() {
                     <BookOpen className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <p className="font-medium text-blue-800">選修技能</p>
-                    <p className="text-sm text-blue-600">進階提升，擴展專業能力範圍</p>
+                    <p className="font-medium text-blue-800">職位選修技能</p>
+                    <p className="text-sm text-blue-600">此職位的進階技能，擴展專業能力</p>
                     <p className="text-xs text-gray-500 mt-1">顯示為金色圓圈（無標記）</p>
                   </div>
                 </div>
@@ -114,9 +114,10 @@ export default function SkillsPage() {
               <h4 className="font-medium text-gray-800 mb-2">💡 使用提示</h4>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• 點擊技能節點可查看詳細資訊</li>
-                <li>• 必修技能會優先顯示在前面</li>
+                <li>• 職位必修技能會優先顯示在前面</li>
                 <li>• 學習中的技能會有呼吸燈效果</li>
                 <li>• 完成前一等級後可解鎖下一等級</li>
+                <li>• 技能的必修/選修狀態依職位而定</li>
               </ul>
             </div>
           </div>

@@ -31,6 +31,12 @@ router.post('/skills', skillController.createSkill);
 router.put('/skills/:id', skillController.updateSkill);
 router.delete('/skills/:id', skillController.deleteSkill);
 
+// Skill prerequisites management
+router.get('/skills/:skillId/prerequisites', skillController.getSkillPrerequisites);
+router.post('/skills/:skillId/prerequisites', skillController.addSkillPrerequisite);
+router.put('/skills/:skillId/prerequisites/:prerequisiteSkillId', skillController.updateSkillPrerequisite);
+router.delete('/skills/:skillId/prerequisites/:prerequisiteSkillId', skillController.removeSkillPrerequisite);
+
 // Job management
 router.get('/jobs', jobController.getAdminJobs);
 router.post('/jobs', jobController.createJob);

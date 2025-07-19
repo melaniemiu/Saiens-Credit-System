@@ -20,12 +20,6 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: 'SET NULL',
       comment: 'Foreign key reference to skill_categories table'
     },
-    isRequired: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
-      comment: 'Whether this skill is required (必修) or optional (選修)'
-    },
     learningMethod: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -48,9 +42,6 @@ module.exports = (sequelize, DataTypes) => {
     indexes: [
       {
         fields: ['categoryId']
-      },
-      {
-        fields: ['isRequired']
       }
     ]
   });

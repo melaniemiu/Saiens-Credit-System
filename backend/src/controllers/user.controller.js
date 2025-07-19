@@ -22,7 +22,7 @@ exports.getCurrentUser = async (req, res, next) => {
             {
               model: Skill,
               as: 'skills',
-              attributes: ['id', 'name', 'categoryId', 'isRequired', 'learningMethod', 'assessmentMethod'],
+              attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod'],
               include: [{
                 model: SkillCategory,
                 as: 'category',
@@ -35,7 +35,7 @@ exports.getCurrentUser = async (req, res, next) => {
         {
           model: Skill,
           as: 'skills',
-          attributes: ['id', 'name', 'categoryId', 'isRequired', 'learningMethod', 'assessmentMethod'],
+          attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod'],
           include: [{
             model: SkillCategory,
             as: 'category',

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Plus, Search, Edit, Trash2, Brain, Building2, BookOpen, CheckCircle, Users } from "lucide-react"
+import { Plus, Search, Edit, Trash2, Brain, Building2, BookOpen, CheckCircle, Users, GitBranch, X, ChevronDown, ChevronRight } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { apiClient } from "@/lib/api-client"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -39,7 +39,6 @@ interface Skill {
   name: string
   category: SkillCategory
   categoryId: string
-  isRequired: boolean
   learningMethod: string
   assessmentMethod: string
   departments: Department[]
@@ -52,10 +51,15 @@ interface Skill {
 interface SkillFormData {
   name: string
   categoryName: string
-  isRequired: boolean
   learningMethod: string
   assessmentMethod: string
   departmentIds: string[]
+}
+
+interface SkillPrerequisite {
+  id: string
+  name: string
+  category: SkillCategory
 }
 
 export function AdminSkillList() {
@@ -74,10 +78,15 @@ export function AdminSkillList() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null)
+  const [isPrerequisitesDialogOpen, setIsPrerequisitesDialogOpen] = useState(false)
+  const [managingSkill, setManagingSkill] = useState<Skill | null>(null)
+  const [prerequisites, setPrerequisites] = useState<SkillPrerequisite[]>([])
+  const [availableSkills, setAvailableSkills] = useState<Skill[]>([])
+  const [prerequisiteSearchTerm, setPrerequisiteSearchTerm] = useState("")
+  const [expandedPrerequisiteCategories, setExpandedPrerequisiteCategories] = useState<Set<string>>(new Set())
   const [formData, setFormData] = useState<SkillFormData>({
     name: "",
     categoryName: "",
-    isRequired: false,
     learningMethod: "",
     assessmentMethod: "",
     departmentIds: []
@@ -131,8 +140,8 @@ export function AdminSkillList() {
   const fetchSkillCategories = async () => {
     try {
       const response = await apiClient.getSkillCategories()
-      if (response.data && response.data.data) {
-        setSkillCategories(response.data.data.categories || [])
+      if (response.data) {
+        setSkillCategories(response.data.categories || [])
       }
     } catch (error) {
       console.error("Failed to fetch skill categories:", error)
@@ -168,7 +177,6 @@ export function AdminSkillList() {
     setFormData({
       name: "",
       categoryName: "",
-      isRequired: false,
       learningMethod: "",
       assessmentMethod: "",
       departmentIds: []
@@ -228,7 +236,6 @@ export function AdminSkillList() {
     setFormData({
       name: skill.name,
       categoryName: skill.category?.name || '',
-      isRequired: skill.isRequired,
       learningMethod: skill.learningMethod,
       assessmentMethod: skill.assessmentMethod,
       departmentIds: skill.departments?.map(d => d.id) || []
@@ -282,6 +289,119 @@ export function AdminSkillList() {
       })
     }
   }
+
+  const handleManagePrerequisites = async (skill: Skill) => {
+    setManagingSkill(skill)
+    // Reset search and expanded categories
+    setPrerequisiteSearchTerm("")
+    setExpandedPrerequisiteCategories(new Set())
+    
+    try {
+      // Fetch current prerequisites
+      const prereqResponse = await apiClient.getSkillPrerequisites(skill.id)
+      setPrerequisites(prereqResponse.data?.prerequisites || [])
+      
+      // Fetch all skills as available options (excluding the current skill)
+      const skillsResponse = await apiClient.getAdminSkills({ limit: 1000 })
+      const allSkills = skillsResponse.data?.skills || []
+      setAvailableSkills(allSkills.filter(s => s.id !== skill.id))
+      
+      setIsPrerequisitesDialogOpen(true)
+    } catch (error: any) {
+      toast({
+        title: "錯誤",
+        description: error.message || "載入前置技能失敗",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleAddPrerequisite = async (prerequisiteSkillId: string) => {
+    if (!managingSkill) return
+    
+    try {
+      await apiClient.addSkillPrerequisite(managingSkill.id, {
+        prerequisiteSkillId,
+        isRequired: true
+      })
+      
+      toast({
+        title: "成功",
+        description: "前置技能新增成功"
+      })
+      
+      // Refresh prerequisites
+      const response = await apiClient.getSkillPrerequisites(managingSkill.id)
+      setPrerequisites(response.data?.prerequisites || [])
+    } catch (error: any) {
+      toast({
+        title: "錯誤",
+        description: error.message || "新增前置技能失敗",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleRemovePrerequisite = async (prerequisiteSkillId: string) => {
+    if (!managingSkill) return
+    
+    try {
+      await apiClient.removeSkillPrerequisite(managingSkill.id, prerequisiteSkillId)
+      
+      toast({
+        title: "成功",
+        description: "前置技能移除成功"
+      })
+      
+      // Refresh prerequisites
+      const response = await apiClient.getSkillPrerequisites(managingSkill.id)
+      setPrerequisites(response.data?.prerequisites || [])
+    } catch (error: any) {
+      toast({
+        title: "錯誤",
+        description: error.message || "移除前置技能失敗",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Helper function to group skills by category for prerequisites
+  const groupPrerequisiteSkillsByCategory = (skills: Skill[]) => {
+    const grouped = skills.reduce((acc, skill) => {
+      const categoryName = typeof skill.category === 'string' 
+        ? skill.category 
+        : skill.category?.name || 'Uncategorized'
+      
+      const categoryColor = typeof skill.category === 'object' 
+        ? skill.category?.color || '#6B7280'
+        : '#6B7280'
+      
+      if (!acc[categoryName]) {
+        acc[categoryName] = {
+          skills: [],
+          color: categoryColor
+        }
+      }
+      acc[categoryName].skills.push(skill)
+      return acc
+    }, {} as Record<string, { skills: Skill[], color: string }>)
+    
+    return grouped
+  }
+
+  // Helper function to toggle prerequisite category expansion
+  const togglePrerequisiteCategory = (categoryName: string) => {
+    setExpandedPrerequisiteCategories(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(categoryName)) {
+        newSet.delete(categoryName)
+      } else {
+        newSet.add(categoryName)
+      }
+      return newSet
+    })
+  }
+
 
   return (
     <Card>
@@ -375,7 +495,6 @@ export function AdminSkillList() {
                           )}
                         </div>
                       </TableHead>
-                      <TableHead>類型</TableHead>
                       <TableHead>學習方式</TableHead>
                       <TableHead>評估方式</TableHead>
                       <TableHead className="text-center">
@@ -424,11 +543,6 @@ export function AdminSkillList() {
                             />
                           </TableCell>
                           <TableCell>
-                            <Badge variant={skill.isRequired ? "default" : "secondary"}>
-                              {skill.isRequired ? "必修" : "選修"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
                             <div className="flex items-center gap-1">
                               <BookOpen className="h-3 w-3" />
                               <span className="text-sm">{skill.learningMethod}</span>
@@ -456,8 +570,17 @@ export function AdminSkillList() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleEditClick(skill)}
+                                title="編輯技能"
                               >
                                 <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleManagePrerequisites(skill)}
+                                title="管理前置技能"
+                              >
+                                <GitBranch className="h-4 w-4" />
                               </Button>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -526,9 +649,6 @@ export function AdminSkillList() {
                             />
                           </div>
                           <div className="flex items-center gap-2 mt-2">
-                            <Badge variant={skill.isRequired ? "default" : "secondary"} className="text-xs">
-                              {skill.isRequired ? "必修" : "選修"}
-                            </Badge>
                             <Badge variant="outline" className="text-xs">
                               {skill.learningMethod}
                             </Badge>
@@ -547,8 +667,18 @@ export function AdminSkillList() {
                           size="sm"
                           className="h-8 w-8 p-0"
                           onClick={() => handleEditClick(skill)}
+                          title="編輯技能"
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleManagePrerequisites(skill)}
+                          title="管理前置技能"
+                        >
+                          <GitBranch className="h-4 w-4" />
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -677,14 +807,6 @@ export function AdminSkillList() {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="isRequired"
-                checked={formData.isRequired}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isRequired: checked }))}
-              />
-              <Label htmlFor="isRequired">必修技能</Label>
-            </div>
 
             <div>
               <Label>所屬部門</Label>
@@ -781,14 +903,6 @@ export function AdminSkillList() {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="edit-isRequired"
-                checked={formData.isRequired}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isRequired: checked }))}
-              />
-              <Label htmlFor="edit-isRequired">必修技能</Label>
-            </div>
 
             <div>
               <Label>所屬部門</Label>
@@ -814,6 +928,184 @@ export function AdminSkillList() {
             </Button>
             <Button onClick={handleUpdate}>
               更新
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Prerequisites Management Dialog */}
+      <Dialog open={isPrerequisitesDialogOpen} onOpenChange={setIsPrerequisitesDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>管理前置技能 - {managingSkill?.name}</DialogTitle>
+            <DialogDescription>
+              設定此技能需要先完成的前置技能
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Current Prerequisites */}
+            <div>
+              <h4 className="font-medium mb-3">目前的前置技能</h4>
+              {prerequisites.length === 0 ? (
+                <p className="text-muted-foreground text-sm">尚未設定前置技能</p>
+              ) : (
+                <div className="space-y-2">
+                  {prerequisites.map((prerequisite) => (
+                    <div key={prerequisite.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Brain className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <div className="font-medium">{prerequisite.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            <CategoryDisplay 
+                              category={prerequisite.category}
+                              className="text-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          必須先完成
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemovePrerequisite(prerequisite.id)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <X className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Add New Prerequisite */}
+            <div>
+              <h4 className="font-medium mb-3">新增前置技能</h4>
+              
+              {/* Search */}
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="搜尋技能名稱或類別..."
+                  value={prerequisiteSearchTerm}
+                  onChange={(e) => setPrerequisiteSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {(() => {
+                const filteredSkills = availableSkills.filter(skill => 
+                  !prerequisites.find(p => p.id === skill.id) &&
+                  (prerequisiteSearchTerm === '' || 
+                   skill.name.toLowerCase().includes(prerequisiteSearchTerm.toLowerCase()) ||
+                   (typeof skill.category === 'string' ? skill.category : skill.category?.name || '').toLowerCase().includes(prerequisiteSearchTerm.toLowerCase()))
+                )
+                
+                if (filteredSkills.length === 0) {
+                  return (
+                    <p className="text-muted-foreground text-sm text-center py-4">
+                      {prerequisiteSearchTerm ? '沒有找到符合條件的技能' : '沒有可用的技能可以新增為前置技能'}
+                    </p>
+                  )
+                }
+
+                const groupedSkills = groupPrerequisiteSkillsByCategory(filteredSkills)
+                
+                return (
+                  <div className="space-y-3">
+                    {Object.entries(groupedSkills).map(([categoryName, { skills, color }]) => {
+                      const isExpanded = expandedPrerequisiteCategories.has(categoryName)
+                      
+                      return (
+                        <div key={categoryName} className="space-y-2">
+                          <Button
+                            variant="outline"
+                            className="w-full justify-between p-4 h-auto border-l-4 hover:bg-opacity-50 transition-all duration-200"
+                            style={{ 
+                              borderLeftColor: color,
+                              backgroundColor: isExpanded ? `${color}15` : 'transparent'
+                            }}
+                            onClick={() => togglePrerequisiteCategory(categoryName)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div 
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: color }}
+                              />
+                              <span className="font-medium">{categoryName}</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {skills.length}
+                              </Badge>
+                            </div>
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
+                          
+                          {isExpanded && (
+                            <div className="space-y-2 mt-2">
+                              {skills.map((skill) => (
+                                <div 
+                                  key={skill.id} 
+                                  className="ml-6 flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors duration-200"
+                                  style={{
+                                    borderLeftColor: color,
+                                    borderLeftWidth: '2px'
+                                  }}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <Brain className="h-4 w-4 text-muted-foreground" />
+                                    <div>
+                                      <div className="font-medium">{skill.name}</div>
+                                      <div className="text-sm text-muted-foreground">
+                                        {skill.learningMethod} · {skill.assessmentMethod}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => handleAddPrerequisite(skill.id)}
+                                    className="shrink-0"
+                                    style={{
+                                      backgroundColor: color,
+                                      borderColor: color
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = color;
+                                      e.currentTarget.style.opacity = '0.8';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = color;
+                                      e.currentTarget.style.opacity = '1';
+                                    }}
+                                  >
+                                    新增為前置技能
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button onClick={() => setIsPrerequisitesDialogOpen(false)}>
+              完成
             </Button>
           </DialogFooter>
         </DialogContent>

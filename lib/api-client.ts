@@ -53,6 +53,12 @@ export interface ApiClient {
   updateSkill: typeof skillApi.updateSkill
   deleteSkill: typeof skillApi.deleteSkill
   
+  // Skill Prerequisites management
+  getSkillPrerequisites: (skillId: string) => Promise<any>
+  addSkillPrerequisite: (skillId: string, data: { prerequisiteSkillId: string, isRequired?: boolean }) => Promise<any>
+  updateSkillPrerequisite: (skillId: string, prerequisiteSkillId: string, data: { isRequired: boolean }) => Promise<any>
+  removeSkillPrerequisite: (skillId: string, prerequisiteSkillId: string) => Promise<any>
+  
   // Skill Categories management
   getSkillCategories: typeof skillCategoryApi.getSkillCategories
   getSkillCategoryById: typeof skillCategoryApi.getSkillCategoryById
@@ -412,6 +418,24 @@ const createMockApiClient = (): ApiClient => ({
   updateSkill: async (id: string, data: any) => ({ data: { message: 'Mock skill updated', skill: data }, status: 200 }),
   deleteSkill: async (id: string) => ({ data: { message: 'Mock skill deleted' }, status: 200 }),
   
+  // Skill Prerequisites management
+  getSkillPrerequisites: async (skillId: string) => ({ 
+    data: { prerequisites: [] }, 
+    status: 200 
+  }),
+  addSkillPrerequisite: async (skillId: string, data: any) => ({ 
+    data: { message: 'Mock prerequisite added' }, 
+    status: 201 
+  }),
+  updateSkillPrerequisite: async (skillId: string, prerequisiteSkillId: string, data: any) => ({ 
+    data: { message: 'Mock prerequisite updated' }, 
+    status: 200 
+  }),
+  removeSkillPrerequisite: async (skillId: string, prerequisiteSkillId: string) => ({ 
+    data: { message: 'Mock prerequisite removed' }, 
+    status: 200 
+  }),
+  
   // Skill Categories management
   getSkillCategories: async (params: any = {}) => {
     const result = await mockApi.getSkillCategories(params)
@@ -581,6 +605,12 @@ const createRealApiClient = (): ApiClient => ({
   createSkill: skillApi.createSkill,
   updateSkill: skillApi.updateSkill,
   deleteSkill: skillApi.deleteSkill,
+  
+  // Skill Prerequisites management
+  getSkillPrerequisites: skillApi.getSkillPrerequisites,
+  addSkillPrerequisite: skillApi.addSkillPrerequisite,
+  updateSkillPrerequisite: skillApi.updateSkillPrerequisite,
+  removeSkillPrerequisite: skillApi.removeSkillPrerequisite,
   
   // Skill Categories management
   getSkillCategories: skillCategoryApi.getSkillCategories,
