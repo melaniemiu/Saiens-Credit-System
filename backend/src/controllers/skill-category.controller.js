@@ -49,10 +49,7 @@ const getSkillCategories = async (req, res) => {
       group: includeSkillCount ? ['SkillCategory.id'] : undefined
     });
 
-    res.json({
-      success: true,
-      data: { categories }
-    });
+    res.json({ categories });
   } catch (error) {
     console.error('Error fetching skill categories:', error);
     res.status(500).json({
@@ -83,10 +80,7 @@ const getSkillCategoryById = async (req, res) => {
       });
     }
 
-    res.json({
-      success: true,
-      data: { category }
-    });
+    res.json({ category });
   } catch (error) {
     console.error('Error fetching skill category:', error);
     res.status(500).json({
@@ -131,9 +125,8 @@ const createSkillCategory = async (req, res) => {
     });
 
     res.status(201).json({
-      success: true,
       message: 'Skill category created successfully',
-      data: { category }
+      category
     });
   } catch (error) {
     console.error('Error creating skill category:', error);
@@ -189,9 +182,8 @@ const updateSkillCategory = async (req, res) => {
     await category.update(updateData);
 
     res.json({
-      success: true,
       message: 'Skill category updated successfully',
-      data: { category }
+      category
     });
   } catch (error) {
     console.error('Error updating skill category:', error);
@@ -233,7 +225,6 @@ const deleteSkillCategory = async (req, res) => {
     await category.destroy();
 
     res.json({
-      success: true,
       message: 'Skill category deleted successfully'
     });
   } catch (error) {
@@ -290,10 +281,7 @@ const getOrCreateSkillCategory = async (req, res) => {
 
     const category = await getOrCreateSkillCategoryHelper(name);
 
-    res.json({
-      success: true,
-      data: { category }
-    });
+    res.json({ category });
   } catch (error) {
     console.error('Error getting or creating skill category:', error);
     res.status(500).json({

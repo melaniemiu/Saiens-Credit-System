@@ -300,9 +300,14 @@ export default function AdminPage() {
         params.endDate,
         params.search
       )
-      if (response) {
-        setCredits(response.credits)
-        setCreditTotalPages(response.totalPages)
+      if (response && response.data) {
+        // Real API format: response.data.items (PaginatedResponse)
+        setCredits(response.data.items || [])
+        setCreditTotalPages(response.data.totalPages || 1)
+      } else {
+        console.error('Invalid response structure:', response)
+        setCredits([])
+        setCreditTotalPages(1)
       }
     } catch (error) {
       console.error("Failed to fetch credits:", error)

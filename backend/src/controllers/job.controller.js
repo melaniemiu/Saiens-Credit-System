@@ -71,15 +71,12 @@ const getAdminJobs = async (req, res) => {
     }));
 
     res.json({
-      success: true,
-      data: {
-        jobs: jobsWithCounts,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(count / parseInt(limit)),
-          totalItems: count,
-          itemsPerPage: parseInt(limit)
-        }
+      jobs: jobsWithCounts,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(count / parseInt(limit)),
+        totalItems: count,
+        itemsPerPage: parseInt(limit)
       }
     });
   } catch (error) {
@@ -152,9 +149,8 @@ const createJob = async (req, res) => {
     });
 
     res.status(201).json({
-      success: true,
       message: 'Job created successfully',
-      data: { job: createdJob }
+      job: createdJob
     });
   } catch (error) {
     console.error('Error creating job:', error);
@@ -246,9 +242,8 @@ const updateJob = async (req, res) => {
     });
 
     res.json({
-      success: true,
       message: 'Job updated successfully',
-      data: { job: updatedJob }
+      job: updatedJob
     });
   } catch (error) {
     console.error('Error updating job:', error);
@@ -299,7 +294,6 @@ const deleteJob = async (req, res) => {
     await job.destroy();
 
     res.json({
-      success: true,
       message: 'Job deleted successfully'
     });
   } catch (error) {

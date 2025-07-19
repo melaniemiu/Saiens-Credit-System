@@ -261,11 +261,15 @@ const createMockApiClient = (): ApiClient => ({
       endDate,
       search: searchTerm
     })
+    // Return exactly the same format as real API: ApiResponse<PaginatedResponse<any>>
     return {
-      credits: result.items,
-      totalPages: result.pagination.totalPages,
-      currentPage: result.pagination.page,
-      totalItems: result.pagination.total
+      data: {
+        totalItems: result.pagination.total,
+        totalPages: result.pagination.totalPages,
+        currentPage: result.pagination.page,
+        items: result.items
+      },
+      status: 200
     }
   },
   
@@ -367,8 +371,7 @@ const createMockApiClient = (): ApiClient => ({
     }
   },
   
-  // Simplified implementations for remaining methods
-  // In a full implementation, you would extend mockApi to handle all these cases
+  // Skills evaluation and admin
   requestEvaluation: async (skillId: string) => ({ data: { message: 'Mock evaluation requested', evaluationRequest: {} }, status: 200 }),
   submitEvaluationByUserSkillId: async (userSkillId: string, evaluationData: any) => ({ data: { message: 'Mock evaluation submitted', userSkill: {} }, status: 200 }),
   getEvaluationDetailsByUserSkillId: async (userSkillId: string) => ({ data: { skill: {}, userSkill: {}, user: {} }, status: 200 }),
@@ -387,25 +390,6 @@ const createMockApiClient = (): ApiClient => ({
       status: 200
     }
   },
-  getAdminSkills: async (params: any) => {
-    const result = await mockApi.getAdminSkills(params)
-    return {
-      data: {
-        skills: result.items,
-        pagination: {
-          total: result.pagination.total,
-          page: result.pagination.page,
-          limit: result.pagination.limit,
-          totalPages: result.pagination.totalPages
-        },
-        categories: result.categories
-      },
-      status: 200
-    }
-  },
-  createSkill: async (data: any) => ({ data: { message: 'Mock skill created', skill: data }, status: 200 }),
-  updateSkill: async (id: string, data: any) => ({ data: { message: 'Mock skill updated', skill: data }, status: 200 }),
-  deleteSkill: async (id: string) => ({ data: { message: 'Mock skill deleted' }, status: 200 }),
   getAdminSkills: async (params: any = {}) => {
     const result = await mockApi.getAdminSkills({
       page: params.page || 1,
@@ -424,6 +408,9 @@ const createMockApiClient = (): ApiClient => ({
       status: 200
     }
   },
+  createSkill: async (data: any) => ({ data: { message: 'Mock skill created', skill: data }, status: 200 }),
+  updateSkill: async (id: string, data: any) => ({ data: { message: 'Mock skill updated', skill: data }, status: 200 }),
+  deleteSkill: async (id: string) => ({ data: { message: 'Mock skill deleted' }, status: 200 }),
   
   // Skill Categories management
   getSkillCategories: async (params: any = {}) => {
@@ -478,13 +465,16 @@ const createMockApiClient = (): ApiClient => ({
       sortOrder
     })
     return {
-      departments: result.items,
-      pagination: {
-        total: result.pagination.total,
-        page: result.pagination.page,
-        limit: result.pagination.limit,
-        totalPages: result.pagination.totalPages
-      }
+      data: {
+        departments: result.items,
+        pagination: {
+          total: result.pagination.total,
+          page: result.pagination.page,
+          limit: result.pagination.limit,
+          totalPages: result.pagination.totalPages
+        }
+      },
+      status: 200
     }
   },
   createDepartment: async (data: any) => ({ data: { message: 'Mock department created', department: data }, status: 200 }),
@@ -529,7 +519,6 @@ const createMockApiClient = (): ApiClient => ({
       sortOrder
     })
     return {
-      success: true,
       data: {
         jobs: result.items,
         pagination: {
@@ -538,7 +527,8 @@ const createMockApiClient = (): ApiClient => ({
           totalItems: result.pagination.total,
           itemsPerPage: result.pagination.limit
         }
-      }
+      },
+      status: 200
     }
   },
   createJob: async (data: any) => ({ data: { message: 'Mock job created', job: data }, status: 200 }),

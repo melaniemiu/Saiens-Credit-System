@@ -64,9 +64,9 @@ export function AdminDepartmentList() {
         sortOrder
       )
       
-      if (response) {
-        setDepartments(response.departments)
-        setTotalPages(response.pagination.totalPages)
+      if (response && response.data) {
+        setDepartments(response.data.departments || [])
+        setTotalPages(response.data.pagination?.totalPages || 1)
       }
     } catch (error) {
       toast({
