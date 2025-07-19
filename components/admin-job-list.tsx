@@ -25,7 +25,12 @@ interface Department {
 interface Skill {
   id: string
   name: string
-  category: string
+  category: string | {
+    id: string
+    name: string
+    color: string
+    icon?: string
+  }
   JobSkill?: {
     isRequired: boolean
   }
@@ -609,7 +614,7 @@ export function AdminJobList() {
                         />
                         <Label htmlFor={`skill-${skill.id}`} className="text-sm flex-1">
                           <span className="font-medium">{skill.name}</span>
-                          <span className="text-muted-foreground ml-2">({skill.category})</span>
+                          <span className="text-muted-foreground ml-2">({skill.category?.name || skill.category})</span>
                         </Label>
                       </div>
                       {isSelected && (
@@ -698,7 +703,7 @@ export function AdminJobList() {
                         />
                         <Label htmlFor={`edit-skill-${skill.id}`} className="text-sm flex-1">
                           <span className="font-medium">{skill.name}</span>
-                          <span className="text-muted-foreground ml-2">({skill.category})</span>
+                          <span className="text-muted-foreground ml-2">({skill.category?.name || skill.category})</span>
                         </Label>
                       </div>
                       {isSelected && (
