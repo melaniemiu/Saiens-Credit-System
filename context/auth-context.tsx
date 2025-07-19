@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { AuthUser, getLineUserProfile, isAuthenticated, getCurrentUser, setCurrentUser, logout as authLogout, clearAuthStorage } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
-import { authApi, userApi, setAuthToken, removeAuthToken, getAuthToken } from '@/lib/api'
+import { setAuthToken, removeAuthToken, getAuthToken } from '@/lib/api'
 import { apiClient } from '@/lib/api-client'
 import { API_CONFIG } from '@/config/api-config'
 import { debugMockAuth } from '@/lib/mock-auth-debug'
@@ -270,7 +270,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // **REAL MODE: Use real backend API**
       // Add a flag to the request to bypass cache
-      const response = await userApi.getCurrentUser(true)
+      const response = await apiClient.getCurrentUser(true)
 
       if (response.data?.user) {
         const backendUser: AuthUser = {
@@ -377,7 +377,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Successfully retrieved LINE profile")
 
       // Send to our backend
-      const response = await authApi.lineLogin(idToken)
+      const response = await apiClient.login(idToken)
 
       if (response.error || !response.data) {
         // Check if this is a binding case first, before showing any error message

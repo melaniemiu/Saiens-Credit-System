@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { FileUp, Download, Upload, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { csvApi } from '@/lib/api';
+import { apiClient } from '@/lib/api-client';
 
 interface CSVImportDialogProps {
   type: 'users' | 'skills' | 'departments' | 'jobs';
@@ -57,7 +57,7 @@ const CSVImportDialog: React.FC<CSVImportDialogProps> = ({
 
   const handleDownloadExample = async () => {
     try {
-      await csvApi.downloadExample(type);
+      await apiClient.downloadExample(type);
       toast({
         title: "範例檔案已下載",
         description: "請參考範例檔案格式來準備您的資料",
@@ -89,16 +89,16 @@ const CSVImportDialog: React.FC<CSVImportDialogProps> = ({
       let result;
       switch (type) {
         case 'users':
-          result = await csvApi.importUsers(selectedFile);
+          result = await apiClient.importUsers(selectedFile);
           break;
         case 'skills':
-          result = await csvApi.importSkills(selectedFile);
+          result = await apiClient.importSkills(selectedFile);
           break;
         case 'departments':
-          result = await csvApi.importDepartments(selectedFile);
+          result = await apiClient.importDepartments(selectedFile);
           break;
         case 'jobs':
-          result = await csvApi.importJobs(selectedFile);
+          result = await apiClient.importJobs(selectedFile);
           break;
         default:
           throw new Error('Unknown import type');

@@ -6,7 +6,7 @@ import { useAuth } from './auth-context'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { triggerConfettiIfNotShown, cleanupConfettiRecords, triggerPromotionConfettiIfNotShown } from '@/lib/confetti'
-import { skillApi } from '@/lib/api'
+import { apiClient } from '@/lib/api-client'
 
 interface CreditNotification {
   id: string
