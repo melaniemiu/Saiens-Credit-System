@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Plus, Search, Edit, Trash2, Briefcase, Building2, Brain, Users } from "lucide-react"
+import { Plus, Search, Edit, Trash2, Briefcase, Building2, Brain, Users, ChevronDown, ChevronRight } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { apiClient } from "@/lib/api-client"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -72,6 +72,9 @@ export function AdminJobList() {
     departmentId: "",
     skillIds: []
   })
+  // New state for enhanced skill selection
+  const [skillSearchTerm, setSkillSearchTerm] = useState("")
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const { toast } = useToast()
 
   const fetchJobs = async () => {
@@ -153,6 +156,58 @@ export function AdminJobList() {
       name: "",
       departmentId: "",
       skillIds: []
+    })
+    // Reset skill search and expanded categories
+    setSkillSearchTerm("")
+    setExpandedCategories(new Set())
+  }
+
+  // Helper function to group skills by category
+  const groupSkillsByCategory = (skills: Skill[]) => {
+    const grouped = skills.reduce((acc, skill) => {
+      const categoryName = typeof skill.category === 'string' 
+        ? skill.category 
+        : skill.category?.name || 'Uncategorized'
+      
+      const categoryColor = typeof skill.category === 'object' 
+        ? skill.category?.color || '#6B7280'
+        : '#6B7280'
+      
+      if (!acc[categoryName]) {
+        acc[categoryName] = {
+          skills: [],
+          color: categoryColor
+        }
+      }
+      acc[categoryName].skills.push(skill)
+      return acc
+    }, {} as Record<string, { skills: Skill[], color: string }>)
+    
+    return grouped
+  }
+
+  // Helper function to filter skills based on search term
+  const filterSkills = (skills: Skill[], searchTerm: string) => {
+    if (!searchTerm.trim()) return skills
+    const term = searchTerm.toLowerCase()
+    return skills.filter(skill => 
+      skill.name.toLowerCase().includes(term) ||
+      (typeof skill.category === 'string' 
+        ? skill.category.toLowerCase().includes(term)
+        : skill.category?.name?.toLowerCase().includes(term) || false)
+    )
+  }
+
+  // Toggle category expansion
+  const toggleCategory = (categoryName: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(categoryName)) {
+        newSet.delete(categoryName)
+      } else {
+        newSet.add(categoryName)
+      }
+      return newSet
     })
   }
 
@@ -599,39 +654,122 @@ export function AdminJobList() {
 
             <div>
               <Label>技能要求</Label>
-              <div className="mt-2 space-y-2 max-h-60 overflow-y-auto border rounded-md p-3">
-                {(skills || []).map((skill) => {
-                  const isSelected = formData.skillIds.some(s => s.id === skill.id)
-                  const skillData = formData.skillIds.find(s => s.id === skill.id)
+              
+              {/* Search Input */}
+              <div className="mt-2 mb-3">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="搜尋技能或類別..."
+                    value={skillSearchTerm}
+                    onChange={(e) => setSkillSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+
+              {/* Skills grouped by category */}
+              <div className="max-h-80 overflow-y-auto border rounded-md">
+                {(() => {
+                  const filteredSkills = filterSkills(skills || [], skillSearchTerm)
+                  const groupedSkills = groupSkillsByCategory(filteredSkills)
                   
-                  return (
-                    <div key={skill.id} className="flex items-center justify-between space-x-2">
-                      <div className="flex items-center space-x-2 flex-1">
-                        <Checkbox
-                          id={`skill-${skill.id}`}
-                          checked={isSelected}
-                          onCheckedChange={(checked) => handleSkillToggle(skill.id, !!checked)}
-                        />
-                        <Label htmlFor={`skill-${skill.id}`} className="text-sm flex-1">
-                          <span className="font-medium">{skill.name}</span>
-                          <span className="text-muted-foreground ml-2">({skill.category?.name || skill.category})</span>
-                        </Label>
+                  return Object.entries(groupedSkills).map(([categoryName, categoryData]) => {
+                    const isExpanded = expandedCategories.has(categoryName)
+                    const selectedInCategory = categoryData.skills.filter(skill => 
+                      formData.skillIds.some(s => s.id === skill.id)
+                    ).length
+                    
+                    return (
+                      <div key={categoryName} className="border-b last:border-b-0">
+                        {/* Category Header with Color */}
+                        <button
+                          type="button"
+                          onClick={() => toggleCategory(categoryName)}
+                          className="w-full flex items-center justify-between p-3 hover:opacity-90 transition-all"
+                          style={{ 
+                            backgroundColor: `${categoryData.color}15`,
+                            borderLeft: `4px solid ${categoryData.color}`
+                          }}
+                        >
+                          <div className="flex items-center space-x-2">
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4" style={{ color: categoryData.color }} />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" style={{ color: categoryData.color }} />
+                            )}
+                            <div 
+                              className="w-3 h-3 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: categoryData.color }}
+                            />
+                            <span className="font-medium">{categoryName}</span>
+                            <Badge 
+                              variant="secondary" 
+                              className="text-xs"
+                              style={{ 
+                                backgroundColor: `${categoryData.color}25`,
+                                color: categoryData.color,
+                                border: `1px solid ${categoryData.color}40`
+                              }}
+                            >
+                              {selectedInCategory}/{categoryData.skills.length}
+                            </Badge>
+                          </div>
+                        </button>
+                        
+                        {/* Category Skills */}
+                        {isExpanded && (
+                          <div 
+                            className="px-3 pb-3 space-y-2"
+                            style={{ backgroundColor: `${categoryData.color}08` }}
+                          >
+                            {categoryData.skills.map((skill) => {
+                              const isSelected = formData.skillIds.some(s => s.id === skill.id)
+                              const skillData = formData.skillIds.find(s => s.id === skill.id)
+                              
+                              return (
+                                <div 
+                                  key={skill.id} 
+                                  className="flex items-center justify-between space-x-2 p-2 rounded hover:shadow-sm transition-shadow"
+                                  style={{ 
+                                    borderLeft: `3px solid ${categoryData.color}`,
+                                    borderTop: isSelected ? `1px solid ${categoryData.color}` : '1px solid #e5e7eb',
+                                    borderRight: isSelected ? `1px solid ${categoryData.color}` : '1px solid #e5e7eb',
+                                    borderBottom: isSelected ? `1px solid ${categoryData.color}` : '1px solid #e5e7eb',
+                                    backgroundColor: isSelected ? `${categoryData.color}10` : 'white'
+                                  }}
+                                >
+                                  <div className="flex items-center space-x-2 flex-1">
+                                    <Checkbox
+                                      id={`skill-${skill.id}`}
+                                      checked={isSelected}
+                                      onCheckedChange={(checked) => handleSkillToggle(skill.id, !!checked)}
+                                    />
+                                    <Label htmlFor={`skill-${skill.id}`} className="text-sm flex-1">
+                                      <span className="font-medium">{skill.name}</span>
+                                    </Label>
+                                  </div>
+                                  {isSelected && (
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={`required-${skill.id}`}
+                                        checked={skillData?.isRequired || false}
+                                        onCheckedChange={(checked) => handleSkillRequiredToggle(skill.id, !!checked)}
+                                      />
+                                      <Label htmlFor={`required-${skill.id}`} className="text-xs">
+                                        必修
+                                      </Label>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
-                      {isSelected && (
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`required-${skill.id}`}
-                            checked={skillData?.isRequired || false}
-                            onCheckedChange={(checked) => handleSkillRequiredToggle(skill.id, !!checked)}
-                          />
-                          <Label htmlFor={`required-${skill.id}`} className="text-xs">
-                            必修
-                          </Label>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
+                    )
+                  })
+                })()}
               </div>
             </div>
           </div>
@@ -688,39 +826,122 @@ export function AdminJobList() {
 
             <div>
               <Label>技能要求</Label>
-              <div className="mt-2 space-y-2 max-h-60 overflow-y-auto border rounded-md p-3">
-                {(skills || []).map((skill) => {
-                  const isSelected = formData.skillIds.some(s => s.id === skill.id)
-                  const skillData = formData.skillIds.find(s => s.id === skill.id)
+              
+              {/* Search Input */}
+              <div className="mt-2 mb-3">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="搜尋技能或類別..."
+                    value={skillSearchTerm}
+                    onChange={(e) => setSkillSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+
+              {/* Skills grouped by category */}
+              <div className="max-h-80 overflow-y-auto border rounded-md">
+                {(() => {
+                  const filteredSkills = filterSkills(skills || [], skillSearchTerm)
+                  const groupedSkills = groupSkillsByCategory(filteredSkills)
                   
-                  return (
-                    <div key={skill.id} className="flex items-center justify-between space-x-2">
-                      <div className="flex items-center space-x-2 flex-1">
-                        <Checkbox
-                          id={`edit-skill-${skill.id}`}
-                          checked={isSelected}
-                          onCheckedChange={(checked) => handleSkillToggle(skill.id, !!checked)}
-                        />
-                        <Label htmlFor={`edit-skill-${skill.id}`} className="text-sm flex-1">
-                          <span className="font-medium">{skill.name}</span>
-                          <span className="text-muted-foreground ml-2">({skill.category?.name || skill.category})</span>
-                        </Label>
+                  return Object.entries(groupedSkills).map(([categoryName, categoryData]) => {
+                    const isExpanded = expandedCategories.has(categoryName)
+                    const selectedInCategory = categoryData.skills.filter(skill => 
+                      formData.skillIds.some(s => s.id === skill.id)
+                    ).length
+                    
+                    return (
+                      <div key={categoryName} className="border-b last:border-b-0">
+                        {/* Category Header with Color */}
+                        <button
+                          type="button"
+                          onClick={() => toggleCategory(categoryName)}
+                          className="w-full flex items-center justify-between p-3 hover:opacity-90 transition-all"
+                          style={{ 
+                            backgroundColor: `${categoryData.color}15`,
+                            borderLeft: `4px solid ${categoryData.color}`
+                          }}
+                        >
+                          <div className="flex items-center space-x-2">
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4" style={{ color: categoryData.color }} />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" style={{ color: categoryData.color }} />
+                            )}
+                            <div 
+                              className="w-3 h-3 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: categoryData.color }}
+                            />
+                            <span className="font-medium">{categoryName}</span>
+                            <Badge 
+                              variant="secondary" 
+                              className="text-xs"
+                              style={{ 
+                                backgroundColor: `${categoryData.color}25`,
+                                color: categoryData.color,
+                                border: `1px solid ${categoryData.color}40`
+                              }}
+                            >
+                              {selectedInCategory}/{categoryData.skills.length}
+                            </Badge>
+                          </div>
+                        </button>
+                        
+                        {/* Category Skills */}
+                        {isExpanded && (
+                          <div 
+                            className="px-3 pb-3 space-y-2"
+                            style={{ backgroundColor: `${categoryData.color}08` }}
+                          >
+                            {categoryData.skills.map((skill) => {
+                              const isSelected = formData.skillIds.some(s => s.id === skill.id)
+                              const skillData = formData.skillIds.find(s => s.id === skill.id)
+                              
+                              return (
+                                <div 
+                                  key={skill.id} 
+                                  className="flex items-center justify-between space-x-2 p-2 rounded hover:shadow-sm transition-shadow"
+                                  style={{ 
+                                    borderLeft: `3px solid ${categoryData.color}`,
+                                    borderTop: isSelected ? `1px solid ${categoryData.color}` : '1px solid #e5e7eb',
+                                    borderRight: isSelected ? `1px solid ${categoryData.color}` : '1px solid #e5e7eb',
+                                    borderBottom: isSelected ? `1px solid ${categoryData.color}` : '1px solid #e5e7eb',
+                                    backgroundColor: isSelected ? `${categoryData.color}10` : 'white'
+                                  }}
+                                >
+                                  <div className="flex items-center space-x-2 flex-1">
+                                    <Checkbox
+                                      id={`edit-skill-${skill.id}`}
+                                      checked={isSelected}
+                                      onCheckedChange={(checked) => handleSkillToggle(skill.id, !!checked)}
+                                    />
+                                    <Label htmlFor={`edit-skill-${skill.id}`} className="text-sm flex-1">
+                                      <span className="font-medium">{skill.name}</span>
+                                    </Label>
+                                  </div>
+                                  {isSelected && (
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={`edit-required-${skill.id}`}
+                                        checked={skillData?.isRequired || false}
+                                        onCheckedChange={(checked) => handleSkillRequiredToggle(skill.id, !!checked)}
+                                      />
+                                      <Label htmlFor={`edit-required-${skill.id}`} className="text-xs">
+                                        必修
+                                      </Label>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
-                      {isSelected && (
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`edit-required-${skill.id}`}
-                            checked={skillData?.isRequired || false}
-                            onCheckedChange={(checked) => handleSkillRequiredToggle(skill.id, !!checked)}
-                          />
-                          <Label htmlFor={`edit-required-${skill.id}`} className="text-xs">
-                            必修
-                          </Label>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
+                    )
+                  })
+                })()}
               </div>
             </div>
           </div>
