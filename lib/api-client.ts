@@ -1,5 +1,6 @@
 import { API_CONFIG } from '@/config/api-config'
 import { mockApi } from './api-mock'
+import { mockSkillCategories } from './mock-data'
 import {
   authApi,
   userApi,
@@ -251,23 +252,20 @@ const createMockApiClient = (): ApiClient => ({
     }
   },
   
-  getAllCredits: async (params: any) => {
-    const result = await api.getAllCredits(
-      params.page || 1,
-      params.limit || 20,
-      params.departmentId,
-      params.startDate,
-      params.endDate,
-      params.search
-    )
+  getAllCredits: async (page = 1, limit = 20, departmentId?: string, startDate?: string, endDate?: string, searchTerm?: string) => {
+    const result = await mockApi.getAdminCredits({
+      page,
+      limit,
+      departmentId,
+      startDate,
+      endDate,
+      search: searchTerm
+    })
     return {
-      data: {
-        credits: result.credits,
-        totalPages: result.totalPages,
-        currentPage: result.currentPage,
-        totalCount: result.totalItems
-      },
-      status: 200
+      credits: result.items,
+      totalPages: result.pagination.totalPages,
+      currentPage: result.pagination.page,
+      totalItems: result.pagination.total
     }
   },
   
@@ -408,19 +406,85 @@ const createMockApiClient = (): ApiClient => ({
   createSkill: async (data: any) => ({ data: { message: 'Mock skill created', skill: data }, status: 200 }),
   updateSkill: async (id: string, data: any) => ({ data: { message: 'Mock skill updated', skill: data }, status: 200 }),
   deleteSkill: async (id: string) => ({ data: { message: 'Mock skill deleted' }, status: 200 }),
-  getAdminDepartments: async (params: any) => {
-    const result = await mockApi.getAdminDepartments(params)
+  getAdminSkills: async (params: any = {}) => {
+    const result = await mockApi.getAdminSkills({
+      page: params.page || 1,
+      limit: params.limit || 10,
+      search: params.search,
+      category: params.category,
+      sortField: params.sortField || 'name',
+      sortOrder: params.sortOrder || 'ASC'
+    })
     return {
       data: {
-        departments: result.items,
-        pagination: {
-          total: result.pagination.total,
-          page: result.pagination.page,
-          limit: result.pagination.limit,
-          totalPages: result.pagination.totalPages
-        }
+        skills: result.items,
+        pagination: result.pagination,
+        categories: result.categories
       },
       status: 200
+    }
+  },
+  
+  // Skill Categories management
+  getSkillCategories: async (params: any = {}) => {
+    const result = await mockApi.getSkillCategories(params)
+    return {
+      data: result,
+      status: 200
+    }
+  },
+  getSkillCategoryById: async (id: string) => {
+    const category = mockSkillCategories.find(c => c.id === id)
+    return {
+      data: { category },
+      status: 200
+    }
+  },
+  createSkillCategory: async (data: any) => {
+    const result = await mockApi.createSkillCategory(data)
+    return {
+      data: result,
+      status: 201
+    }
+  },
+  updateSkillCategory: async (id: string, data: any) => {
+    const result = await mockApi.updateSkillCategory(id, data)
+    return {
+      data: result,
+      status: 200
+    }
+  },
+  deleteSkillCategory: async (id: string) => {
+    const result = await mockApi.deleteSkillCategory(id)
+    return {
+      data: result,
+      status: 200
+    }
+  },
+  getOrCreateSkillCategory: async (data: any) => {
+    const result = await mockApi.getOrCreateSkillCategory(data)
+    return {
+      data: result,
+      status: 200
+    }
+  },
+
+  getAdminDepartments: async (page = 1, limit = 10, search?: string, sortField = 'name', sortOrder = 'ASC') => {
+    const result = await mockApi.getAdminDepartments({
+      page,
+      limit,
+      search,
+      sortField,
+      sortOrder
+    })
+    return {
+      departments: result.items,
+      pagination: {
+        total: result.pagination.total,
+        page: result.pagination.page,
+        limit: result.pagination.limit,
+        totalPages: result.pagination.totalPages
+      }
     }
   },
   createDepartment: async (data: any) => ({ data: { message: 'Mock department created', department: data }, status: 200 }),
@@ -455,21 +519,26 @@ const createMockApiClient = (): ApiClient => ({
   },
   exportCredits: async (params: any) => ({ data: 'Mock CSV data', status: 200 }),
   getJobsForDepartment: async (departmentId: string) => ({ data: { jobs: [] }, status: 200 }),
-  getAdminJobs: async (params: any) => {
-    const result = await mockApi.getAdminJobs(params)
+  getAdminJobs: async (page = 1, limit = 10, search?: string, departmentId?: string, sortField = 'name', sortOrder = 'ASC') => {
+    const result = await mockApi.getAdminJobs({
+      page,
+      limit,
+      search,
+      departmentId,
+      sortField,
+      sortOrder
+    })
     return {
+      success: true,
       data: {
-        data: {
-          jobs: result.items,
-          pagination: {
-            currentPage: result.pagination.page,
-            totalPages: result.pagination.totalPages,
-            totalItems: result.pagination.total,
-            itemsPerPage: result.pagination.limit
-          }
+        jobs: result.items,
+        pagination: {
+          currentPage: result.pagination.page,
+          totalPages: result.pagination.totalPages,
+          totalItems: result.pagination.total,
+          itemsPerPage: result.pagination.limit
         }
-      },
-      status: 200
+      }
     }
   },
   createJob: async (data: any) => ({ data: { message: 'Mock job created', job: data }, status: 200 }),

@@ -64,8 +64,8 @@ export function AdminCategoryList() {
     try {
       setLoading(true)
       const response = await apiClient.getSkillCategories({ includeSkillCount: true })
-      if (response.data && response.data.data) {
-        setCategories(response.data.data.categories || [])
+      if (response.data) {
+        setCategories(response.data.categories || [])
       }
     } catch (error) {
       toast({

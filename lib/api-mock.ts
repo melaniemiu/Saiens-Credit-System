@@ -2,6 +2,7 @@ import { API_CONFIG, MOCK_CONFIG } from '@/config/api-config'
 import {
   mockUsers,
   mockSkills,
+  mockSkillCategories,
   mockUserSkills,
   mockCredits,
   mockDepartments,
@@ -16,6 +17,7 @@ import {
   type MockCredit,
   type MockUserSkill,
   type MockSkill,
+  type MockSkillCategory,
   type MockDepartment,
   type MockJob
 } from './mock-data'
@@ -676,16 +678,17 @@ export const mockApi = {
     // Apply search filter
     if (params.search) {
       const search = params.search.toLowerCase()
-      filteredSkills = filteredSkills.filter(skill => 
-        skill.name.toLowerCase().includes(search) ||
-        skill.category.toLowerCase().includes(search) ||
-        (skill.description || '').toLowerCase().includes(search)
-      )
+      filteredSkills = filteredSkills.filter(skill => {
+        const category = mockSkillCategories.find(c => c.id === skill.categoryId)
+        return skill.name.toLowerCase().includes(search) ||
+               (category?.name.toLowerCase() || '').includes(search) ||
+               (skill.description || '').toLowerCase().includes(search)
+      })
     }
     
     // Apply category filter
     if (params.category && params.category !== 'all') {
-      filteredSkills = filteredSkills.filter(skill => skill.category === params.category)
+      filteredSkills = filteredSkills.filter(skill => skill.categoryId === params.category)
     }
     
     // Apply sorting
@@ -711,15 +714,19 @@ export const mockApi = {
     const paginatedSkills = filteredSkills.slice(offset, offset + limit)
     
     // Add additional stats for each skill
-    const skillsWithStats = paginatedSkills.map(skill => ({
-      ...skill,
-      jobCount: mockJobSkills.filter(js => js.skillId === skill.id).length,
-      userProgressCount: mockUserSkills.filter(us => us.skillId === skill.id).length,
-      completedCount: mockUserSkills.filter(us => us.skillId === skill.id && us.status === 'completed').length
-    }))
+    const skillsWithStats = paginatedSkills.map(skill => {
+      const category = mockSkillCategories.find(c => c.id === skill.categoryId)
+      return {
+        ...skill,
+        category: category,
+        jobCount: mockJobSkills.filter(js => js.skillId === skill.id).length,
+        userProgressCount: mockUserSkills.filter(us => us.skillId === skill.id).length,
+        completedCount: mockUserSkills.filter(us => us.skillId === skill.id && us.status === 'completed').length
+      }
+    })
     
     // Get unique categories
-    const categories = [...new Set(mockSkills.map(s => s.category))]
+    const categories = mockSkillCategories
     
     log('Get admin skills', { 
       total: filteredSkills.length, 
@@ -739,6 +746,103 @@ export const mockApi = {
       },
       categories
     }
+  },
+
+  // Skill Categories management
+  async getSkillCategories(params: { search?: string; isActive?: string; sortField?: string; sortOrder?: string; includeSkillCount?: boolean } = {}) {
+    await delay()
+    simulateError()
+    
+    let categories = [...mockSkillCategories]
+    
+    if (params.search) {
+      const search = params.search.toLowerCase()
+      categories = categories.filter(c => c.name.toLowerCase().includes(search))
+    }
+    
+    if (params.isActive !== undefined && params.isActive !== '') {
+      const isActive = params.isActive === 'true'
+      categories = categories.filter(c => c.isActive === isActive)
+    }
+    
+    // Add skill count if requested
+    if (params.includeSkillCount) {
+      categories = categories.map(cat => ({
+        ...cat,
+        skillCount: mockSkills.filter(s => s.categoryId === cat.id).length
+      }))
+    }
+    
+    log('Get skill categories', { count: categories.length, params })
+    return { categories }
+  },
+
+  async createSkillCategory(data: { name: string; description?: string; color?: string; icon?: string; isActive?: boolean; sortOrder?: number }) {
+    await delay()
+    simulateError()
+    
+    const newCategory: MockSkillCategory = {
+      id: `cat-${Date.now()}`,
+      name: data.name,
+      description: data.description || null,
+      color: data.color || '#6B7280',
+      icon: data.icon || null,
+      isActive: data.isActive !== false,
+      sortOrder: data.sortOrder || mockSkillCategories.length + 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    
+    log('Create skill category', { category: newCategory })
+    return { category: newCategory }
+  },
+
+  async updateSkillCategory(id: string, data: Partial<MockSkillCategory>) {
+    await delay()
+    simulateError()
+    
+    const category = mockSkillCategories.find(c => c.id === id)
+    if (!category) {
+      throw new Error('Skill category not found')
+    }
+    
+    const updatedCategory = { ...category, ...data, updatedAt: new Date().toISOString() }
+    log('Update skill category', { id, data })
+    return { category: updatedCategory }
+  },
+
+  async deleteSkillCategory(id: string) {
+    await delay()
+    simulateError()
+    
+    const category = mockSkillCategories.find(c => c.id === id)
+    if (!category) {
+      throw new Error('Skill category not found')
+    }
+    
+    // Check if category has associated skills
+    const associatedSkills = mockSkills.filter(s => s.categoryId === id)
+    if (associatedSkills.length > 0) {
+      throw new Error(`Cannot delete category. It has ${associatedSkills.length} associated skill(s).`)
+    }
+    
+    log('Delete skill category', { id })
+    return { message: 'Skill category deleted successfully' }
+  },
+
+  async getOrCreateSkillCategory(data: { name: string }) {
+    await delay()
+    simulateError()
+    
+    let category = mockSkillCategories.find(c => c.name === data.name)
+    
+    if (!category) {
+      const result = await this.createSkillCategory({ name: data.name })
+      category = result.category
+    }
+    
+    log('Get or create skill category', { name: data.name, category })
+    return { category }
   },
 
   async getAdminJobs(params: { page?: number; limit?: number; search?: string; sortField?: string; sortOrder?: string; departmentId?: string }) {

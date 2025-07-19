@@ -292,10 +292,17 @@ export default function AdminPage() {
       if (creditDateRange.from) params.startDate = format(creditDateRange.from, 'yyyy-MM-dd')
       if (creditDateRange.to) params.endDate = format(creditDateRange.to, 'yyyy-MM-dd')
 
-      const response = await apiClient.getAllCredits(params)
-      if (response.data) {
-        setCredits(response.data.credits)
-        setCreditTotalPages(response.data.totalPages)
+      const response = await apiClient.getAllCredits(
+        params.page,
+        params.limit,
+        params.departmentId,
+        params.startDate,
+        params.endDate,
+        params.search
+      )
+      if (response) {
+        setCredits(response.credits)
+        setCreditTotalPages(response.totalPages)
       }
     } catch (error) {
       console.error("Failed to fetch credits:", error)

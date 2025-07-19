@@ -56,17 +56,17 @@ export function AdminDepartmentList() {
   const fetchDepartments = async () => {
     try {
       setLoading(true)
-      const response = await apiClient.getAdminDepartments({
+      const response = await apiClient.getAdminDepartments(
         page,
-        limit: 10,
-        search: searchTerm,
+        10,
+        searchTerm,
         sortField,
         sortOrder
-      })
+      )
       
-      if (response.data) {
-        setDepartments(response.data.departments)
-        setTotalPages(response.data.pagination.totalPages)
+      if (response) {
+        setDepartments(response.departments)
+        setTotalPages(response.pagination.totalPages)
       }
     } catch (error) {
       toast({

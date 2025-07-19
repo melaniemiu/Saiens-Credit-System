@@ -72,18 +72,18 @@ export function AdminJobList() {
   const fetchJobs = async () => {
     try {
       setLoading(true)
-      const response = await apiClient.getAdminJobs({
+      const response = await apiClient.getAdminJobs(
         page,
-        limit: 10,
-        search: searchTerm,
-        departmentId: departmentFilter === "__all__" ? "" : departmentFilter,
+        10,
+        searchTerm,
+        departmentFilter === "__all__" ? undefined : departmentFilter,
         sortField,
         sortOrder
-      })
+      )
       
-      if (response.data?.data) {
-        setJobs(response.data.data.jobs || [])
-        setTotalPages(response.data.data.pagination?.totalPages || 1)
+      if (response.data) {
+        setJobs(response.data.jobs || [])
+        setTotalPages(response.data.pagination?.totalPages || 1)
       }
     } catch (error) {
       console.error("Error:", error)

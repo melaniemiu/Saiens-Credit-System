@@ -99,7 +99,11 @@ export function AdminSkillList() {
       
       if (response.data) {
         setSkills(response.data.skills)
-        setCategories(response.data.categories)
+        // Map category objects to strings for the filter dropdown
+        const categoryNames = response.data.categories?.map((cat: any) => 
+          typeof cat === 'string' ? cat : cat.name
+        ) || []
+        setCategories(categoryNames)
         setTotalPages(response.data.pagination.totalPages)
       }
     } catch (error) {
