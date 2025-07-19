@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { AdminNavbar } from "@/components/admin-navbar"
 import { AdminDepartmentList } from "@/components/admin-department-list"
 import { AdminSkillList } from "@/components/admin-skill-list"
+import { AdminCategoryList } from "@/components/admin-category-list"
 import { AdminJobList } from "@/components/admin-job-list"
 import { AdminEvaluationList } from "@/components/admin-evaluation-list"
 import CSVImportDialog from "@/components/csv-import-dialog"
@@ -126,7 +126,7 @@ function SortableTableHead({
 
 export default function AdminPage() {
   // Sidebar state
-  const [activeSection, setActiveSection] = useState<'users' | 'credits' | 'departments' | 'skills' | 'jobs' | 'evaluations'>('users')
+  const [activeSection, setActiveSection] = useState<'users' | 'credits' | 'departments' | 'skills' | 'categories' | 'jobs' | 'evaluations'>('users')
 
   // Users state
   const [users, setUsers] = useState<User[]>([])
@@ -179,6 +179,17 @@ export default function AdminPage() {
   // Ensure client-side hydration
   useEffect(() => {
     setMounted(true)
+    
+    // Listen for section changes from the layout sidebar
+    const handleSectionChange = (event: CustomEvent) => {
+      setActiveSection(event.detail)
+    }
+    
+    window.addEventListener('adminSectionChange', handleSectionChange as EventListener)
+    
+    return () => {
+      window.removeEventListener('adminSectionChange', handleSectionChange as EventListener)
+    }
   }, [])
 
   // Fetch departments on mount
@@ -502,11 +513,8 @@ export default function AdminPage() {
   }
 
   return (
-    <div suppressHydrationWarning className="min-h-screen bg-gray-50">
-      <AdminNavbar activeSection={activeSection} onSectionChange={setActiveSection} />
-
-      <main className="container mx-auto px-4 py-6">
-        <div className="max-w-7xl mx-auto">
+    <div suppressHydrationWarning>
+      <div className="max-w-7xl mx-auto">
             {/* Page header */}
             <div className="mb-6">
               <h1 className="text-2xl font-bold">
@@ -515,6 +523,7 @@ export default function AdminPage() {
                 {activeSection === 'evaluations' && '技能評估管理'}
                 {activeSection === 'departments' && '部門管理'}
                 {activeSection === 'skills' && '技能管理'}
+                {activeSection === 'categories' && '類別管理'}
                 {activeSection === 'jobs' && '職位管理'}
               </h1>
             </div>
@@ -1064,6 +1073,10 @@ export default function AdminPage() {
               <AdminSkillList />
             )}
 
+            {activeSection === 'categories' && (
+              <AdminCategoryList />
+            )}
+
             {activeSection === 'jobs' && (
               <AdminJobList />
             )}
@@ -1496,8 +1509,7 @@ export default function AdminPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-        </div>
-      </main>
+      </div>
     </div>
   )
 }

@@ -30,6 +30,7 @@ db.User = require('./user.model')(sequelize, Sequelize);
 db.Credit = require('./credit.model')(sequelize, Sequelize);
 db.Department = require('./department.model')(sequelize, Sequelize);
 db.Job = require('./job.model')(sequelize, Sequelize);
+db.SkillCategory = require('./skill-category.model')(sequelize, Sequelize);
 db.Skill = require('./skill.model')(sequelize, Sequelize);
 db.JobSkill = require('./job-skill.model')(sequelize, Sequelize);
 db.UserSkill = require('./user-skill.model')(sequelize, Sequelize);
@@ -55,6 +56,10 @@ db.Credit.belongsTo(db.User, { as: 'receiver', foreignKey: 'receiverId' });
 
 db.User.hasMany(db.Credit, { as: 'sentCredits', foreignKey: 'senderId' });
 db.User.hasMany(db.Credit, { as: 'receivedCredits', foreignKey: 'receiverId' });
+
+// SkillCategory and Skill associations
+db.Skill.belongsTo(db.SkillCategory, { foreignKey: 'categoryId', as: 'category' });
+db.SkillCategory.hasMany(db.Skill, { foreignKey: 'categoryId', as: 'skills' });
 
 // Job and Skill many-to-many relationship through JobSkill
 db.Job.belongsToMany(db.Skill, { 

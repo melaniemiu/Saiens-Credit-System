@@ -6,6 +6,7 @@ import {
   creditApi,
   departmentApi,
   skillApi,
+  skillCategoryApi,
   adminApi,
   jobApi,
   promotionApi,
@@ -50,6 +51,14 @@ export interface ApiClient {
   createSkill: typeof skillApi.createSkill
   updateSkill: typeof skillApi.updateSkill
   deleteSkill: typeof skillApi.deleteSkill
+  
+  // Skill Categories management
+  getSkillCategories: typeof skillCategoryApi.getSkillCategories
+  getSkillCategoryById: typeof skillCategoryApi.getSkillCategoryById
+  createSkillCategory: typeof skillCategoryApi.createSkillCategory
+  getOrCreateSkillCategory: typeof skillCategoryApi.getOrCreateSkillCategory
+  updateSkillCategory: typeof skillCategoryApi.updateSkillCategory
+  deleteSkillCategory: typeof skillCategoryApi.deleteSkillCategory
   
   // Department management
   getDepartments: typeof departmentApi.getDepartments
@@ -243,20 +252,20 @@ const createMockApiClient = (): ApiClient => ({
   },
   
   getAllCredits: async (params: any) => {
-    const result = await mockApi.getAdminCredits({
-      page: params.page || 1,
-      limit: params.limit || 10,
-      departmentId: params.departmentId,
-      startDate: params.startDate,
-      endDate: params.endDate,
-      search: params.search
-    })
+    const result = await api.getAllCredits(
+      params.page || 1,
+      params.limit || 20,
+      params.departmentId,
+      params.startDate,
+      params.endDate,
+      params.search
+    )
     return {
       data: {
-        credits: result.items,
-        totalPages: result.pagination.totalPages,
-        currentPage: result.pagination.page,
-        totalCount: result.pagination.total
+        credits: result.credits,
+        totalPages: result.totalPages,
+        currentPage: result.currentPage,
+        totalCount: result.totalItems
       },
       status: 200
     }
@@ -513,6 +522,14 @@ const createRealApiClient = (): ApiClient => ({
   createSkill: skillApi.createSkill,
   updateSkill: skillApi.updateSkill,
   deleteSkill: skillApi.deleteSkill,
+  
+  // Skill Categories management
+  getSkillCategories: skillCategoryApi.getSkillCategories,
+  getSkillCategoryById: skillCategoryApi.getSkillCategoryById,
+  createSkillCategory: skillCategoryApi.createSkillCategory,
+  getOrCreateSkillCategory: skillCategoryApi.getOrCreateSkillCategory,
+  updateSkillCategory: skillCategoryApi.updateSkillCategory,
+  deleteSkillCategory: skillCategoryApi.deleteSkillCategory,
   
   // Department management
   getDepartments: departmentApi.getDepartments,

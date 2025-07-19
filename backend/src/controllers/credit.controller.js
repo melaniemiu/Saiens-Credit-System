@@ -311,7 +311,9 @@ exports.getAllCredits = async (req, res, next) => {
       searchTerm,
     } = req.query;
 
-    const offset = (page - 1) * limit;
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 20;
+    const offset = (pageNum - 1) * limitNum;
     const whereClause = { status: "approved" };
 
     // Add date filters if provided
@@ -366,15 +368,15 @@ exports.getAllCredits = async (req, res, next) => {
       where: whereClause,
       include: includeClause,
       order: [["createdAt", "DESC"]],
-      limit: parseInt(limit),
+      limit: limitNum,
       offset,
     });
 
     return res.status(200).json({
       totalItems: count,
       credits,
-      totalPages: Math.ceil(count / limit),
-      currentPage: parseInt(page),
+      totalPages: Math.ceil(count / limitNum),
+      currentPage: pageNum,
     });
   } catch (error) {
     next(error);

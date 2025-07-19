@@ -1,4 +1,4 @@
-const { User, Department, Credit, Job, Skill, UserSkill, JobSkill } = require('../models');
+const { User, Department, Credit, Job, Skill, SkillCategory, UserSkill, JobSkill } = require('../models');
 const { Op } = require('sequelize');
 
 // Get current user profile
@@ -22,7 +22,12 @@ exports.getCurrentUser = async (req, res, next) => {
             {
               model: Skill,
               as: 'skills',
-              attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod'],
+              attributes: ['id', 'name', 'categoryId', 'isRequired', 'learningMethod', 'assessmentMethod'],
+              include: [{
+                model: SkillCategory,
+                as: 'category',
+                attributes: ['id', 'name', 'color', 'icon']
+              }],
               through: { attributes: ['isRequired'] }
             }
           ]
@@ -30,7 +35,12 @@ exports.getCurrentUser = async (req, res, next) => {
         {
           model: Skill,
           as: 'skills',
-          attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod'],
+          attributes: ['id', 'name', 'categoryId', 'isRequired', 'learningMethod', 'assessmentMethod'],
+          include: [{
+            model: SkillCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'color', 'icon']
+          }],
           through: { 
             attributes: ['status', 'startedAt', 'completedAt', 'certifiedAt', 'score', 'attempts'],
             as: 'progress'

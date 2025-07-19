@@ -17,16 +17,28 @@ import { useToast } from "@/hooks/use-toast"
 import { apiClient } from "@/lib/api-client"
 import { Skeleton } from "@/components/ui/skeleton"
 import CSVImportDialog from "@/components/csv-import-dialog"
+import { CategoryComboInput, CategoryDisplay } from "@/components/ui/category-combo-input"
 
 interface Department {
   id: string
   name: string
 }
 
+interface SkillCategory {
+  id: string
+  name: string
+  description?: string
+  color?: string
+  icon?: string
+  isActive: boolean
+  sortOrder: number
+}
+
 interface Skill {
   id: string
   name: string
-  category: string
+  category: SkillCategory
+  categoryId: string
   isRequired: boolean
   learningMethod: string
   assessmentMethod: string
@@ -39,7 +51,7 @@ interface Skill {
 
 interface SkillFormData {
   name: string
-  category: string
+  categoryName: string
   isRequired: boolean
   learningMethod: string
   assessmentMethod: string
@@ -49,6 +61,7 @@ interface SkillFormData {
 export function AdminSkillList() {
   const [skills, setSkills] = useState<Skill[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
+  const [skillCategories, setSkillCategories] = useState<SkillCategory[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -63,7 +76,7 @@ export function AdminSkillList() {
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null)
   const [formData, setFormData] = useState<SkillFormData>({
     name: "",
-    category: "",
+    categoryName: "",
     isRequired: false,
     learningMethod: "",
     assessmentMethod: "",
@@ -111,9 +124,22 @@ export function AdminSkillList() {
     }
   }
 
+  const fetchSkillCategories = async () => {
+    try {
+      const response = await apiClient.getSkillCategories()
+      if (response.data && response.data.data) {
+        setSkillCategories(response.data.data.categories || [])
+      }
+    } catch (error) {
+      console.error("Failed to fetch skill categories:", error)
+    }
+  }
+
   useEffect(() => {
     fetchDepartments()
+    fetchSkillCategories()
   }, [])
+
 
   useEffect(() => {
     fetchSkills()
@@ -137,12 +163,17 @@ export function AdminSkillList() {
   const resetForm = () => {
     setFormData({
       name: "",
-      category: "",
+      categoryName: "",
       isRequired: false,
       learningMethod: "",
       assessmentMethod: "",
       departmentIds: []
     })
+  }
+
+  const handleCategoryCreated = (newCategory: SkillCategory) => {
+    // Add the new category to the local state so it appears in dropdown immediately
+    setSkillCategories(prev => [...prev, newCategory])
   }
 
   const handleDepartmentToggle = (departmentId: string, checked: boolean) => {
@@ -156,7 +187,7 @@ export function AdminSkillList() {
 
   const handleCreate = async () => {
     try {
-      if (!formData.name || !formData.category || !formData.learningMethod || !formData.assessmentMethod) {
+      if (!formData.name || !formData.categoryName || !formData.learningMethod || !formData.assessmentMethod) {
         toast({
           title: "錯誤",
           description: "請填寫所有必填欄位",
@@ -165,7 +196,10 @@ export function AdminSkillList() {
         return
       }
 
-      const response = await apiClient.createSkill(formData)
+      const response = await apiClient.createSkill({
+        ...formData,
+        category: formData.categoryName // Send as 'category' to backend
+      })
       
       toast({
         title: "成功",
@@ -175,6 +209,7 @@ export function AdminSkillList() {
       setIsCreateDialogOpen(false)
       resetForm()
       fetchSkills()
+      await fetchSkillCategories() // Refresh categories to get the newly created ones
     } catch (error: any) {
       toast({
         title: "錯誤",
@@ -188,11 +223,11 @@ export function AdminSkillList() {
     setEditingSkill(skill)
     setFormData({
       name: skill.name,
-      category: skill.category,
+      categoryName: skill.category?.name || '',
       isRequired: skill.isRequired,
       learningMethod: skill.learningMethod,
       assessmentMethod: skill.assessmentMethod,
-      departmentIds: skill.departments.map(d => d.id)
+      departmentIds: skill.departments?.map(d => d.id) || []
     })
     setIsEditDialogOpen(true)
   }
@@ -201,7 +236,10 @@ export function AdminSkillList() {
     if (!editingSkill) return
 
     try {
-      const response = await apiClient.updateSkill(editingSkill.id, formData)
+      const response = await apiClient.updateSkill(editingSkill.id, {
+        ...formData,
+        category: formData.categoryName // Send as 'category' to backend
+      })
       
       toast({
         title: "成功",
@@ -212,6 +250,7 @@ export function AdminSkillList() {
       setEditingSkill(null)
       resetForm()
       fetchSkills()
+      fetchSkillCategories() // Refresh categories to get any newly created ones
     } catch (error: any) {
       toast({
         title: "錯誤",
@@ -375,9 +414,10 @@ export function AdminSkillList() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="text-xs">
-                              {skill.category}
-                            </Badge>
+                            <CategoryDisplay 
+                              category={skill.category}
+                              className="text-xs"
+                            />
                           </TableCell>
                           <TableCell>
                             <Badge variant={skill.isRequired ? "default" : "secondary"}>
@@ -475,8 +515,11 @@ export function AdminSkillList() {
                         <Brain className="h-5 w-5 text-gray-500 mt-0.5" />
                         <div className="flex-1">
                           <div className="font-medium">{skill.name}</div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            {skill.category}
+                          <div className="mt-1">
+                            <CategoryDisplay 
+                              category={skill.category}
+                              className="text-xs"
+                            />
                           </div>
                           <div className="flex items-center gap-2 mt-2">
                             <Badge variant={skill.isRequired ? "default" : "secondary"} className="text-xs">
@@ -586,11 +629,13 @@ export function AdminSkillList() {
               </div>
               <div>
                 <Label htmlFor="category">技能類別 *</Label>
-                <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                  placeholder="例：山恩DNA、產品知識"
+                <CategoryComboInput
+                  categories={skillCategories}
+                  value={formData.categoryName}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, categoryName: value }))}
+                  placeholder="選擇或輸入技能類別..."
+                  allowCreate={true}
+                  onCategoryCreated={handleCategoryCreated}
                 />
               </div>
             </div>
@@ -688,11 +733,13 @@ export function AdminSkillList() {
               </div>
               <div>
                 <Label htmlFor="edit-category">技能類別 *</Label>
-                <Input
-                  id="edit-category"
-                  value={formData.category}
-                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                  placeholder="例：山恩DNA、產品知識"
+                <CategoryComboInput
+                  categories={skillCategories}
+                  value={formData.categoryName}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, categoryName: value }))}
+                  placeholder="選擇或輸入技能類別..."
+                  allowCreate={true}
+                  onCategoryCreated={handleCategoryCreated}
                 />
               </div>
             </div>

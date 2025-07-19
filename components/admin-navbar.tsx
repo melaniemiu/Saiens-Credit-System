@@ -4,12 +4,12 @@ import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { Home, LogOut, Menu, Users, CreditCard, Building2, Brain, Briefcase, ClipboardCheck } from "lucide-react"
+import { Home, LogOut, Menu, Users, CreditCard, Building2, Brain, Briefcase, ClipboardCheck, Tag } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 
 interface AdminNavbarProps {
-  activeSection: 'users' | 'credits' | 'departments' | 'skills' | 'jobs' | 'evaluations'
-  onSectionChange: (section: 'users' | 'credits' | 'departments' | 'skills' | 'jobs' | 'evaluations') => void
+  activeSection: 'users' | 'credits' | 'departments' | 'skills' | 'categories' | 'jobs' | 'evaluations'
+  onSectionChange: (section: 'users' | 'credits' | 'departments' | 'skills' | 'categories' | 'jobs' | 'evaluations') => void
 }
 
 export function AdminNavbar({ activeSection, onSectionChange }: AdminNavbarProps) {
@@ -43,6 +43,11 @@ export function AdminNavbar({ activeSection, onSectionChange }: AdminNavbarProps
       icon: Brain,
     },
     {
+      id: 'categories',
+      label: '類別管理',
+      icon: Tag,
+    },
+    {
       id: 'jobs',
       label: '職位管理',
       icon: Briefcase,
@@ -62,7 +67,7 @@ export function AdminNavbar({ activeSection, onSectionChange }: AdminNavbarProps
             {adminMenuItems.map((item) => (
               <Button
                 key={item.id}
-                onClick={() => onSectionChange(item.id as 'users' | 'credits' | 'departments' | 'skills' | 'jobs' | 'evaluations')}
+                onClick={() => onSectionChange(item.id as 'users' | 'credits' | 'departments' | 'skills' | 'categories' | 'jobs' | 'evaluations')}
                 variant={activeSection === item.id ? "default" : "ghost"}
                 className={`flex items-center gap-2 transition-all duration-300 ${
                   activeSection === item.id
@@ -94,7 +99,7 @@ export function AdminNavbar({ activeSection, onSectionChange }: AdminNavbarProps
                     <Button
                       key={item.id}
                       onClick={() => {
-                        onSectionChange(item.id as 'users' | 'credits' | 'departments' | 'skills' | 'jobs' | 'evaluations')
+                        onSectionChange(item.id as 'users' | 'credits' | 'departments' | 'skills' | 'categories' | 'jobs' | 'evaluations')
                         setIsOpen(false)
                       }}
                       variant={activeSection === item.id ? "default" : "ghost"}

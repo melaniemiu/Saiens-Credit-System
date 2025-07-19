@@ -1,4 +1,4 @@
-const { Job, Department, Skill, JobSkill, User } = require('../models');
+const { Job, Department, Skill, JobSkill, User, SkillCategory } = require('../models');
 const { Op } = require('sequelize');
 
 // Get all jobs with pagination, search, and filtering
@@ -43,7 +43,12 @@ const getAdminJobs = async (req, res) => {
         {
           model: Skill,
           as: 'skills',
-          attributes: ['id', 'name', 'category'],
+          attributes: ['id', 'name', 'categoryId'],
+          include: [{
+            model: SkillCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'color']
+          }],
           through: { attributes: ['isRequired'] }
         }
       ],
@@ -135,7 +140,12 @@ const createJob = async (req, res) => {
         {
           model: Skill,
           as: 'skills',
-          attributes: ['id', 'name', 'category'],
+          attributes: ['id', 'name', 'categoryId'],
+          include: [{
+            model: SkillCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'color']
+          }],
           through: { attributes: ['isRequired'] }
         }
       ]
@@ -224,7 +234,12 @@ const updateJob = async (req, res) => {
         {
           model: Skill,
           as: 'skills',
-          attributes: ['id', 'name', 'category'],
+          attributes: ['id', 'name', 'categoryId'],
+          include: [{
+            model: SkillCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'color']
+          }],
           through: { attributes: ['isRequired'] }
         }
       ]

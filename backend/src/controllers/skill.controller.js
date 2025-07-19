@@ -1,4 +1,4 @@
-const { Skill, UserSkill, Job, JobSkill, User, Department, SkillDepartment } = require('../models');
+const { Skill, SkillCategory, UserSkill, Job, JobSkill, User, Department, SkillDepartment } = require('../models');
 const { Op, sequelize } = require('sequelize');
 const { sequelize: dbInstance } = require('../models');
 
@@ -12,7 +12,12 @@ exports.getUserSkills = async (req, res, next) => {
       include: [
         {
           model: Skill,
-          attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus']
+          attributes: ['id', 'name', 'categoryId', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus'],
+          include: [{
+            model: SkillCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'color', 'icon']
+          }]
         },
         {
           model: User,
@@ -85,7 +90,12 @@ exports.getDepartmentProgression = async (req, res, next) => {
           include: [
             {
               model: Skill,
-              attributes: ['id', 'name', 'category', 'learningMethod', 'assessmentMethod', 'syllabus']
+              attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
+              include: [{
+                model: SkillCategory,
+                as: 'category',
+                attributes: ['id', 'name', 'color', 'icon']
+              }]
             }
           ]
         }
@@ -155,11 +165,16 @@ exports.getJobSkills = async (req, res, next) => {
       include: [
         {
           model: Skill,
-          attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus']
+          attributes: ['id', 'name', 'categoryId', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus'],
+          include: [{
+            model: SkillCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'color', 'icon']
+          }]
         }
       ],
       order: [
-        [Skill, 'category', 'ASC'],
+        [Skill, { model: SkillCategory, as: 'category' }, 'name', 'ASC'],
         [Skill, 'name', 'ASC']
       ]
     });
@@ -230,7 +245,12 @@ exports.getSuggestedSkills = async (req, res, next) => {
       include: [
         {
           model: Skill,
-          attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus']
+          attributes: ['id', 'name', 'categoryId', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus'],
+          include: [{
+            model: SkillCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'color', 'icon']
+          }]
         }
       ],
       limit: 4 // Limit to 4 suggestions for UI
@@ -292,7 +312,12 @@ exports.updateUserSkill = async (req, res, next) => {
       include: [
         {
           model: Skill,
-          attributes: ['id', 'name', 'category', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus']
+          attributes: ['id', 'name', 'categoryId', 'isRequired', 'learningMethod', 'assessmentMethod', 'syllabus'],
+          include: [{
+            model: SkillCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'color', 'icon']
+          }]
         }
       ]
     });
@@ -392,12 +417,15 @@ exports.getAdminSkills = async (req, res, next) => {
         { name: { [Op.iLike]: `%${search}%` } }
       ];
     }
-    if (category) {
-      whereClause.category = category;
-    }
-
-    // Build include clause for department filter
+    // Build include clause for category, department filter, and skill relationships
     const includeClause = [
+      {
+        model: SkillCategory,
+        as: 'category',
+        attributes: ['id', 'name', 'color', 'icon'],
+        where: category ? { name: category } : undefined,
+        required: !!category
+      },
       {
         model: Department,
         as: 'departments',
@@ -414,7 +442,7 @@ exports.getAdminSkills = async (req, res, next) => {
     ];
 
     if (departmentId) {
-      includeClause[0].where = { id: departmentId };
+      includeClause[1].where = { id: departmentId };
     }
 
     const { count, rows: skills } = await Skill.findAndCountAll({
@@ -434,12 +462,13 @@ exports.getAdminSkills = async (req, res, next) => {
     }));
 
     // Get unique categories for filter
-    const categories = await Skill.findAll({
-      attributes: [
-        [require('sequelize').fn('DISTINCT', require('sequelize').col('category')), 'category']
-      ],
+    const categoryRecords = await SkillCategory.findAll({
+      attributes: ['name'],
+      where: { isActive: true },
+      order: [['sortOrder', 'ASC']],
       raw: true
     });
+    const categories = categoryRecords.map(cat => ({ category: cat.name }));
 
     return res.status(200).json({
       skills: skillsWithCounts,
@@ -461,7 +490,8 @@ exports.createSkill = async (req, res, next) => {
   try {
     const { 
       name, 
-      category, 
+      category, // This can be categoryName for compatibility
+      categoryName, // New field name from frontend
       isRequired = false, 
       learningMethod, 
       assessmentMethod,
@@ -469,7 +499,9 @@ exports.createSkill = async (req, res, next) => {
       departmentIds = []
     } = req.body;
 
-    if (!name || !category || !learningMethod || !assessmentMethod) {
+    const categoryNameToUse = categoryName || category;
+
+    if (!name || !categoryNameToUse || !learningMethod || !assessmentMethod) {
       return res.status(400).json({ 
         error: '技能名稱、類別、學習方式、評估方式為必填項目' 
       });
@@ -484,10 +516,14 @@ exports.createSkill = async (req, res, next) => {
       return res.status(400).json({ error: '技能名稱已存在' });
     }
 
+    // Handle category - get or create the category
+    const { getOrCreateSkillCategoryHelper } = require('./skill-category.controller');
+    const categoryResult = await getOrCreateSkillCategoryHelper(categoryNameToUse);
+
     // Create skill
     const skill = await Skill.create({
       name,
-      category,
+      categoryId: categoryResult.id,
       isRequired,
       learningMethod,
       assessmentMethod,
@@ -507,9 +543,14 @@ exports.createSkill = async (req, res, next) => {
       await skill.setDepartments(validDepartments);
     }
 
-    // Reload with associations
+    // Reload with associations including the category
     const skillWithAssociations = await Skill.findByPk(skill.id, {
       include: [
+        {
+          model: SkillCategory,
+          as: 'category',
+          attributes: ['id', 'name', 'color', 'icon']
+        },
         {
           model: Department,
           as: 'departments',
@@ -534,7 +575,8 @@ exports.updateSkill = async (req, res, next) => {
     const { id } = req.params;
     const { 
       name, 
-      category, 
+      category, // This can be categoryName for compatibility 
+      categoryName, // New field name from frontend
       isRequired, 
       learningMethod, 
       assessmentMethod,
@@ -561,10 +603,23 @@ exports.updateSkill = async (req, res, next) => {
       }
     }
 
+    // Handle category update - support both old 'category' and new 'categoryName'
+    let categoryId = skill.categoryId;
+    const categoryNameToUse = categoryName || category;
+    
+    if (categoryNameToUse) {
+      // Import the skill category controller to use getOrCreateSkillCategoryHelper
+      const { getOrCreateSkillCategoryHelper } = require('./skill-category.controller');
+      
+      // Get or create the category
+      const categoryResult = await getOrCreateSkillCategoryHelper(categoryNameToUse);
+      categoryId = categoryResult.id;
+    }
+
     // Update skill
     await skill.update({
       name: name || skill.name,
-      category: category || skill.category,
+      categoryId: categoryId,
       isRequired: isRequired !== undefined ? isRequired : skill.isRequired,
       learningMethod: learningMethod || skill.learningMethod,
       assessmentMethod: assessmentMethod || skill.assessmentMethod,
@@ -588,9 +643,14 @@ exports.updateSkill = async (req, res, next) => {
       }
     }
 
-    // Reload with associations
+    // Reload with associations including the new category
     const updatedSkill = await Skill.findByPk(skill.id, {
       include: [
+        {
+          model: SkillCategory,
+          as: 'category',
+          attributes: ['id', 'name', 'color', 'icon']
+        },
         {
           model: Department,
           as: 'departments',
@@ -772,7 +832,12 @@ exports.getEvaluationDetailsByUserSkillId = async (req, res, next) => {
       include: [
         {
           model: Skill,
-          attributes: ['id', 'name', 'category', 'learningMethod', 'assessmentMethod', 'syllabus']
+          attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
+          include: [{
+            model: SkillCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'color', 'icon']
+          }]
         },
         {
           model: User,
@@ -947,7 +1012,12 @@ exports.getPendingEvaluations = async (req, res, next) => {
       },
       {
         model: Skill,
-        attributes: ['id', 'name', 'category', 'learningMethod', 'assessmentMethod', 'syllabus']
+        attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
+        include: [{
+          model: SkillCategory,
+          as: 'category',
+          attributes: ['id', 'name', 'color', 'icon']
+        }]
       }
     ];
     
@@ -964,7 +1034,7 @@ exports.getPendingEvaluations = async (req, res, next) => {
       includeClause[1].where = {
         [Op.or]: [
           { name: { [Op.iLike]: `%${search}%` } },
-          { category: { [Op.iLike]: `%${search}%` } }
+          { '$category.name$': { [Op.iLike]: `%${search}%` } }
         ]
       };
     }
@@ -983,7 +1053,7 @@ exports.getPendingEvaluations = async (req, res, next) => {
     } else if (validSortField === 'skillName') {
       orderClause = [[Skill, 'name', sortOrder]];
     } else if (validSortField === 'category') {
-      orderClause = [[Skill, 'category', sortOrder]];
+      orderClause = [[Skill, { model: SkillCategory, as: 'category' }, 'name', sortOrder]];
     } else {
       orderClause = [[validSortField, sortOrder]];
     }

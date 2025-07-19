@@ -1,4 +1,4 @@
-const { Department, Skill, SkillDepartment, User } = require('../models');
+const { Department, Skill, SkillDepartment, User, SkillCategory } = require('../models');
 const { Op } = require('sequelize');
 
 // Get all departments
@@ -44,7 +44,12 @@ exports.getAdminDepartments = async (req, res, next) => {
         {
           model: Skill,
           as: 'skills',
-          attributes: ['id', 'name', 'category'],
+          attributes: ['id', 'name', 'categoryId'],
+          include: [{
+            model: SkillCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'color']
+          }],
           through: { attributes: [] }
         },
         {
@@ -161,7 +166,16 @@ exports.deleteDepartment = async (req, res, next) => {
     const department = await Department.findByPk(id, {
       include: [
         { model: User, required: false },
-        { model: Skill, as: 'skills', required: false }
+        { 
+          model: Skill, 
+          as: 'skills', 
+          required: false,
+          include: [{
+            model: SkillCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'color']
+          }]
+        }
       ]
     });
 

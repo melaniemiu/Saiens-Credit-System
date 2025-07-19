@@ -790,6 +790,151 @@ export const skillApi = {
   },
 };
 
+// Skill Categories API
+export const skillCategoryApi = {
+  // Get all skill categories
+  getSkillCategories: async (params?: {
+    search?: string;
+    isActive?: boolean;
+    sortField?: string;
+    sortOrder?: string;
+    includeSkillCount?: boolean;
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.isActive !== undefined) query.append('isActive', params.isActive.toString());
+    if (params?.sortField) query.append('sortField', params.sortField);
+    if (params?.sortOrder) query.append('sortOrder', params.sortOrder);
+    if (params?.includeSkillCount) query.append('includeSkillCount', params.includeSkillCount.toString());
+
+    return fetchApi<{
+      categories: Array<{
+        id: string;
+        name: string;
+        description?: string;
+        color?: string;
+        icon?: string;
+        isActive: boolean;
+        sortOrder: number;
+        skillCount?: number;
+        createdAt: string;
+        updatedAt: string;
+      }>;
+    }>(`/skill-categories?${query.toString()}`, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Get skill category by ID
+  getSkillCategoryById: async (id: string) => {
+    return fetchApi<{
+      category: {
+        id: string;
+        name: string;
+        description?: string;
+        color?: string;
+        icon?: string;
+        isActive: boolean;
+        sortOrder: number;
+        skills?: Array<{ id: string; name: string }>;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>(`/skill-categories/${id}`, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Create new skill category
+  createSkillCategory: async (categoryData: {
+    name: string;
+    description?: string;
+    color?: string;
+    icon?: string;
+    isActive?: boolean;
+    sortOrder?: number;
+  }) => {
+    return fetchApi<{
+      category: {
+        id: string;
+        name: string;
+        description?: string;
+        color?: string;
+        icon?: string;
+        isActive: boolean;
+        sortOrder: number;
+        createdAt: string;
+        updatedAt: string;
+      };
+      message: string;
+    }>('/skill-categories', {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify(categoryData),
+    });
+  },
+
+  // Get or create skill category by name
+  getOrCreateSkillCategory: async (name: string) => {
+    return fetchApi<{
+      category: {
+        id: string;
+        name: string;
+        description?: string;
+        color?: string;
+        icon?: string;
+        isActive: boolean;
+        sortOrder: number;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>('/skill-categories/get-or-create', {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify({ name }),
+    });
+  },
+
+  // Update skill category
+  updateSkillCategory: async (id: string, categoryData: {
+    name?: string;
+    description?: string;
+    color?: string;
+    icon?: string;
+    isActive?: boolean;
+    sortOrder?: number;
+  }) => {
+    return fetchApi<{
+      category: {
+        id: string;
+        name: string;
+        description?: string;
+        color?: string;
+        icon?: string;
+        isActive: boolean;
+        sortOrder: number;
+        createdAt: string;
+        updatedAt: string;
+      };
+      message: string;
+    }>(`/skill-categories/${id}`, {
+      method: 'PUT',
+      headers: createHeaders(),
+      body: JSON.stringify(categoryData),
+    });
+  },
+
+  // Delete skill category
+  deleteSkillCategory: async (id: string) => {
+    return fetchApi<{ message: string }>(`/skill-categories/${id}`, {
+      method: 'DELETE',
+      headers: createHeaders(),
+    });
+  },
+};
+
 export const jobApi = {
   // Admin: Get jobs with pagination and filtering
   getAdminJobs: async (params: {

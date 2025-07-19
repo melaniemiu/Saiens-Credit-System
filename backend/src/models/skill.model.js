@@ -9,10 +9,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false
     },
-    category: {
-      type: DataTypes.STRING,
+    categoryId: {
+      type: DataTypes.UUID,
       allowNull: false,
-      comment: 'Category like: 山恩DNA, 產品知識, 工具使用, etc.'
+      references: {
+        model: 'skill_categories',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'Foreign key reference to skill_categories table'
     },
     isRequired: {
       type: DataTypes.BOOLEAN,
@@ -41,7 +47,7 @@ module.exports = (sequelize, DataTypes) => {
     paranoid: true,
     indexes: [
       {
-        fields: ['category']
+        fields: ['categoryId']
       },
       {
         fields: ['isRequired']
