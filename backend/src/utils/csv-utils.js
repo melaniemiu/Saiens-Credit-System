@@ -152,9 +152,9 @@ class CSVUtils {
         errors.push(`Row ${rowNum}: Assessment method is required`);
       }
       
-      // Validate isRequired field if present (flexible boolean validation)
-      if (row.isRequired && !['true', 'false', '1', '0', 'yes', 'no'].includes(row.isRequired.toLowerCase())) {
-        errors.push(`Row ${rowNum}: isRequired must be true/false, 1/0, or yes/no`);
+      // Prerequisites field is optional - just check it's not malformed if present
+      if (row.prerequisiteSkills && typeof row.prerequisiteSkills === 'string' && row.prerequisiteSkills.length > 500) {
+        errors.push(`Row ${rowNum}: Prerequisites list is too long (max 500 characters)`);
       }
     });
     

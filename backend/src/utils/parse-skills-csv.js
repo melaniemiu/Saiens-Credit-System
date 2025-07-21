@@ -91,7 +91,6 @@ function parseSkillsCsv() {
     const skill = {
       name: skillItem,
       category: category,
-      isRequired: requiredOrOption === '必修',
       learningMethod: learningMethod || '線上',
       assessmentMethod: assessmentMethod || '實作考核',
       syllabus: syllabus || null

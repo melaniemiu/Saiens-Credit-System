@@ -56,13 +56,22 @@ export interface MockSkill {
   name: string;
   description: string | null;
   categoryId: string;
-  isRequired: boolean;
   learningMethod: string;
   assessmentMethod: string;
   syllabus: string | null;
   createdAt: string;
   updatedAt: string;
   category?: MockSkillCategory;
+}
+
+export interface MockSkillPrerequisite {
+  id: string;
+  skillId: string;
+  prerequisiteSkillId: string;
+  isRequired: boolean;
+  createdAt: string;
+  updatedAt: string;
+  prerequisiteSkill?: MockSkill;
 }
 
 export interface MockUserSkill {
@@ -333,7 +342,6 @@ export const mockSkills: MockSkill[] = [
     name: "公司文化認知",
     description: "了解公司價值觀與文化",
     categoryId: "cat-1",
-    isRequired: true,
     learningMethod: "實體",
     assessmentMethod: "考卷考核",
     syllabus: "公司價值觀、使命與願景",
@@ -345,7 +353,6 @@ export const mockSkills: MockSkill[] = [
     name: "團隊合作精神",
     description: "具備良好的團隊協作能力",
     categoryId: "cat-1",
-    isRequired: true,
     learningMethod: "實體",
     assessmentMethod: "實作考核",
     syllabus: "團隊協作技巧與溝通",
@@ -357,7 +364,6 @@ export const mockSkills: MockSkill[] = [
     name: "創新思維",
     description: "培養創新解決問題的能力",
     categoryId: "cat-1",
-    isRequired: false,
     learningMethod: "線上",
     assessmentMethod: "實作考核",
     syllabus: "創新方法論與案例研究",
@@ -371,7 +377,6 @@ export const mockSkills: MockSkill[] = [
     name: "產品架構理解",
     description: "熟悉公司產品的整體架構",
     categoryId: "cat-2",
-    isRequired: true,
     learningMethod: "線上",
     assessmentMethod: "考卷考核",
     syllabus: "產品架構圖與技術文件",
@@ -383,7 +388,6 @@ export const mockSkills: MockSkill[] = [
     name: "客戶需求分析",
     description: "能夠分析並理解客戶需求",
     categoryId: "cat-2",
-    isRequired: true,
     learningMethod: "實體",
     assessmentMethod: "實作考核",
     syllabus: "需求收集與分析方法",
@@ -395,7 +399,6 @@ export const mockSkills: MockSkill[] = [
     name: "競品分析",
     description: "了解市場競爭產品特性",
     categoryId: "cat-2",
-    isRequired: false,
     learningMethod: "線上",
     assessmentMethod: "考卷考核",
     syllabus: "市場分析與競品研究",
@@ -409,7 +412,6 @@ export const mockSkills: MockSkill[] = [
     name: "Git版本控制",
     description: "熟練使用Git進行版本管理",
     categoryId: "cat-3",
-    isRequired: true,
     learningMethod: "線上",
     assessmentMethod: "實作考核",
     syllabus: "Git基礎操作與分支管理",
@@ -421,7 +423,6 @@ export const mockSkills: MockSkill[] = [
     name: "IDE開發環境",
     description: "熟悉開發環境的使用",
     categoryId: "cat-3",
-    isRequired: true,
     learningMethod: "線上",
     assessmentMethod: "實作考核",
     syllabus: "IDE配置與開發技巧",
@@ -433,7 +434,6 @@ export const mockSkills: MockSkill[] = [
     name: "資料庫操作",
     description: "能夠進行基本資料庫操作",
     categoryId: "cat-3",
-    isRequired: false,
     learningMethod: "線上",
     assessmentMethod: "實作考核",
     syllabus: "SQL語法與資料庫設計",
@@ -447,7 +447,6 @@ export const mockSkills: MockSkill[] = [
     name: "系統環境配置",
     description: "能夠配置開發與測試環境",
     categoryId: "cat-4",
-    isRequired: true,
     learningMethod: "實體",
     assessmentMethod: "實作考核",
     syllabus: "開發環境安裝與配置",
@@ -459,7 +458,6 @@ export const mockSkills: MockSkill[] = [
     name: "部署流程",
     description: "了解應用程式部署流程",
     categoryId: "cat-4",
-    isRequired: true,
     learningMethod: "實體",
     assessmentMethod: "實作考核",
     syllabus: "CI/CD流程與部署策略",
@@ -471,7 +469,6 @@ export const mockSkills: MockSkill[] = [
     name: "監控與維護",
     description: "能夠監控系統運行狀態",
     categoryId: "cat-4",
-    isRequired: false,
     learningMethod: "線上",
     assessmentMethod: "考卷考核",
     syllabus: "系統監控與日誌分析",
@@ -485,7 +482,6 @@ export const mockSkills: MockSkill[] = [
     name: "資安基礎",
     description: "了解基本資訊安全概念",
     categoryId: "cat-5",
-    isRequired: true,
     learningMethod: "線上",
     assessmentMethod: "考卷考核",
     syllabus: "資訊安全基礎知識",
@@ -497,7 +493,6 @@ export const mockSkills: MockSkill[] = [
     name: "安全編程",
     description: "能夠編寫安全的程式碼",
     categoryId: "cat-5",
-    isRequired: true,
     learningMethod: "線上",
     assessmentMethod: "實作考核",
     syllabus: "安全編程最佳實務",
@@ -509,7 +504,6 @@ export const mockSkills: MockSkill[] = [
     name: "權限管理",
     description: "了解系統權限管理機制",
     categoryId: "cat-5",
-    isRequired: false,
     learningMethod: "實體",
     assessmentMethod: "考卷考核",
     syllabus: "存取控制與權限設計",
@@ -523,7 +517,6 @@ export const mockSkills: MockSkill[] = [
     name: "架構設計",
     description: "能夠設計系統架構",
     categoryId: "cat-6",
-    isRequired: false,
     learningMethod: "線上",
     assessmentMethod: "實作考核",
     syllabus: "軟體架構設計模式",
@@ -535,7 +528,6 @@ export const mockSkills: MockSkill[] = [
     name: "性能優化",
     description: "能夠優化系統性能",
     categoryId: "cat-6",
-    isRequired: false,
     learningMethod: "線上",
     assessmentMethod: "實作考核",
     syllabus: "效能調校與最佳化",
@@ -575,6 +567,82 @@ export const mockSkills: MockSkill[] = [
     learningMethod: "實體",
     assessmentMethod: "實作考核",
     syllabus: "跨部門溝通與協作",
+    createdAt: generateDate(365),
+    updatedAt: generateDate(30),
+  },
+];
+
+// Skill Prerequisites data (skill dependencies)
+export const mockSkillPrerequisites: MockSkillPrerequisite[] = [
+  // 產品架構理解 requires 公司文化認知
+  {
+    id: "prereq-1",
+    skillId: "skill-4",
+    prerequisiteSkillId: "skill-1",
+    isRequired: true,
+    createdAt: generateDate(365),
+    updatedAt: generateDate(30),
+  },
+  // 客戶需求分析 requires 產品架構理解
+  {
+    id: "prereq-2", 
+    skillId: "skill-5",
+    prerequisiteSkillId: "skill-4",
+    isRequired: true,
+    createdAt: generateDate(365),
+    updatedAt: generateDate(30),
+  },
+  // 資料庫操作 requires Git版本控制
+  {
+    id: "prereq-3",
+    skillId: "skill-9",
+    prerequisiteSkillId: "skill-7",
+    isRequired: true,
+    createdAt: generateDate(365),
+    updatedAt: generateDate(30),
+  },
+  // 部署流程 requires 系統環境配置
+  {
+    id: "prereq-4",
+    skillId: "skill-11",
+    prerequisiteSkillId: "skill-10",
+    isRequired: true,
+    createdAt: generateDate(365),
+    updatedAt: generateDate(30),
+  },
+  // 監控與維護 requires 部署流程
+  {
+    id: "prereq-5",
+    skillId: "skill-12",
+    prerequisiteSkillId: "skill-11",
+    isRequired: true,
+    createdAt: generateDate(365),
+    updatedAt: generateDate(30),
+  },
+  // 安全編程 requires 資安基礎
+  {
+    id: "prereq-6",
+    skillId: "skill-14",
+    prerequisiteSkillId: "skill-13",
+    isRequired: true,
+    createdAt: generateDate(365),
+    updatedAt: generateDate(30),
+  },
+  // 架構設計 requires 安全編程
+  {
+    id: "prereq-7",
+    skillId: "skill-16",
+    prerequisiteSkillId: "skill-14",
+    isRequired: true,
+    createdAt: generateDate(365),
+    updatedAt: generateDate(30),
+  },
+  // 性能優化 requires 架構設計
+  {
+    id: "prereq-8",
+    skillId: "skill-17",
+    prerequisiteSkillId: "skill-16",
+    isRequired: true,
     createdAt: generateDate(365),
     updatedAt: generateDate(30),
   },

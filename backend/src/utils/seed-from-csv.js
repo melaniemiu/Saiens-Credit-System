@@ -294,6 +294,108 @@ async function createJobSkillRelationships() {
   }
 }
 
+// Function to create skill prerequisites from sample CSV data
+async function createSkillPrerequisites() {
+  const { Skill, SkillPrerequisite } = require('../models');
+  const fs = require('fs');
+  const path = require('path');
+  
+  try {
+    // Read the skills sample file to extract prerequisite data
+    const sampleDataPath = path.join(__dirname, '../../sample-data');
+    const skillsFilePath = path.join(sampleDataPath, 'skills-sample.csv');
+    
+    if (!fs.existsSync(skillsFilePath)) {
+      console.log('ℹ️ Skills sample file not found, skipping prerequisite creation');
+      return;
+    }
+    
+    // Parse the CSV file
+    const csvData = await CSVUtils.parseCSVFromBuffer(fs.readFileSync(skillsFilePath));
+    
+    console.log(`📊 Processing prerequisites for ${csvData.length} skills`);
+    
+    const prerequisites = [];
+    let processed = 0;
+    
+    for (const row of csvData) {
+      const skillName = CSVUtils.cleanString(row.name);
+      const prerequisiteSkillsText = CSVUtils.cleanString(row.prerequisiteSkills);
+      
+      if (!prerequisiteSkillsText) {
+        continue; // Skip skills without prerequisites
+      }
+      
+      // Find the main skill
+      const skill = await Skill.findOne({ where: { name: skillName } });
+      if (!skill) {
+        console.log(`⚠️ Skill not found: ${skillName}`);
+        continue;
+      }
+      
+      // Parse prerequisite skills (comma-separated)
+      const prerequisiteNames = prerequisiteSkillsText.split(',')
+        .map(name => name.trim())
+        .filter(name => name.length > 0);
+      
+      for (const prereqName of prerequisiteNames) {
+        // Find the prerequisite skill
+        const prerequisiteSkill = await Skill.findOne({ where: { name: prereqName } });
+        if (!prerequisiteSkill) {
+          console.log(`⚠️ Prerequisite skill not found: ${prereqName} for ${skillName}`);
+          continue;
+        }
+        
+        // Check if relationship already exists
+        const existingPrereq = await SkillPrerequisite.findOne({
+          where: {
+            skillId: skill.id,
+            prerequisiteSkillId: prerequisiteSkill.id
+          }
+        });
+        
+        if (!existingPrereq) {
+          prerequisites.push({
+            skillId: skill.id,
+            prerequisiteSkillId: prerequisiteSkill.id,
+            isRequired: true // All sample prerequisites are required
+          });
+        }
+      }
+      
+      processed++;
+    }
+    
+    // Bulk create prerequisites
+    if (prerequisites.length > 0) {
+      await SkillPrerequisite.bulkCreate(prerequisites, { 
+        ignoreDuplicates: true 
+      });
+      
+      console.log(`✅ Created ${prerequisites.length} skill prerequisites`);
+      
+      // Log summary
+      const prereqsBySkill = {};
+      for (const prereq of prerequisites) {
+        const skill = await Skill.findByPk(prereq.skillId);
+        if (skill) {
+          prereqsBySkill[skill.name] = (prereqsBySkill[skill.name] || 0) + 1;
+        }
+      }
+      
+      Object.entries(prereqsBySkill).forEach(([skillName, count]) => {
+        console.log(`   • ${skillName}: ${count} prerequisite(s)`);
+      });
+    } else {
+      console.log('ℹ️ No prerequisites to create');
+    }
+    
+  } catch (error) {
+    console.error('❌ Failed to create skill prerequisites:', error);
+    throw error;
+  }
+}
+
 async function seedFromCSV() {
   try {
     console.log('🌱 Starting CSV-based seeding...');
@@ -415,6 +517,9 @@ async function seedFromCSV() {
     console.log('\n🔗 Creating job-skill relationships...');
     await createJobSkillRelationships();
     
+    console.log('\n🔗 Creating skill prerequisites from sample data...');
+    await createSkillPrerequisites();
+    
     console.log('\n👤 Creating realistic skill progress for higher-level users...');
     await createRealisticSkillProgress();
     
@@ -423,6 +528,7 @@ async function seedFromCSV() {
     console.log('   • 10 departments with realistic Chinese names');
     console.log('   • 35+ job positions with career progression levels');
     console.log('   • 15 skills with flexible categories and methods');
+    console.log('   • 6 skill prerequisite relationships');
     console.log('   • 20 users across different departments and roles');
     console.log('   • Job-skill relationships for demonstration');
     

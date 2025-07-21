@@ -3,6 +3,7 @@ import {
   mockUsers,
   mockSkills,
   mockSkillCategories,
+  mockSkillPrerequisites,
   mockUserSkills,
   mockCredits,
   mockDepartments,
@@ -18,6 +19,7 @@ import {
   type MockUserSkill,
   type MockSkill,
   type MockSkillCategory,
+  type MockSkillPrerequisite,
   type MockDepartment,
   type MockJob
 } from './mock-data'
@@ -843,6 +845,94 @@ export const mockApi = {
     
     log('Get or create skill category', { name: data.name, category })
     return { category }
+  },
+
+  // Skill Prerequisites API
+  async getSkillPrerequisites(skillId: string) {
+    await delay()
+    simulateError()
+    
+    const prerequisites = mockSkillPrerequisites
+      .filter(p => p.skillId === skillId)
+      .map(p => {
+        const prerequisiteSkill = mockSkills.find(s => s.id === p.prerequisiteSkillId)
+        const category = mockSkillCategories.find(c => c.id === prerequisiteSkill?.categoryId)
+        return {
+          id: p.prerequisiteSkillId,
+          name: prerequisiteSkill?.name || '',
+          category: category ? { id: category.id, name: category.name, color: category.color } : null,
+          isRequired: p.isRequired
+        }
+      })
+    
+    log('Get skill prerequisites', { skillId, prerequisites })
+    return { prerequisites }
+  },
+
+  async addSkillPrerequisite(skillId: string, data: { prerequisiteSkillId: string; isRequired: boolean }) {
+    await delay()
+    simulateError()
+    
+    // Check if prerequisite already exists
+    const existingPrereq = mockSkillPrerequisites.find(p => 
+      p.skillId === skillId && p.prerequisiteSkillId === data.prerequisiteSkillId
+    )
+    
+    if (existingPrereq) {
+      throw new Error('This prerequisite already exists')
+    }
+    
+    // Check for circular dependencies
+    const checkCircular = (currentSkillId: string, targetSkillId: string, visited: Set<string> = new Set()): boolean => {
+      if (visited.has(currentSkillId)) return true
+      if (currentSkillId === targetSkillId) return true
+      
+      visited.add(currentSkillId)
+      
+      const prerequisites = mockSkillPrerequisites.filter(p => p.skillId === currentSkillId)
+      for (const prereq of prerequisites) {
+        if (checkCircular(prereq.prerequisiteSkillId, targetSkillId, new Set(visited))) {
+          return true
+        }
+      }
+      return false
+    }
+    
+    if (checkCircular(data.prerequisiteSkillId, skillId)) {
+      throw new Error('This would create a circular dependency')
+    }
+    
+    const newPrerequisite: MockSkillPrerequisite = {
+      id: `prereq-${Date.now()}`,
+      skillId,
+      prerequisiteSkillId: data.prerequisiteSkillId,
+      isRequired: data.isRequired,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    
+    mockSkillPrerequisites.push(newPrerequisite)
+    
+    log('Add skill prerequisite', { skillId, data })
+    return { message: 'Prerequisite added successfully' }
+  },
+
+  async removeSkillPrerequisite(skillId: string, prerequisiteSkillId: string) {
+    await delay()
+    simulateError()
+    
+    const index = mockSkillPrerequisites.findIndex(p => 
+      p.skillId === skillId && p.prerequisiteSkillId === prerequisiteSkillId
+    )
+    
+    if (index === -1) {
+      throw new Error('Prerequisite not found')
+    }
+    
+    mockSkillPrerequisites.splice(index, 1)
+    
+    log('Remove skill prerequisite', { skillId, prerequisiteSkillId })
+    return { message: 'Prerequisite removed successfully' }
   },
 
   async getAdminJobs(params: { page?: number; limit?: number; search?: string; sortField?: string; sortOrder?: string; departmentId?: string }) {
