@@ -19,14 +19,14 @@ module.exports = {
     });
 
     // Migrate existing category strings to categoryId references
-    const [skills] = await queryInterface.sequelize.query(
+    const skills = await queryInterface.sequelize.query(
       'SELECT id, category FROM skills WHERE category IS NOT NULL',
       { type: Sequelize.QueryTypes.SELECT }
     );
 
     for (const skill of skills) {
       // Find the corresponding category ID
-      const [categoryResults] = await queryInterface.sequelize.query(
+      const categoryResults = await queryInterface.sequelize.query(
         'SELECT id FROM skill_categories WHERE name = :categoryName LIMIT 1',
         { 
           replacements: { categoryName: skill.category },
@@ -104,7 +104,7 @@ module.exports = {
     });
 
     // Migrate categoryId back to category strings
-    const [skills] = await queryInterface.sequelize.query(
+    const skills = await queryInterface.sequelize.query(
       `SELECT s.id, s."categoryId", sc.name as category_name 
        FROM skills s 
        LEFT JOIN skill_categories sc ON s."categoryId" = sc.id 
