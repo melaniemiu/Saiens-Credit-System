@@ -1,22 +1,27 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    // Add the new categoryId column
-    await queryInterface.addColumn('skills', 'categoryId', {
-      type: Sequelize.UUID,
-      allowNull: true, // Temporarily allow null during migration
-      references: {
-        model: 'skill_categories',
-        key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
-      comment: 'Foreign key reference to skill_categories table'
-    });
+    // Check if categoryId column already exists
+    const tableDesc = await queryInterface.describeTable('skills');
+    
+    if (!tableDesc.categoryId) {
+      // Add the new categoryId column
+      await queryInterface.addColumn('skills', 'categoryId', {
+        type: Sequelize.UUID,
+        allowNull: true, // Temporarily allow null during migration
+        references: {
+          model: 'skill_categories',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+        comment: 'Foreign key reference to skill_categories table'
+      });
 
-    // Add index for the new foreign key
-    await queryInterface.addIndex('skills', ['categoryId'], {
-      name: 'skills_category_id_idx'
-    });
+      // Add index for the new foreign key
+      await queryInterface.addIndex('skills', ['categoryId'], {
+        name: 'skills_category_id_idx'
+      });
+    }
 
     // Migrate existing category strings to categoryId references
     const skills = await queryInterface.sequelize.query(
@@ -88,11 +93,20 @@ module.exports = {
       comment: 'Foreign key reference to skill_categories table'
     });
 
-    // Remove the old category column
-    await queryInterface.removeColumn('skills', 'category');
+    // Check if old category column exists before removing
+    const tableDescAfter = await queryInterface.describeTable('skills');
+    if (tableDescAfter.category) {
+      // Remove the old category column
+      await queryInterface.removeColumn('skills', 'category');
+    }
 
-    // Remove the old index on category
-    await queryInterface.removeIndex('skills', 'skills_category_idx');
+    // Try to remove the old index on category (ignore if it doesn't exist)
+    try {
+      await queryInterface.removeIndex('skills', 'skills_category_idx');
+    } catch (error) {
+      // Index might not exist, continue
+      console.log('Index skills_category_idx does not exist or already removed');
+    }
   },
 
   down: async (queryInterface, Sequelize) => {
