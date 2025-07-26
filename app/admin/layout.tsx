@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 import { Home, LogOut, Menu, Users, CreditCard, Building2, Brain, Briefcase, ClipboardCheck, Tag, Settings } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { useSystemName } from "@/hooks/use-system-config"
+import { MaintenanceNotice } from "@/components/maintenance-notice"
 
 export default function AdminLayout({
   children,
@@ -203,8 +204,11 @@ export default function AdminLayout({
         </div>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto bg-gray-50 p-6">
-          {children}
+        <main className="flex-1 overflow-auto bg-gray-50">
+          <MaintenanceNotice />
+          <div className="p-6">
+            {children}
+          </div>
         </main>
       </div>
     </div>

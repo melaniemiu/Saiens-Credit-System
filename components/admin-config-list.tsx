@@ -154,8 +154,8 @@ export function AdminConfigList() {
         
         console.log(`✅ Successfully updated ${selectedConfig.key} = ${data.value}`)
         
-        // Trigger global system config refresh if system_name or use_mock_api was updated
-        if (selectedConfig.key === 'system_name' || selectedConfig.key === 'use_mock_api') {
+        // Trigger global system config refresh if critical config was updated
+        if (['system_name', 'use_mock_api', 'maintenance_mode'].includes(selectedConfig.key)) {
           console.log(`🔄 Triggering global config refresh for ${selectedConfig.key}`)
           const event = new CustomEvent('systemConfigUpdated')
           window.dispatchEvent(event)

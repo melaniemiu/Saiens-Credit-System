@@ -8,6 +8,7 @@ import { EvaluationProvider } from "@/context/evaluation-context"
 import { LiffInit } from "@/components/liff-init"
 import { GlobalEvaluationModal } from "@/components/global-evaluation-modal"
 import { MockDevPanel } from "@/components/mock-dev-panel"
+import { MaintenanceMode } from "@/components/maintenance-mode"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -46,9 +47,11 @@ export default function RootLayout({
               <SocketProvider>
                 {/* LIFF initializer component */}
                 <LiffInit />
-                {children}
-                <GlobalEvaluationModal />
-                <MockDevPanel />
+                <MaintenanceMode>
+                  {children}
+                  <GlobalEvaluationModal />
+                  <MockDevPanel />
+                </MaintenanceMode>
               </SocketProvider>
             </EvaluationProvider>
           </AuthProvider>

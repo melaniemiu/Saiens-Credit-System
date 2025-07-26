@@ -4,19 +4,15 @@ import { setUseMockApi } from '@/lib/api-client'
 
 interface SystemConfig {
   systemName: string
-  systemNameEn: string
   useMockApi: boolean
   defaultDailyCreditLimit: number
-  enableRealTimeNotifications: boolean
   maintenanceMode: boolean
 }
 
 const defaultConfig: SystemConfig = {
   systemName: '山恩互動表彰系統',
-  systemNameEn: 'Saiens Interactive Recognition System',
   useMockApi: false,
   defaultDailyCreditLimit: 5,
-  enableRealTimeNotifications: true,
   maintenanceMode: false
 }
 
@@ -69,28 +65,22 @@ export function useSystemConfig() {
       try {
         const configPromises = [
           getConfigValue('system_name', defaultConfig.systemName),
-          getConfigValue('system_name_en', defaultConfig.systemNameEn),
           getConfigValue('use_mock_api', defaultConfig.useMockApi, true), // Always use real API for mock setting
           getConfigValue('default_daily_credit_limit', defaultConfig.defaultDailyCreditLimit),
-          getConfigValue('enable_real_time_notifications', defaultConfig.enableRealTimeNotifications),
           getConfigValue('maintenance_mode', defaultConfig.maintenanceMode)
         ]
 
         const [
           systemName,
-          systemNameEn,
           useMockApi,
           defaultDailyCreditLimit,
-          enableRealTimeNotifications,
           maintenanceMode
         ] = await Promise.all(configPromises)
 
         setConfig({
           systemName,
-          systemNameEn,
           useMockApi,
           defaultDailyCreditLimit,
-          enableRealTimeNotifications,
           maintenanceMode
         })
 
@@ -129,30 +119,24 @@ export function useSystemConfig() {
       try {
         const configPromises = [
           getConfigValue('system_name', defaultConfig.systemName),
-          getConfigValue('system_name_en', defaultConfig.systemNameEn),
           getConfigValue('use_mock_api', defaultConfig.useMockApi, true), // Always use real API for mock setting
           getConfigValue('default_daily_credit_limit', defaultConfig.defaultDailyCreditLimit),
-          getConfigValue('enable_real_time_notifications', defaultConfig.enableRealTimeNotifications),
           getConfigValue('maintenance_mode', defaultConfig.maintenanceMode)
         ]
 
         const [
           systemName,
-          systemNameEn,
           useMockApi,
           defaultDailyCreditLimit,
-          enableRealTimeNotifications,
           maintenanceMode
         ] = await Promise.all(configPromises)
 
-        console.log('🔄 Refreshed system config:', { systemName, systemNameEn, useMockApi })
+        console.log('🔄 Refreshed system config:', { systemName, useMockApi, maintenanceMode })
 
         setConfig({
           systemName,
-          systemNameEn,
           useMockApi,
           defaultDailyCreditLimit,
-          enableRealTimeNotifications,
           maintenanceMode
         })
 

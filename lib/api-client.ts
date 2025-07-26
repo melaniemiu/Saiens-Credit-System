@@ -604,10 +604,8 @@ const createMockApiClient = (): ApiClient => ({
     // Return realistic mock values for each config
     const mockConfigValues: Record<string, any> = {
       'system_name': '山恩互動表彰系統 (Mock)',
-      'system_name_en': 'Saiens Interactive Recognition System (Mock)',
       'use_mock_api': true,
       'default_daily_credit_limit': 10,
-      'enable_real_time_notifications': true,
       'maintenance_mode': false
     }
     
@@ -738,6 +736,7 @@ const createRealApiClient = (): ApiClient => ({
 })
 
 // Global state for dynamic API switching
+// Starts with environment variable, can be overridden by database config
 let currentUseMockApi = API_CONFIG.useMockApi
 let mockClient: ApiClient | null = null
 let realClient: ApiClient | null = null

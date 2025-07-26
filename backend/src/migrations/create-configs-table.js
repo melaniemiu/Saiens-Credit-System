@@ -80,17 +80,6 @@ module.exports = {
       },
       {
         id: Sequelize.literal('gen_random_uuid()'),
-        key: 'system_name_en',
-        value: 'Saiens Interactive Recognition System',
-        type: 'string',
-        description: 'English system name for international use',
-        category: 'system',
-        isEditable: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: Sequelize.literal('gen_random_uuid()'),
         key: 'default_daily_credit_limit',
         value: '5',
         type: 'number',
@@ -113,66 +102,11 @@ module.exports = {
       },
       {
         id: Sequelize.literal('gen_random_uuid()'),
-        key: 'enable_real_time_notifications',
-        value: 'true',
-        type: 'boolean',
-        description: 'Enable Socket.IO real-time notifications',
-        category: 'features',
-        isEditable: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: Sequelize.literal('gen_random_uuid()'),
-        key: 'max_bulk_credit_recipients',
-        value: '10',
-        type: 'number',
-        description: 'Maximum number of recipients for bulk credit operations',
-        category: 'credits',
-        isEditable: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: Sequelize.literal('gen_random_uuid()'),
-        key: 'credit_export_format',
-        value: 'csv',
-        type: 'string',
-        description: 'Default format for credit data exports (csv, xlsx)',
-        category: 'admin',
-        isEditable: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: Sequelize.literal('gen_random_uuid()'),
-        key: 'profile_picture_max_size',
-        value: '5242880',
-        type: 'number',
-        description: 'Maximum profile picture size in bytes (5MB)',
-        category: 'user',
-        isEditable: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: Sequelize.literal('gen_random_uuid()'),
         key: 'maintenance_mode',
         value: 'false',
         type: 'boolean',
         description: 'Enable maintenance mode to temporarily disable user access',
         category: 'system',
-        isEditable: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: Sequelize.literal('gen_random_uuid()'),
-        key: 'skill_tree_theme',
-        value: 'default',
-        type: 'string',
-        description: 'Theme for the skill tree visualization (default, dark, colorful)',
-        category: 'ui',
         isEditable: true,
         createdAt: new Date(),
         updatedAt: new Date()
