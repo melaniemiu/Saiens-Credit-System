@@ -8,12 +8,14 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 import { Home, Gift, Clock, LogOut, Menu, Shield, Map } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useSystemName } from "@/hooks/use-system-config"
 
 export function Navbar() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const { logout, user } = useAuth()
   const isMobile = useIsMobile()
+  const { systemName, loading } = useSystemName()
 
   const isActive = (path: string) => {
     return pathname === path
@@ -54,7 +56,9 @@ export function Navbar() {
       <div className="container mx-auto flex h-16 items-center px-6">
         <div className="flex-1 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center">
-            <h1 className="text-xl font-bold gradient-text">山恩互動表彰系統</h1>
+            <h1 className="text-xl font-bold gradient-text">
+              {loading ? "山恩互動表彰系統" : systemName}
+            </h1>
           </Link>
 
           {/* Desktop Navigation */}

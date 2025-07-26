@@ -5,11 +5,13 @@ import { LineLoginButton } from "@/components/line-login-button"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
+import { useSystemName } from "@/hooks/use-system-config"
 import { Loader2 } from "lucide-react"
 import dynamic from "next/dynamic"
 
 function HomeContent() {
   const { user, loading } = useAuth()
+  const { systemName, loading: systemLoading } = useSystemName()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isRedirect, setIsRedirect] = useState(false)
@@ -468,7 +470,9 @@ function HomeContent() {
         <div className="w-full max-w-md space-y-8 rounded-xl bg-white px-5 py-8 shadow-lg">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-green-600">山恩實業</h1>
-            <h2 className="text-2xl font-bold text-green-600 mt-2">山恩互動表彰系統</h2>
+            <h2 className="text-2xl font-bold text-green-600 mt-2">
+              {systemLoading ? "山恩互動表彰系統" : systemName}
+            </h2>
             <p className="mt-2 text-gray-600">自動登入中，請稍候...</p>
           </div>
 
@@ -486,7 +490,9 @@ function HomeContent() {
       <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-lg">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-green-600">山恩實業</h1>
-          <h2 className="text-2xl font-bold text-green-600 mt-2">山恩互動表彰系統</h2>
+          <h2 className="text-2xl font-bold text-green-600 mt-2">
+            {systemLoading ? "山恩互動表彰系統" : systemName}
+          </h2>
           <p className="mt-2 text-gray-600">使用 LINE 帳號登入以開始使用</p>
         </div>
 

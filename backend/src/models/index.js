@@ -36,6 +36,7 @@ db.JobSkill = require('./job-skill.model')(sequelize, Sequelize);
 db.UserSkill = require('./user-skill.model')(sequelize, Sequelize);
 db.SkillDepartment = require('./skill-department.model')(sequelize, Sequelize);
 db.SkillPrerequisite = require('./skill-prerequisite.model')(sequelize, Sequelize);
+db.Config = require('./config.model')(sequelize, Sequelize);
 
 // Define associations using explicit foreign key
 db.User.belongsTo(db.Department, { foreignKey: 'departmentId' });

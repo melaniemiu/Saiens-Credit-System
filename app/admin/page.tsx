@@ -6,6 +6,7 @@ import { AdminSkillList } from "@/components/admin-skill-list"
 import { AdminCategoryList } from "@/components/admin-category-list"
 import { AdminJobList } from "@/components/admin-job-list"
 import { AdminEvaluationList } from "@/components/admin-evaluation-list"
+import { AdminConfigList } from "@/components/admin-config-list"
 import CSVImportDialog from "@/components/csv-import-dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -126,7 +127,7 @@ function SortableTableHead({
 
 export default function AdminPage() {
   // Sidebar state
-  const [activeSection, setActiveSection] = useState<'users' | 'credits' | 'departments' | 'skills' | 'categories' | 'jobs' | 'evaluations'>('users')
+  const [activeSection, setActiveSection] = useState<'users' | 'credits' | 'departments' | 'skills' | 'categories' | 'jobs' | 'evaluations' | 'configs'>('users')
 
   // Users state
   const [users, setUsers] = useState<User[]>([])
@@ -537,6 +538,7 @@ export default function AdminPage() {
                 {activeSection === 'skills' && '技能管理'}
                 {activeSection === 'categories' && '類別管理'}
                 {activeSection === 'jobs' && '職位管理'}
+                {activeSection === 'configs' && '系統設定'}
               </h1>
             </div>
             {activeSection === 'users' && (
@@ -1091,6 +1093,10 @@ export default function AdminPage() {
 
             {activeSection === 'jobs' && (
               <AdminJobList />
+            )}
+
+            {activeSection === 'configs' && (
+              <AdminConfigList />
             )}
 
       {/* 新增使用者對話框 */}

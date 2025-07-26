@@ -17,6 +17,7 @@ const skillRoutes = require("./routes/skill.routes");
 const skillCategoryRoutes = require("./routes/skill-category.routes");
 const jobRoutes = require("./routes/job.routes");
 const csvImportRoutes = require("./routes/csv-import.routes");
+const configRoutes = require("./routes/config.routes");
 
 // Initialize express app
 const app = express();
@@ -72,6 +73,7 @@ app.use("/api/skills", skillRoutes);
 app.use("/api/skill-categories", skillCategoryRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/csv-import", csvImportRoutes);
+app.use("/api/config", configRoutes);
 
 // Make io available to routes
 app.set("io", io);

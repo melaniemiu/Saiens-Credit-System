@@ -4,8 +4,9 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { Home, LogOut, Menu, Users, CreditCard, Building2, Brain, Briefcase, ClipboardCheck, Tag } from "lucide-react"
+import { Home, LogOut, Menu, Users, CreditCard, Building2, Brain, Briefcase, ClipboardCheck, Tag, Settings } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
+import { useSystemName } from "@/hooks/use-system-config"
 
 export default function AdminLayout({
   children,
@@ -15,6 +16,7 @@ export default function AdminLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState('users')
   const { logout } = useAuth()
+  const { systemName, loading } = useSystemName()
 
   useEffect(() => {
     // Listen for section changes to update active state
@@ -65,6 +67,11 @@ export default function AdminLayout({
       label: '職位管理',
       icon: Briefcase,
     },
+    {
+      id: 'configs',
+      label: '系統設定',
+      icon: Settings,
+    },
   ]
 
   return (
@@ -74,7 +81,9 @@ export default function AdminLayout({
         {/* Sidebar Header */}
         <div className="flex items-center h-16 px-6 border-b border-gray-200">
           <Link href="/dashboard" className="flex items-center">
-            <h1 className="text-lg font-bold gradient-text">山恩互動表彰系統</h1>
+            <h1 className="text-lg font-bold gradient-text">
+              {loading ? "山恩互動表彰系統" : systemName}
+            </h1>
           </Link>
         </div>
 
@@ -126,7 +135,9 @@ export default function AdminLayout({
         <div className="md:hidden bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between h-16 px-4">
             <Link href="/dashboard" className="flex items-center">
-              <h1 className="text-lg font-bold gradient-text">山恩互動表彰系統</h1>
+              <h1 className="text-lg font-bold gradient-text">
+                {loading ? "山恩互動表彰系統" : systemName}
+              </h1>
             </Link>
             
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>

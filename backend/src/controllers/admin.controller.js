@@ -1,4 +1,4 @@
-const { User, Credit, Department, Job, UserSkill, JobSkill, Skill } = require("../models");
+const { User, Credit, Department, Job, UserSkill, JobSkill, Skill, Config } = require("../models");
 const { Op } = require("sequelize");
 
 // Get all users with filtering and pagination
@@ -158,6 +158,9 @@ exports.createUser = async (req, res, next) => {
       });
     }
 
+    // Get default daily credit limit from config
+    const defaultDailyCreditLimit = await Config.getConfigValue('default_daily_credit_limit', 5);
+    
     // Create the user
     const user = await User.create({
       name,
@@ -165,7 +168,8 @@ exports.createUser = async (req, res, next) => {
       employeeId,
       role: role || "user",
       departmentId,
-      remainingDailyCredits: process.env.DAILY_CREDIT_LIMIT || 5,
+      dailyCreditLimit: defaultDailyCreditLimit,
+      remainingDailyCredits: defaultDailyCreditLimit,
       dailyCreditResetDate: new Date(),
     });
 

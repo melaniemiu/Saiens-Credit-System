@@ -1234,6 +1234,144 @@ export const csvApi = {
   },
 };
 
+// Config API
+export const configApi = {
+  // Get all configs (admin only)
+  getConfigs: async (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    category?: string;
+    sortField?: string;
+    sortOrder?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page.toString());
+    if (params.limit) query.append('limit', params.limit.toString());
+    if (params.search) query.append('search', params.search);
+    if (params.category && params.category !== 'all') query.append('category', params.category);
+    if (params.sortField) query.append('sortField', params.sortField);
+    if (params.sortOrder) query.append('sortOrder', params.sortOrder);
+
+    return fetchApi<{
+      configs: any[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+    }>(`/config?${query.toString()}`, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Get config categories
+  getConfigCategories: async () => {
+    return fetchApi<{
+      success: boolean;
+      categories: string[];
+    }>('/config/meta/categories', {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Get config by key (admin only)
+  getConfigByKey: async (key: string) => {
+    return fetchApi<{
+      success: boolean;
+      config: any;
+    }>(`/config/${key}`, {
+      method: 'GET',
+      headers: createHeaders(),
+    });
+  },
+
+  // Get public config value
+  getPublicConfigValue: async (key: string) => {
+    return fetchApi<{
+      success: boolean;
+      key: string;
+      value: any;
+    }>(`/config/public/${key}`, {
+      method: 'GET',
+      headers: createHeaders(false), // No auth required for public endpoint
+    });
+  },
+
+  // Create config (admin only)
+  createConfig: async (configData: {
+    key: string;
+    value: string;
+    type: 'string' | 'number' | 'boolean' | 'json';
+    description?: string;
+    category?: string;
+    isEditable?: boolean;
+  }) => {
+    return fetchApi<{
+      success: boolean;
+      message: string;
+      config: any;
+    }>('/config', {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify(configData),
+    });
+  },
+
+  // Update config (admin only)
+  updateConfig: async (key: string, configData: {
+    value?: string;
+    type?: 'string' | 'number' | 'boolean' | 'json';
+    description?: string;
+    category?: string;
+    isEditable?: boolean;
+  }) => {
+    return fetchApi<{
+      success: boolean;
+      message: string;
+      config: any;
+    }>(`/config/${key}`, {
+      method: 'PUT',
+      headers: createHeaders(),
+      body: JSON.stringify(configData),
+    });
+  },
+
+  // Delete config (admin only)
+  deleteConfig: async (key: string) => {
+    return fetchApi<{
+      success: boolean;
+      message: string;
+    }>(`/config/${key}`, {
+      method: 'DELETE',
+      headers: createHeaders(),
+    });
+  },
+
+  // Bulk update configs (admin only)
+  bulkUpdateConfigs: async (configs: Array<{
+    key: string;
+    value: string;
+    type?: string;
+    description?: string;
+    category?: string;
+  }>) => {
+    return fetchApi<{
+      success: boolean;
+      message: string;
+      results: any[];
+      errors: any[];
+    }>('/config/bulk', {
+      method: 'POST',
+      headers: createHeaders(),
+      body: JSON.stringify({ configs }),
+    });
+  },
+};
+
 export default {
   authApi,
   userApi,
@@ -1241,6 +1379,7 @@ export default {
   departmentApi,
   skillApi,
   csvApi,
+  configApi,
   setAuthToken,
   removeAuthToken,
 };

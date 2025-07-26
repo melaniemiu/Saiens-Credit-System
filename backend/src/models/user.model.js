@@ -70,11 +70,11 @@ module.exports = (sequelize, DataTypes) => {
     },
     remainingDailyCredits: {
       type: DataTypes.INTEGER,
-      defaultValue: 5 // Default daily credit limit
+      defaultValue: 5 // Will be set from config in controllers
     },
     dailyCreditLimit: {
       type: DataTypes.INTEGER,
-      defaultValue: 5, // Default daily credit limit per user
+      defaultValue: 5, // Will be set from config in controllers
       allowNull: false
     },
     dailyCreditResetDate: {
@@ -113,6 +113,17 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     return Promise.resolve(this);
+  };
+
+  // Static method to get default daily credit limit from config
+  User.getDefaultDailyCreditLimit = async function() {
+    try {
+      const { Config } = require('./index');
+      return await Config.getConfigValue('default_daily_credit_limit', 5);
+    } catch (error) {
+      console.warn('Failed to get default daily credit limit from config, using fallback:', error.message);
+      return 5;
+    }
   };
 
   return User;

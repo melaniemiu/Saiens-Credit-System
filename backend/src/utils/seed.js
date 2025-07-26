@@ -1,6 +1,6 @@
 const dotenv = require("dotenv");
 dotenv.config();
-const { sequelize, Department, User, Job, Skill, JobSkill, UserSkill, SkillDepartment } = require("../models");
+const { sequelize, Department, User, Job, Skill, JobSkill, UserSkill, SkillDepartment, Config } = require("../models");
 const { parseSkillsCsv } = require("./parse-skills-csv");
 // Seeds the database with initial data
 async function seed() {
@@ -729,6 +729,103 @@ async function seed() {
       }
     } else {
       console.log(`Found ${existingUserSkillCount} existing user skill progress records, skipping creation`);
+    }
+
+    // Seed default configurations
+    const existingConfigCount = await Config.count();
+    if (existingConfigCount === 0 || forceDrop) {
+      console.log("Creating default system configurations...");
+      
+      const defaultConfigs = [
+        {
+          key: 'system_name',
+          value: '山恩互動表彰系統',
+          type: 'string',
+          description: 'System display name shown throughout the application',
+          category: 'system',
+          isEditable: true
+        },
+        {
+          key: 'system_name_en',
+          value: 'Saiens Interactive Recognition System',
+          type: 'string',
+          description: 'English system name for international use',
+          category: 'system',
+          isEditable: true
+        },
+        {
+          key: 'default_daily_credit_limit',
+          value: '5',
+          type: 'number',
+          description: 'Default daily credit limit for new users',
+          category: 'credits',
+          isEditable: true
+        },
+        {
+          key: 'use_mock_api',
+          value: 'false',
+          type: 'boolean',
+          description: 'Whether to use mock API responses for development/testing',
+          category: 'development',
+          isEditable: true
+        },
+        {
+          key: 'enable_real_time_notifications',
+          value: 'true',
+          type: 'boolean',
+          description: 'Enable Socket.IO real-time notifications',
+          category: 'features',
+          isEditable: true
+        },
+        {
+          key: 'max_bulk_credit_recipients',
+          value: '10',
+          type: 'number',
+          description: 'Maximum number of recipients for bulk credit operations',
+          category: 'credits',
+          isEditable: true
+        },
+        {
+          key: 'credit_export_format',
+          value: 'csv',
+          type: 'string',
+          description: 'Default format for credit data exports (csv, xlsx)',
+          category: 'admin',
+          isEditable: true
+        },
+        {
+          key: 'profile_picture_max_size',
+          value: '5242880',
+          type: 'number',
+          description: 'Maximum profile picture size in bytes (5MB)',
+          category: 'user',
+          isEditable: true
+        },
+        {
+          key: 'maintenance_mode',
+          value: 'false',
+          type: 'boolean',
+          description: 'Enable maintenance mode to temporarily disable user access',
+          category: 'system',
+          isEditable: true
+        },
+        {
+          key: 'skill_tree_theme',
+          value: 'default',
+          type: 'string',
+          description: 'Theme for the skill tree visualization (default, dark, colorful)',
+          category: 'ui',
+          isEditable: true
+        }
+      ];
+
+      for (const configData of defaultConfigs) {
+        await Config.create(configData);
+      }
+
+      console.log(`Created ${defaultConfigs.length} default configurations`);
+    } else {
+      console.log(`Found ${existingConfigCount} existing configurations, skipping default config creation`);
     }
 
     console.log("Seed completed successfully");

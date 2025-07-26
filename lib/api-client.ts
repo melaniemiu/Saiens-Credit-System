@@ -11,7 +11,8 @@ import {
   adminApi,
   jobApi,
   promotionApi,
-  csvApi
+  csvApi,
+  configApi
 } from './api'
 
 // Unified API client interface
@@ -99,6 +100,26 @@ export interface ApiClient {
   importDepartments: typeof csvApi.importDepartments
   importJobs: typeof csvApi.importJobs
   downloadExample: typeof csvApi.downloadExample
+  
+  // Config management
+  getConfigs: typeof configApi.getConfigs
+  getConfigCategories: typeof configApi.getConfigCategories
+  getConfigByKey: typeof configApi.getConfigByKey
+  getPublicConfigValue: typeof configApi.getPublicConfigValue
+  createConfig: typeof configApi.createConfig
+  updateConfig: typeof configApi.updateConfig
+  deleteConfig: typeof configApi.deleteConfig
+  bulkUpdateConfigs: typeof configApi.bulkUpdateConfigs
+  
+  // Special config methods that always use real API
+  getConfigsReal: typeof configApi.getConfigs
+  getConfigCategoriesReal: typeof configApi.getConfigCategories
+  getConfigByKeyReal: typeof configApi.getConfigByKey
+  getPublicConfigValueReal: typeof configApi.getPublicConfigValue
+  createConfigReal: typeof configApi.createConfig
+  updateConfigReal: typeof configApi.updateConfig
+  deleteConfigReal: typeof configApi.deleteConfig
+  bulkUpdateConfigsReal: typeof configApi.bulkUpdateConfigs
 }
 
 // Mock API client adapter (converts mock responses to match real API format)
@@ -564,7 +585,49 @@ const createMockApiClient = (): ApiClient => ({
   importSkills: async (file: File) => ({ data: { message: 'Mock skills imported' }, status: 200 }),
   importDepartments: async (file: File) => ({ data: { message: 'Mock departments imported' }, status: 200 }),
   importJobs: async (file: File) => ({ data: { message: 'Mock jobs imported' }, status: 200 }),
-  downloadExample: async (type: string) => { console.log('Mock CSV download:', type) }
+  downloadExample: async (type: string) => { console.log('Mock CSV download:', type) },
+  
+  // Config management (mock)
+  getConfigs: async (params: any) => ({ 
+    data: { 
+      configs: [
+        { id: '1', key: 'system_name', value: '山恩互動表彰系統', parsedValue: '山恩互動表彰系統', type: 'string', category: 'system', description: 'System name', isEditable: true },
+        { id: '2', key: 'default_daily_credit_limit', value: '5', parsedValue: 5, type: 'number', category: 'credits', description: 'Daily credit limit', isEditable: true }
+      ], 
+      pagination: { page: 1, limit: 10, total: 2, totalPages: 1 } 
+    }, 
+    status: 200 
+  }),
+  getConfigCategories: async () => ({ data: { success: true, categories: ['system', 'credits', 'ui'] }, status: 200 }),
+  getConfigByKey: async (key: string) => ({ data: { success: true, config: { id: '1', key, value: 'mock-value', parsedValue: 'mock-value', type: 'string' } }, status: 200 }),
+  getPublicConfigValue: async (key: string) => {
+    // Return realistic mock values for each config
+    const mockConfigValues: Record<string, any> = {
+      'system_name': '山恩互動表彰系統 (Mock)',
+      'system_name_en': 'Saiens Interactive Recognition System (Mock)',
+      'use_mock_api': true,
+      'default_daily_credit_limit': 10,
+      'enable_real_time_notifications': true,
+      'maintenance_mode': false
+    }
+    
+    const value = mockConfigValues[key] || 'mock-value'
+    return { data: { success: true, key, value }, status: 200 }
+  },
+  createConfig: async (configData: any) => ({ data: { success: true, message: 'Mock config created', config: { ...configData, id: 'mock-id' } }, status: 201 }),
+  updateConfig: async (key: string, configData: any) => ({ data: { success: true, message: 'Mock config updated', config: { key, ...configData, id: 'mock-id' } }, status: 200 }),
+  deleteConfig: async (key: string) => ({ data: { success: true, message: 'Mock config deleted' }, status: 200 }),
+  bulkUpdateConfigs: async (configs: any[]) => ({ data: { success: true, message: 'Mock configs updated', results: configs.map(c => ({ key: c.key, success: true })), errors: [] }, status: 200 }),
+  
+  // Special config methods that always use real API (even in mock mode)
+  getConfigsReal: configApi.getConfigs,
+  getConfigCategoriesReal: configApi.getConfigCategories,
+  getConfigByKeyReal: configApi.getConfigByKey,
+  getPublicConfigValueReal: configApi.getPublicConfigValue,
+  createConfigReal: configApi.createConfig,
+  updateConfigReal: configApi.updateConfig,
+  deleteConfigReal: configApi.deleteConfig,
+  bulkUpdateConfigsReal: configApi.bulkUpdateConfigs
 })
 
 // Real API client adapter (uses existing API functions)
@@ -651,17 +714,85 @@ const createRealApiClient = (): ApiClient => ({
   importSkills: csvApi.importSkills,
   importDepartments: csvApi.importDepartments,
   importJobs: csvApi.importJobs,
-  downloadExample: csvApi.downloadExample
+  downloadExample: csvApi.downloadExample,
+  
+  // Config management
+  getConfigs: configApi.getConfigs,
+  getConfigCategories: configApi.getConfigCategories,
+  getConfigByKey: configApi.getConfigByKey,
+  getPublicConfigValue: configApi.getPublicConfigValue,
+  createConfig: configApi.createConfig,
+  updateConfig: configApi.updateConfig,
+  deleteConfig: configApi.deleteConfig,
+  bulkUpdateConfigs: configApi.bulkUpdateConfigs,
+  
+  // Special config methods that always use real API
+  getConfigsReal: configApi.getConfigs,
+  getConfigCategoriesReal: configApi.getConfigCategories,
+  getConfigByKeyReal: configApi.getConfigByKey,
+  getPublicConfigValueReal: configApi.getPublicConfigValue,
+  createConfigReal: configApi.createConfig,
+  updateConfigReal: configApi.updateConfig,
+  deleteConfigReal: configApi.deleteConfig,
+  bulkUpdateConfigsReal: configApi.bulkUpdateConfigs
 })
 
-// Create and export the unified API client
-export const apiClient: ApiClient = API_CONFIG.useMockApi 
-  ? createMockApiClient() 
-  : createRealApiClient()
+// Global state for dynamic API switching
+let currentUseMockApi = API_CONFIG.useMockApi
+let mockClient: ApiClient | null = null
+let realClient: ApiClient | null = null
 
-// Log the current API mode
+// Lazy initialization to avoid circular dependencies
+const getMockClient = (): ApiClient => {
+  if (!mockClient) {
+    mockClient = createMockApiClient()
+  }
+  return mockClient
+}
+
+const getRealClient = (): ApiClient => {
+  if (!realClient) {
+    realClient = createRealApiClient()
+  }
+  return realClient
+}
+
+// Function to update the mock API setting
+export const setUseMockApi = (useMock: boolean) => {
+  const wasChanged = currentUseMockApi !== useMock
+  currentUseMockApi = useMock
+  
+  if (wasChanged && typeof window !== 'undefined' && API_CONFIG.enableMockLogs) {
+    console.log(`🎭 API Client switched to ${useMock ? 'MOCK' : 'REAL'} mode`)
+  }
+}
+
+// Dynamic API client that switches based on current setting
+const createDynamicApiClient = (): ApiClient => {
+  const handler: ProxyHandler<ApiClient> = {
+    get(target, prop) {
+      const client = currentUseMockApi ? getMockClient() : getRealClient()
+      const value = client[prop as keyof ApiClient]
+      
+      // Bind methods to their original client context
+      if (typeof value === 'function') {
+        return value.bind(client)
+      }
+      
+      return value
+    }
+  }
+  
+  // Create a proxy that delegates to the appropriate client
+  return new Proxy({} as ApiClient, handler)
+}
+
+// Create and export the unified API client
+export const apiClient: ApiClient = createDynamicApiClient()
+
+// Log the initial API mode
 if (typeof window !== 'undefined' && API_CONFIG.enableMockLogs) {
-  console.log(`🎭 API Client initialized in ${API_CONFIG.useMockApi ? 'MOCK' : 'REAL'} mode`)
+  console.log(`🎭 API Client initialized in ${currentUseMockApi ? 'MOCK' : 'REAL'} mode (dynamic)`)
 }
 
 // Export the client as default
