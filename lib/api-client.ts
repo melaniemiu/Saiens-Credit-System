@@ -56,8 +56,8 @@ export interface ApiClient {
   
   // Skill Prerequisites management
   getSkillPrerequisites: (skillId: string) => Promise<any>
-  addSkillPrerequisite: (skillId: string, data: { prerequisiteSkillId: string, isRequired?: boolean }) => Promise<any>
-  updateSkillPrerequisite: (skillId: string, prerequisiteSkillId: string, data: { isRequired: boolean }) => Promise<any>
+  addSkillPrerequisite: (skillId: string, data: { prerequisiteSkillId: string }) => Promise<any>
+  updateSkillPrerequisite: (skillId: string, prerequisiteSkillId: string, data: {}) => Promise<any>
   removeSkillPrerequisite: (skillId: string, prerequisiteSkillId: string) => Promise<any>
   
   // Skill Categories management
@@ -591,10 +591,12 @@ const createMockApiClient = (): ApiClient => ({
   getConfigs: async (params: any) => ({ 
     data: { 
       configs: [
-        { id: '1', key: 'system_name', value: '山恩互動表彰系統', parsedValue: '山恩互動表彰系統', type: 'string', category: 'system', description: 'System name', isEditable: true },
-        { id: '2', key: 'default_daily_credit_limit', value: '5', parsedValue: 5, type: 'number', category: 'credits', description: 'Daily credit limit', isEditable: true }
+        { id: '1', key: 'system_name', value: '山恩互動表彰系統 (Mock)', parsedValue: '山恩互動表彰系統 (Mock)', type: 'string', category: 'system', description: 'System display name', isEditable: true },
+        { id: '2', key: 'use_mock_api', value: 'true', parsedValue: true, type: 'boolean', category: 'development', description: 'Whether to use mock API responses', isEditable: true },
+        { id: '3', key: 'default_daily_credit_limit', value: '10', parsedValue: 10, type: 'number', category: 'credits', description: 'Default daily credit limit for new users', isEditable: true },
+        { id: '4', key: 'maintenance_mode', value: 'false', parsedValue: false, type: 'boolean', category: 'system', description: 'Enable maintenance mode', isEditable: true }
       ], 
-      pagination: { page: 1, limit: 10, total: 2, totalPages: 1 } 
+      pagination: { page: 1, limit: 10, total: 4, totalPages: 1 } 
     }, 
     status: 200 
   }),

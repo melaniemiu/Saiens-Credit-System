@@ -1,4 +1,4 @@
-const { Skill, SkillCategory, UserSkill, Job, JobSkill, User, Department, SkillDepartment, SkillPrerequisite } = require('../models');
+const { Skill, SkillCategory, UserSkill, Job, JobSkill, User, Department, SkillPrerequisite } = require('../models');
 const { Op, sequelize } = require('sequelize');
 const { sequelize: dbInstance } = require('../models');
 
@@ -403,7 +403,6 @@ exports.getAdminSkills = async (req, res, next) => {
       limit = 10, 
       search = '', 
       category = '',
-      departmentId = '',
       sortField = 'name', 
       sortOrder = 'ASC' 
     } = req.query;
@@ -417,7 +416,7 @@ exports.getAdminSkills = async (req, res, next) => {
         { name: { [Op.iLike]: `%${search}%` } }
       ];
     }
-    // Build include clause for category, department filter, and skill relationships
+    // Build include clause for category and skill relationships
     const includeClause = [
       {
         model: SkillCategory,
@@ -427,13 +426,6 @@ exports.getAdminSkills = async (req, res, next) => {
         required: !!category
       },
       {
-        model: Department,
-        as: 'departments',
-        attributes: ['id', 'name'],
-        through: { attributes: [] },
-        required: !!departmentId
-      },
-      {
         model: Job,
         as: 'jobs',
         attributes: ['id', 'name'],
@@ -441,9 +433,6 @@ exports.getAdminSkills = async (req, res, next) => {
       }
     ];
 
-    if (departmentId) {
-      includeClause[1].where = { id: departmentId };
-    }
 
     // Validate and handle sorting by fields
     const validSortFields = ['name', 'category', 'learningMethod', 'assessmentMethod', 'createdAt', 'updatedAt'];
@@ -468,7 +457,6 @@ exports.getAdminSkills = async (req, res, next) => {
     // Add counts to each skill
     const skillsWithCounts = skills.map(skill => ({
       ...skill.toJSON(),
-      departmentCount: skill.departments ? skill.departments.length : 0,
       jobCount: skill.jobs ? skill.jobs.length : 0
     }));
 
@@ -506,7 +494,6 @@ exports.createSkill = async (req, res, next) => {
       learningMethod, 
       assessmentMethod,
       syllabus,
-      departmentIds = []
     } = req.body;
 
     const categoryNameToUse = categoryName || category;
@@ -539,18 +526,6 @@ exports.createSkill = async (req, res, next) => {
       syllabus
     });
 
-    // Associate with departments if provided
-    if (departmentIds.length > 0) {
-      const validDepartments = await Department.findAll({
-        where: { id: { [Op.in]: departmentIds } }
-      });
-
-      if (validDepartments.length !== departmentIds.length) {
-        return res.status(400).json({ error: '部分部門不存在' });
-      }
-
-      await skill.setDepartments(validDepartments);
-    }
 
     // Reload with associations including the category
     const skillWithAssociations = await Skill.findByPk(skill.id, {
@@ -559,12 +534,6 @@ exports.createSkill = async (req, res, next) => {
           model: SkillCategory,
           as: 'category',
           attributes: ['id', 'name', 'color', 'icon']
-        },
-        {
-          model: Department,
-          as: 'departments',
-          attributes: ['id', 'name'],
-          through: { attributes: [] }
         }
       ]
     });
@@ -589,7 +558,6 @@ exports.updateSkill = async (req, res, next) => {
       learningMethod, 
       assessmentMethod,
       syllabus,
-      departmentIds
     } = req.body;
 
     const skill = await Skill.findByPk(id);
@@ -633,22 +601,6 @@ exports.updateSkill = async (req, res, next) => {
       syllabus: syllabus !== undefined ? syllabus : skill.syllabus
     });
 
-    // Update department associations if provided
-    if (departmentIds !== undefined) {
-      if (departmentIds.length > 0) {
-        const validDepartments = await Department.findAll({
-          where: { id: { [Op.in]: departmentIds } }
-        });
-
-        if (validDepartments.length !== departmentIds.length) {
-          return res.status(400).json({ error: '部分部門不存在' });
-        }
-
-        await skill.setDepartments(validDepartments);
-      } else {
-        await skill.setDepartments([]);
-      }
-    }
 
     // Reload with associations including the new category
     const updatedSkill = await Skill.findByPk(skill.id, {
@@ -657,12 +609,6 @@ exports.updateSkill = async (req, res, next) => {
           model: SkillCategory,
           as: 'category',
           attributes: ['id', 'name', 'color', 'icon']
-        },
-        {
-          model: Department,
-          as: 'departments',
-          attributes: ['id', 'name'],
-          through: { attributes: [] }
         }
       ]
     });
@@ -1151,7 +1097,7 @@ exports.getSkillPrerequisites = async (req, res, next) => {
 exports.addSkillPrerequisite = async (req, res, next) => {
   try {
     const { skillId } = req.params;
-    const { prerequisiteSkillId, isRequired = true } = req.body;
+    const { prerequisiteSkillId } = req.body;
     
     if (!prerequisiteSkillId) {
       return res.status(400).json({ error: '必須提供前置技能ID' });
@@ -1185,8 +1131,7 @@ exports.addSkillPrerequisite = async (req, res, next) => {
     // Create prerequisite
     await SkillPrerequisite.create({
       skillId,
-      prerequisiteSkillId,
-      isRequired
+      prerequisiteSkillId
     });
     
     res.status(201).json({ message: '前置技能新增成功' });
@@ -1216,23 +1161,10 @@ exports.removeSkillPrerequisite = async (req, res, next) => {
   }
 };
 
-// Update skill prerequisite
+// Update skill prerequisite - Disabled
 exports.updateSkillPrerequisite = async (req, res, next) => {
   try {
-    const { skillId, prerequisiteSkillId } = req.params;
-    const { isRequired } = req.body;
-    
-    const prerequisite = await SkillPrerequisite.findOne({
-      where: { skillId, prerequisiteSkillId }
-    });
-    
-    if (!prerequisite) {
-      return res.status(404).json({ error: '找不到指定的前置技能關係' });
-    }
-    
-    await prerequisite.update({ isRequired });
-    
-    res.json({ message: '前置技能更新成功' });
+    return res.status(400).json({ error: '前置技能更新功能已停用' });
   } catch (error) {
     next(error);
   }

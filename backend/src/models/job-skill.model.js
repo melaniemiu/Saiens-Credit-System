@@ -20,12 +20,6 @@ module.exports = (sequelize, DataTypes) => {
         model: 'skills',
         key: 'id'
       }
-    },
-    isRequired: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
-      comment: 'Whether this skill is required for this specific job'
     }
   }, {
     timestamps: true,

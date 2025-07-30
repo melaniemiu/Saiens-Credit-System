@@ -1,4 +1,4 @@
-const { Department, Skill, SkillDepartment, User, SkillCategory } = require('../models');
+const { Department, User } = require('../models');
 const { Op } = require('sequelize');
 
 // Get all departments
@@ -42,17 +42,6 @@ exports.getAdminDepartments = async (req, res, next) => {
       where: whereClause,
       include: [
         {
-          model: Skill,
-          as: 'skills',
-          attributes: ['id', 'name', 'categoryId'],
-          include: [{
-            model: SkillCategory,
-            as: 'category',
-            attributes: ['id', 'name', 'color']
-          }],
-          through: { attributes: [] }
-        },
-        {
           model: User,
           attributes: ['id'],
           required: false
@@ -64,10 +53,9 @@ exports.getAdminDepartments = async (req, res, next) => {
       distinct: true
     });
 
-    // Add skill count and user count to each department
+    // Add user count to each department
     const departmentsWithCounts = departments.map(dept => ({
       ...dept.toJSON(),
-      skillCount: dept.skills ? dept.skills.length : 0,
       userCount: dept.Users ? dept.Users.length : 0
     }));
 
@@ -165,17 +153,7 @@ exports.deleteDepartment = async (req, res, next) => {
 
     const department = await Department.findByPk(id, {
       include: [
-        { model: User, required: false },
-        { 
-          model: Skill, 
-          as: 'skills', 
-          required: false,
-          include: [{
-            model: SkillCategory,
-            as: 'category',
-            attributes: ['id', 'name', 'color']
-          }]
-        }
+        { model: User, required: false }
       ]
     });
 

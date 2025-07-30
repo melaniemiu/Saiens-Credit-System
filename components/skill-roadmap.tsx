@@ -21,7 +21,6 @@ interface SkillProgress {
   evaluationRequestedAt?: string
   attempts?: number
   jobLevel?: string
-  isRequired: boolean // From job-skill relationship
   Skill: {
     id: string
     name: string
@@ -118,7 +117,6 @@ export function SkillRoadmap() {
             id: jobSkill.Skill.id,
             name: jobSkill.Skill.name,
             category: jobSkill.Skill.category,
-            isRequired: jobSkill.isRequired,
             learningMethod: jobSkill.Skill.learningMethod,
             assessmentMethod: jobSkill.Skill.assessmentMethod,
             syllabus: jobSkill.Skill.syllabus,
@@ -318,65 +316,118 @@ export function SkillRoadmap() {
           </div>
         </div>
 
-        {/* Game-style Skill Tree */}
-        <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-8 overflow-x-auto min-h-[600px]">
-          {/* Background pattern */}
+        {/* Enhanced Game-style Skill Tree */}
+        <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-8 overflow-x-auto min-h-[700px]">
+          {/* Animated Background Pattern */}
           <div className="absolute inset-0 opacity-10">
-            <div className="absolute inset-0" style={{
+            <div className="absolute inset-0 animate-pulse [animation-duration:8s]" style={{
               backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.3) 1px, transparent 0)`,
               backgroundSize: '20px 20px'
             }} />
           </div>
           
+          {/* Floating Particles */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {[...Array(15)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-1 h-1 bg-white/20 rounded-full animate-float"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 10}s`,
+                  animationDuration: `${6 + Math.random() * 4}s`
+                }}
+              />
+            ))}
+          </div>
+          
           <div className="relative z-10">
             {/* Tree structure */}
-            <div className="flex flex-col items-center space-y-16">
+            <div className="flex flex-col items-center space-y-20">
               {jobLevels.map((level, levelIndex) => (
                 <div key={level.name} className="relative w-full max-w-5xl pt-8 pb-8">
-                  {/* Job Level Title */}
-                  <div className="text-center mb-8">
-                    <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-full text-white font-bold text-lg shadow-2xl ${
+                  {/* Connection Line to Previous Level */}
+                  {levelIndex > 0 && (
+                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-16">
+                      <div className="w-1 h-16 bg-gradient-to-b from-transparent via-white/30 to-transparent" />
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                        <ArrowRight className="h-4 w-4 text-white/50 rotate-90" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Job Level Title with Enhanced Animation */}
+                  <div className="text-center mb-12">
+                    <div className={`inline-flex items-center gap-3 px-8 py-4 rounded-full text-white font-bold text-xl shadow-2xl transform transition-all duration-500 hover:scale-105 ${
                       level.isCurrentLevel 
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 ring-4 ring-blue-300' 
+                        ? 'bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 ring-4 ring-blue-300 animate-pulse [animation-duration:4s] shadow-blue-500/50' 
                         : level.isCompleted 
-                        ? 'bg-gradient-to-r from-green-500 to-green-600 ring-4 ring-green-300'
+                        ? 'bg-gradient-to-r from-green-500 via-green-600 to-green-700 ring-4 ring-green-300 shadow-green-500/50'
                         : level.isLocked
-                        ? 'bg-gradient-to-r from-gray-500 to-gray-600'
-                        : 'bg-gradient-to-r from-orange-500 to-orange-600 ring-4 ring-orange-300'
+                        ? 'bg-gradient-to-r from-gray-500 to-gray-600 opacity-50'
+                        : 'bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 ring-4 ring-orange-300 shadow-orange-500/50'
                     }`}>
                       {level.isLocked ? (
-                        <Lock className="h-6 w-6" />
+                        <Lock className="h-7 w-7" />
                       ) : level.isCompleted ? (
-                        <CheckCircle className="h-6 w-6" />
+                        <CheckCircle className="h-7 w-7 animate-bounce [animation-duration:2s]" />
                       ) : level.isCurrentLevel ? (
-                        <Clock className="h-6 w-6" />
+                        <Clock className="h-7 w-7 animate-spin [animation-duration:5s]" />
                       ) : (
-                        <Play className="h-6 w-6" />
+                        <Play className="h-7 w-7" />
                       )}
-                      <span>{level.name}</span>
+                      <span className="tracking-wide">{level.name}</span>
+                      
+                      {/* Progress indicator */}
+                      {!level.isLocked && level.skills.length > 0 && (
+                        <div className="ml-2 flex items-center gap-1">
+                          <span className="text-sm opacity-75">
+                            {level.skills.filter(s => s.status === 'completed' && s.score && s.score >= 60).length}/{level.skills.length}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     
                     {level.isCurrentLevel && (
-                      <div className="mt-2">
-                        <Badge className="bg-yellow-500 text-black font-bold">
-                          目前等級
+                      <div className="mt-3 animate-bounce [animation-duration:2s]">
+                        <Badge className="bg-yellow-500 text-black font-bold text-sm px-3 py-1">
+                          🎯 目前等級
                         </Badge>
                       </div>
                     )}
                   </div>
 
-                  {/* Skill Nodes */}
+                  {/* Enhanced Skill Nodes with Connection Lines */}
                   {!level.isLocked && level.skills.length > 0 && (
                     <div className="relative">
-                      {/* Skills arranged in a tree pattern - fixed 3 columns with proper alignment */}
-                      <div className="grid grid-cols-3 gap-8 justify-items-center w-full mx-auto" style={{width: '480px'}}>
+                      {/* Connection lines between skills in the same level */}
+                      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{zIndex: 1}}>
+                        <defs>
+                          <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="rgba(255,255,255,0)" />
+                            <stop offset="50%" stopColor="rgba(255,255,255,0.3)" />
+                            <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                          </linearGradient>
+                        </defs>
+                        {/* Horizontal connection lines */}
+                        {level.skills.length > 1 && (
+                          <line 
+                            x1="20%" 
+                            y1="50%" 
+                            x2="80%" 
+                            y2="50%" 
+                            stroke="url(#connectionGradient)" 
+                            strokeWidth="2"
+                            className="animate-pulse [animation-duration:4s]"
+                          />
+                        )}
+                      </svg>
+
+                      {/* Skills arranged in enhanced tree pattern */}
+                      <div className="relative z-10 grid grid-cols-3 gap-12 justify-items-center w-full mx-auto" style={{width: '540px'}}>
                         {level.skills
-                          .sort((a, b) => {
-                            // Sort by required status first (job-level 必修 first, then 選修)
-                            if (a.isRequired && !b.isRequired) return -1
-                            if (!a.isRequired && b.isRequired) return 1
-                            return a.Skill.name.localeCompare(b.Skill.name) // Then by name
-                          })
+                          .sort((a, b) => a.Skill.name.localeCompare(b.Skill.name))
                           .map((skill, skillIndex) => {
                           const isCompleted = skill.status === 'completed' && skill.score && skill.score >= 60
                           const isInProgress = skill.status === 'in_progress' || (skill.status === 'completed' && (!skill.score || skill.score < 60))
@@ -385,65 +436,93 @@ export function SkillRoadmap() {
                           return (
                             <div
                               key={skill.id}
-                              className="relative group flex flex-col items-center w-full"
+                              className="relative group flex flex-col items-center w-full transform transition-all duration-500 hover:scale-110 hover:-translate-y-2"
                               onClick={() => handleSkillClick(skill)}
                             >
-                              {/* Skill Node */}
-                              <div className={`relative w-20 h-20 rounded-full border-4 flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 ${
+                              {/* Skill Node with Enhanced Effects */}
+                              <div className={`relative w-24 h-24 rounded-full border-4 flex items-center justify-center cursor-pointer transition-all duration-500 ${
                                 isCompleted
-                                  ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 border-yellow-300 shadow-lg shadow-yellow-500/50'
+                                  ? 'bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 border-yellow-300 shadow-2xl shadow-yellow-500/60 hover:shadow-yellow-400/80'
                                   : isInProgress
-                                  ? 'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-300 shadow-lg shadow-blue-500/50 animate-pulse [animation-duration:3s]'
-                                  : 'bg-gradient-to-br from-gray-600 to-gray-800 border-gray-500 opacity-60'
+                                  ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 border-blue-300 shadow-2xl shadow-blue-500/60 animate-pulse [animation-duration:3s] hover:shadow-blue-400/80'
+                                  : 'bg-gradient-to-br from-gray-600 via-gray-700 to-gray-800 border-gray-500 opacity-70 hover:opacity-90 shadow-lg shadow-gray-500/30'
                               }`}>
-                                {/* Skill Icon */}
-                                <div className="text-white">
-                                  {skill.isRequired ? (
-                                    <Award className="h-8 w-8" />
-                                  ) : (
-                                    <BookOpen className="h-8 w-8" />
-                                  )}
+                                {/* Glowing Ring Effect */}
+                                {(isCompleted || isInProgress) && (
+                                  <div className={`absolute inset-0 rounded-full border-2 ${
+                                    isCompleted 
+                                      ? 'border-yellow-300 animate-ping [animation-duration:3s]' 
+                                      : 'border-blue-300 animate-ping [animation-duration:2s]'
+                                  }`} />
+                                )}
+                                
+                                {/* Skill Icon with Animation */}
+                                <div className="text-white relative z-10">
+                                  <Award className={`h-10 w-10 ${isCompleted ? 'animate-bounce [animation-duration:2s]' : ''}`} />
                                 </div>
                                 
-                                {/* Status indicator */}
-                                <div className="absolute -top-2 -right-2">
+                                {/* Enhanced Status Indicator */}
+                                <div className="absolute -top-3 -right-3">
                                   {isCompleted && (
-                                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                                      <CheckCircle className="h-4 w-4 text-white" />
+                                    <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white animate-bounce [animation-duration:2s]">
+                                      <CheckCircle className="h-5 w-5 text-white" />
                                     </div>
                                   )}
                                   {isInProgress && (
-                                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                                      <Clock className="h-4 w-4 text-white" />
+                                    <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white animate-spin [animation-duration:4s]">
+                                      <Clock className="h-5 w-5 text-white" />
                                     </div>
                                   )}
-                                  {skill.isRequired && (
-                                    <div className="absolute -top-1 -left-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                                      <span className="text-white text-xs font-bold">必</span>
+                                  {isLocked && (
+                                    <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                                      <Lock className="h-5 w-5 text-white" />
                                     </div>
                                   )}
                                 </div>
+
+                                {/* Hover Particle Effect */}
+                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                  {[...Array(8)].map((_, i) => (
+                                    <div
+                                      key={i}
+                                      className="absolute w-1 h-1 bg-white rounded-full animate-ping"
+                                      style={{
+                                        left: `${20 + Math.random() * 60}%`,
+                                        top: `${20 + Math.random() * 60}%`,
+                                        animationDelay: `${i * 0.1}s`,
+                                        animationDuration: '1s'
+                                      }}
+                                    />
+                                  ))}
+                                </div>
                               </div>
                               
-                              {/* Skill Name */}
-                              <div className="mt-3 text-center w-full">
-                                <div className={`text-xs font-medium px-2 py-1 rounded min-h-[2.5rem] flex items-center justify-center ${
+                              {/* Enhanced Skill Name with Glow Effect */}
+                              <div className="mt-4 text-center w-full">
+                                <div className={`text-sm font-bold px-3 py-2 rounded-lg min-h-[3rem] flex items-center justify-center backdrop-blur-sm transition-all duration-300 group-hover:scale-105 ${
                                   isCompleted
-                                    ? 'text-yellow-300 bg-yellow-900/30'
+                                    ? 'text-yellow-300 bg-yellow-900/40 shadow-lg shadow-yellow-900/50 border border-yellow-600/30'
                                     : isInProgress
-                                    ? 'text-blue-300 bg-blue-900/30'
-                                    : 'text-gray-400 bg-gray-800/30'
+                                    ? 'text-blue-300 bg-blue-900/40 shadow-lg shadow-blue-900/50 border border-blue-600/30'
+                                    : 'text-gray-300 bg-gray-800/40 shadow-lg shadow-gray-800/50 border border-gray-600/30'
                                 }`}>
                                   <span className="break-words text-center leading-tight">
                                     {skill.Skill.name}
                                   </span>
                                 </div>
                                 
-                                {/* Score */}
-                                <div className="mt-2 h-6 flex items-center justify-center">
+                                {/* Enhanced Score Badge */}
+                                <div className="mt-3 h-7 flex items-center justify-center">
                                   {skill.score && (
-                                    <Badge variant="outline" className="text-xs bg-black/30 text-white border-white/30">
-                                      {skill.score}分
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`text-sm font-bold px-3 py-1 backdrop-blur-sm transition-all duration-300 ${
+                                        skill.score >= 60 
+                                          ? 'bg-green-900/50 text-green-300 border-green-400/50 shadow-lg shadow-green-900/50' 
+                                          : 'bg-red-900/50 text-red-300 border-red-400/50 shadow-lg shadow-red-900/50'
+                                      }`}
+                                    >
+                                      ⭐ {skill.score}分
                                     </Badge>
                                   )}
                                 </div>
@@ -455,14 +534,14 @@ export function SkillRoadmap() {
                     </div>
                   )}
 
-                  {/* Locked Level */}
+                  {/* Enhanced Locked Level */}
                   {level.isLocked && (
                     <div className="text-center">
-                      <div className="w-32 h-32 mx-auto bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center border-4 border-gray-600 opacity-50">
-                        <Lock className="h-12 w-12 text-gray-400" />
+                      <div className="w-36 h-36 mx-auto bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 rounded-full flex items-center justify-center border-4 border-gray-600 opacity-50 transition-all duration-500 hover:opacity-70 hover:scale-105">
+                        <Lock className="h-16 w-16 text-gray-400 animate-pulse [animation-duration:3s]" />
                       </div>
-                      <div className="mt-4 text-gray-400 text-sm">
-                        完成前一等級後解鎖
+                      <div className="mt-6 text-gray-300 text-lg font-medium">
+                        🔒 完成前一等級後解鎖
                       </div>
                     </div>
                   )}
@@ -470,6 +549,23 @@ export function SkillRoadmap() {
               ))}
             </div>
           </div>
+
+          {/* Custom CSS for animations */}
+          <style jsx>{`
+            @keyframes float {
+              0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+                opacity: 0.3;
+              }
+              50% {
+                transform: translateY(-20px) rotate(180deg);
+                opacity: 0.7;
+              }
+            }
+            .animate-float {
+              animation: float 6s ease-in-out infinite;
+            }
+          `}</style>
         </div>
 
         {/* Skill Detail Modal */}
@@ -488,22 +584,12 @@ export function SkillRoadmap() {
                           : 'bg-gradient-to-br from-gray-400 to-gray-600 border-gray-300'
                       }`}>
                         <div className="text-white">
-                          {selectedSkill.isRequired ? (
-                            <Award className="h-6 w-6" />
-                          ) : (
-                            <BookOpen className="h-6 w-6" />
-                          )}
+                          <Award className="h-6 w-6" />
                         </div>
                       </div>
                       <div>
                         <DialogTitle className="text-xl font-bold flex items-center gap-2 text-left">
                           {selectedSkill.Skill.name}
-                          {selectedSkill.isRequired && (
-                            <Badge className="bg-red-500 text-white">必</Badge>
-                          )}
-                          {!selectedSkill.isRequired && (
-                            <Badge className="bg-blue-500 text-white">選</Badge>
-                          )}
                         </DialogTitle>
                       </div>
                     </div>

@@ -11,18 +11,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Plus, Search, Edit, Trash2, Brain, Building2, BookOpen, CheckCircle, Users, GitBranch, X, ChevronDown, ChevronRight } from "lucide-react"
+import { Plus, Search, Edit, Trash2, Brain, BookOpen, CheckCircle, Users, GitBranch, X, ChevronDown, ChevronRight } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { apiClient } from "@/lib/api-client"
 import { Skeleton } from "@/components/ui/skeleton"
 import CSVImportDialog from "@/components/csv-import-dialog"
 import { CategoryComboInput, CategoryDisplay } from "@/components/ui/category-combo-input"
 
-interface Department {
-  id: string
-  name: string
-}
 
 interface SkillCategory {
   id: string
@@ -41,8 +36,6 @@ interface Skill {
   categoryId: string
   learningMethod: string
   assessmentMethod: string
-  departments: Department[]
-  departmentCount: number
   jobCount: number
   createdAt: string
   updatedAt: string
@@ -53,7 +46,6 @@ interface SkillFormData {
   categoryName: string
   learningMethod: string
   assessmentMethod: string
-  departmentIds: string[]
 }
 
 interface SkillPrerequisite {
@@ -64,13 +56,11 @@ interface SkillPrerequisite {
 
 export function AdminSkillList() {
   const [skills, setSkills] = useState<Skill[]>([])
-  const [departments, setDepartments] = useState<Department[]>([])
   const [skillCategories, setSkillCategories] = useState<SkillCategory[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("__all__")
-  const [departmentFilter, setDepartmentFilter] = useState("__all__")
   const [sortField, setSortField] = useState("name")
   const [sortOrder, setSortOrder] = useState("ASC")
   const [page, setPage] = useState(1)
@@ -88,8 +78,7 @@ export function AdminSkillList() {
     name: "",
     categoryName: "",
     learningMethod: "",
-    assessmentMethod: "",
-    departmentIds: []
+    assessmentMethod: ""
   })
   const { toast } = useToast()
 
@@ -101,7 +90,6 @@ export function AdminSkillList() {
         limit: 10,
         search: searchTerm,
         category: categoryFilter === "__all__" ? "" : categoryFilter,
-        departmentId: departmentFilter === "__all__" ? "" : departmentFilter,
         sortField,
         sortOrder
       })
@@ -126,16 +114,6 @@ export function AdminSkillList() {
     }
   }
 
-  const fetchDepartments = async () => {
-    try {
-      const response = await apiClient.getDepartments()
-      if (response.data) {
-        setDepartments(response.data.departments)
-      }
-    } catch (error) {
-      console.error("Failed to fetch departments:", error)
-    }
-  }
 
   const fetchSkillCategories = async () => {
     try {
@@ -149,14 +127,13 @@ export function AdminSkillList() {
   }
 
   useEffect(() => {
-    fetchDepartments()
     fetchSkillCategories()
   }, [])
 
 
   useEffect(() => {
     fetchSkills()
-  }, [page, searchTerm, categoryFilter, departmentFilter, sortField, sortOrder])
+  }, [page, searchTerm, categoryFilter, sortField, sortOrder])
 
   const handleSearch = (value: string) => {
     setSearchTerm(value)
@@ -178,8 +155,7 @@ export function AdminSkillList() {
       name: "",
       categoryName: "",
       learningMethod: "",
-      assessmentMethod: "",
-      departmentIds: []
+      assessmentMethod: ""
     })
   }
 
@@ -188,14 +164,6 @@ export function AdminSkillList() {
     setSkillCategories(prev => [...prev, newCategory])
   }
 
-  const handleDepartmentToggle = (departmentId: string, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      departmentIds: checked
-        ? [...prev.departmentIds, departmentId]
-        : prev.departmentIds.filter(id => id !== departmentId)
-    }))
-  }
 
   const handleCreate = async () => {
     try {
@@ -238,7 +206,6 @@ export function AdminSkillList() {
       categoryName: skill.category?.name || '',
       learningMethod: skill.learningMethod,
       assessmentMethod: skill.assessmentMethod,
-      departmentIds: skill.departments?.map(d => d.id) || []
     })
     setIsEditDialogOpen(true)
   }
@@ -321,8 +288,7 @@ export function AdminSkillList() {
     
     try {
       await apiClient.addSkillPrerequisite(managingSkill.id, {
-        prerequisiteSkillId,
-        isRequired: true
+        prerequisiteSkillId
       })
       
       toast({
@@ -406,7 +372,7 @@ export function AdminSkillList() {
   return (
     <Card>
       <CardHeader className="px-4 sm:px-6 py-3">
-        <CardDescription className="text-sm">管理技能庫與部門關聯</CardDescription>
+        <CardDescription className="text-sm">管理技能庫</CardDescription>
       </CardHeader>
       <CardContent className="px-4 sm:px-6 pb-6">
         <div className="space-y-4">
@@ -499,12 +465,6 @@ export function AdminSkillList() {
                       <TableHead>評估方式</TableHead>
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1">
-                          <Building2 className="h-4 w-4" />
-                          部門數
-                        </div>
-                      </TableHead>
-                      <TableHead className="text-center">
-                        <div className="flex items-center justify-center gap-1">
                           <Users className="h-4 w-4" />
                           職位數
                         </div>
@@ -553,11 +513,6 @@ export function AdminSkillList() {
                               <CheckCircle className="h-3 w-3" />
                               <span className="text-sm">{skill.assessmentMethod}</span>
                             </div>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="outline">
-                              {skill.departmentCount || skill.departments?.length || 0}
-                            </Badge>
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge variant="outline">
@@ -657,7 +612,7 @@ export function AdminSkillList() {
                             </Badge>
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            {skill.departmentCount || skill.departments?.length || 0} 部門 · {skill.jobCount} 職位
+                            {skill.jobCount} 職位
                           </div>
                         </div>
                       </div>
@@ -747,7 +702,7 @@ export function AdminSkillList() {
           <DialogHeader>
             <DialogTitle>新增技能</DialogTitle>
             <DialogDescription>
-              創建新的技能并指定所屬部門
+              創建新的技能
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -808,23 +763,6 @@ export function AdminSkillList() {
             </div>
 
 
-            <div>
-              <Label>所屬部門</Label>
-              <div className="mt-2 space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
-                {departments.map((department) => (
-                  <div key={department.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`dept-${department.id}`}
-                      checked={formData.departmentIds.includes(department.id)}
-                      onCheckedChange={(checked) => handleDepartmentToggle(department.id, !!checked)}
-                    />
-                    <Label htmlFor={`dept-${department.id}`} className="text-sm">
-                      {department.name}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
@@ -843,7 +781,7 @@ export function AdminSkillList() {
           <DialogHeader>
             <DialogTitle>編輯技能</DialogTitle>
             <DialogDescription>
-              修改技能資訊與部門關聯
+              修改技能資訊
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -904,23 +842,6 @@ export function AdminSkillList() {
             </div>
 
 
-            <div>
-              <Label>所屬部門</Label>
-              <div className="mt-2 space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
-                {departments.map((department) => (
-                  <div key={department.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`edit-dept-${department.id}`}
-                      checked={formData.departmentIds.includes(department.id)}
-                      onCheckedChange={(checked) => handleDepartmentToggle(department.id, !!checked)}
-                    />
-                    <Label htmlFor={`edit-dept-${department.id}`} className="text-sm">
-                      {department.name}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>

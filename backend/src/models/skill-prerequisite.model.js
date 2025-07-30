@@ -22,12 +22,6 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id'
       },
       comment: 'The skill that is required as a prerequisite'
-    },
-    isRequired: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: true,
-      comment: 'Whether this prerequisite is mandatory or optional'
     }
   }, {
     timestamps: true,

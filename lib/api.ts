@@ -753,7 +753,6 @@ export const skillApi = {
   createSkill: async (data: {
     name: string;
     category: string;
-    isRequired?: boolean;
     learningMethod: string;
     assessmentMethod: string;
     departmentIds?: string[];
@@ -769,7 +768,6 @@ export const skillApi = {
   updateSkill: async (id: string, data: {
     name?: string;
     category?: string;
-    isRequired?: boolean;
     learningMethod?: string;
     assessmentMethod?: string;
     departmentIds?: string[];
@@ -798,7 +796,7 @@ export const skillApi = {
   },
 
   // Add skill prerequisite
-  addSkillPrerequisite: async (skillId: string, data: { prerequisiteSkillId: string, isRequired?: boolean }) => {
+  addSkillPrerequisite: async (skillId: string, data: { prerequisiteSkillId: string }) => {
     return fetchApi<{ message: string }>(`/admin/skills/${skillId}/prerequisites`, {
       method: 'POST',
       headers: createHeaders(),
@@ -807,7 +805,7 @@ export const skillApi = {
   },
 
   // Update skill prerequisite
-  updateSkillPrerequisite: async (skillId: string, prerequisiteSkillId: string, data: { isRequired: boolean }) => {
+  updateSkillPrerequisite: async (skillId: string, prerequisiteSkillId: string, data: {}) => {
     return fetchApi<{ message: string }>(`/admin/skills/${skillId}/prerequisites/${prerequisiteSkillId}`, {
       method: 'PUT',
       headers: createHeaders(),
@@ -1005,7 +1003,7 @@ export const jobApi = {
   createJob: async (data: { 
     name: string; 
     departmentId: string; 
-    skillIds?: Array<{ id: string; isRequired: boolean }> 
+    skillIds?: Array<{ id: string }> 
   }) => {
     return fetchApi<{ message: string; job: any }>('/admin/jobs', {
       method: 'POST',
@@ -1018,7 +1016,7 @@ export const jobApi = {
   updateJob: async (id: string, data: {
     name?: string;
     departmentId?: string;
-    skillIds?: Array<{ id: string; isRequired: boolean }>;
+    skillIds?: Array<{ id: string }>;
   }) => {
     return fetchApi<{ message: string; job: any }>(`/admin/jobs/${id}`, {
       method: 'PUT',
