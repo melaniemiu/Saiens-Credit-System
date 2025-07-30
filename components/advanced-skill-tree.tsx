@@ -20,7 +20,7 @@ import {
 import { 
   CheckCircle, Clock, Play, Award, ArrowRight, Lock, BookOpen, 
   Calendar, Target, Star, Zap, Shield, Sword, Crown, 
-  TrendingUp, Eye, ZoomIn, ZoomOut, RotateCcw, Sparkles
+  TrendingUp, Eye, ZoomIn, ZoomOut, RotateCcw, Sparkles, BarChart3
 } from "lucide-react"
 import React from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -76,6 +76,7 @@ export function AdvancedSkillTree() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedSkill, setSelectedSkill] = useState<SkillProgress | null>(null)
+  const [selectedSkillLocked, setSelectedSkillLocked] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(1)
   const [viewMode, setViewMode] = useState<'tree'>('tree')
@@ -83,8 +84,9 @@ export function AdvancedSkillTree() {
   const [activeTab, setActiveTab] = useState<string>('all')
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const handleSkillClick = useCallback((skill: SkillProgress) => {
+  const handleSkillClick = useCallback((skill: SkillProgress, isLocked?: boolean) => {
     setSelectedSkill(skill)
+    setSelectedSkillLocked(isLocked || false)
     setIsModalOpen(true)
   }, [])
 
@@ -236,45 +238,95 @@ export function AdvancedSkillTree() {
     return SKILL_CATEGORIES[categoryName as keyof typeof SKILL_CATEGORIES] || SKILL_CATEGORIES.default
   }
 
-  // Organize skills by category with prerequisite ordering
+  // Organize skills by category with hierarchical prerequisite rows
   const skillsByCategory = useMemo(() => {
-    const categories: { [key: string]: SkillTreeNode[] } = {}
+    const categories: { [key: string]: { nodes: SkillTreeNode[], hierarchicalRows: Array<{ depth: number; title: string; nodes: SkillTreeNode[] }> } } = {}
     
     skillNodes.forEach(node => {
       // Safely extract category name
       const category = getCategoryName(node.category)
       
       if (!categories[category]) {
-        categories[category] = []
+        categories[category] = { nodes: [], hierarchicalRows: [] }
       }
-      categories[category].push(node)
+      categories[category].nodes.push(node)
     })
 
-    // Sort skills within each category by prerequisites and job level
+    // Create hierarchical organization for each category
     Object.keys(categories).forEach(categoryKey => {
       if (typeof categoryKey === 'string') {
-        categories[categoryKey] = categories[categoryKey].sort((a, b) => {
-          // First sort by job level
-          if (a.jobLevel !== b.jobLevel) {
-            return a.jobLevel - b.jobLevel
+        const categoryNodes = categories[categoryKey].nodes
+        
+        // Calculate prerequisite depth for each skill in this category
+        const skillMap = new Map<string, SkillTreeNode>()
+        categoryNodes.forEach(node => skillMap.set(node.skill.skillId, node))
+
+        const calculateDepth = (skillId: string, visited = new Set<string>()): number => {
+          if (visited.has(skillId)) return 0 // Circular dependency protection
+          
+          const dependency = skillDependencies.find(d => d.skillId === skillId)
+          const prerequisites = dependency?.prerequisiteSkillIds || []
+          
+          if (prerequisites.length === 0) {
+            return 0 // No prerequisites = depth 0
           }
+
+          visited.add(skillId)
+          const maxPrereqDepth = Math.max(
+            0,
+            ...prerequisites.map(prereqId => {
+              // Only count prerequisites within the same category
+              const prereqNode = skillMap.get(prereqId)
+              return prereqNode ? calculateDepth(prereqId, new Set(visited)) : -1
+            }).filter(depth => depth >= 0)
+          )
+          visited.delete(skillId)
           
-          // Then sort by prerequisites (skills with fewer prerequisites come first)
-          const aDeps = skillDependencies.find(d => d.skillId === a.skill.skillId)?.prerequisiteSkillIds.length || 0
-          const bDeps = skillDependencies.find(d => d.skillId === b.skill.skillId)?.prerequisiteSkillIds.length || 0
-          
-          if (aDeps !== bDeps) {
-            return aDeps - bDeps
+          return maxPrereqDepth + 1
+        }
+
+        // Group nodes by prerequisite depth
+        const depthGroups = new Map<number, SkillTreeNode[]>()
+        categoryNodes.forEach(node => {
+          const depth = calculateDepth(node.skill.skillId)
+          if (!depthGroups.has(depth)) {
+            depthGroups.set(depth, [])
           }
-          
-          // Finally sort by skill name for consistency
-          return a.skill.Skill.name.localeCompare(b.skill.Skill.name)
+          depthGroups.get(depth)!.push(node)
         })
+
+        // Create hierarchical rows
+        const hierarchicalRows: Array<{ depth: number; title: string; nodes: SkillTreeNode[] }> = []
+        const maxDepth = Math.max(...Array.from(depthGroups.keys()))
+
+        for (let depth = 0; depth <= maxDepth; depth++) {
+          const nodesAtDepth = depthGroups.get(depth) || []
+          if (nodesAtDepth.length === 0) continue
+
+          // Sort nodes within the same depth by name
+          nodesAtDepth.sort((a, b) => a.skill.Skill.name.localeCompare(b.skill.Skill.name))
+
+          const rowTitle = depth === 0 
+            ? "基礎技能" 
+            : depth === 1 
+            ? "進階技能" 
+            : depth === 2 
+            ? "專精技能"
+            : `第 ${depth + 1} 層技能`
+
+          hierarchicalRows.push({
+            depth,
+            title: rowTitle,
+            nodes: nodesAtDepth
+          })
+        }
+
+        categories[categoryKey].hierarchicalRows = hierarchicalRows
       }
     })
 
-    // Filter out any non-string keys
-    const validCategories: { [key: string]: SkillTreeNode[] } = {}
+    // Filter out any non-string keys and return only valid categories
+    const validCategories: { [key: string]: { nodes: SkillTreeNode[], hierarchicalRows: Array<{ depth: number; title: string; nodes: SkillTreeNode[] }> } } = {}
     Object.entries(categories).forEach(([key, value]) => {
       if (typeof key === 'string' && key.trim()) {
         validCategories[key] = value
@@ -289,8 +341,16 @@ export function AdvancedSkillTree() {
     if (activeTab === 'all') {
       return skillNodes
     }
-    return skillsByCategory[activeTab] || []
+    return skillsByCategory[activeTab]?.nodes || []
   }, [activeTab, skillNodes, skillsByCategory])
+
+  // Get hierarchical rows for the active tab
+  const activeTabHierarchicalRows = useMemo(() => {
+    if (activeTab === 'all') {
+      return []
+    }
+    return skillsByCategory[activeTab]?.hierarchicalRows || []
+  }, [activeTab, skillsByCategory])
 
   const getStatusIcon = (status: string, score?: number, size = "h-4 w-4") => {
     if (status === 'completed' && score && score >= 60) {
@@ -368,13 +428,18 @@ export function AdvancedSkillTree() {
     }
   }, [user])
 
-  // Log any remaining category issues (can be removed once stable)
+  // Debug logging to understand category structure
   useEffect(() => {
+    console.log('🔍 Debug - skillsByCategory:', skillsByCategory)
+    console.log('🔍 Debug - Object.keys(skillsByCategory):', Object.keys(skillsByCategory))
+    console.log('🔍 Debug - activeTab:', activeTab)
+    console.log('🔍 Debug - activeTabHierarchicalRows:', activeTabHierarchicalRows)
+    
     const invalidCategories = Object.entries(skillsByCategory).filter(([category]) => typeof category !== 'string')
     if (invalidCategories.length > 0) {
       console.warn('Invalid categories found:', invalidCategories)
     }
-  }, [skillsByCategory])
+  }, [skillsByCategory, activeTab, activeTabHierarchicalRows])
 
   if (isLoading) {
     return (
@@ -418,15 +483,10 @@ export function AdvancedSkillTree() {
           {/* Control Panel - Mobile Responsive */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
             <div className="flex items-center gap-1 sm:gap-2">
-              <Button
-                variant={viewMode === 'tree' ? 'default' : 'outline'}
-                size="sm"
-                className="text-xs sm:text-sm"
-                onClick={() => setViewMode('tree')}
-              >
-                <span className="hidden sm:inline">樹狀圖</span>
-                <span className="sm:hidden">樹狀</span>
-              </Button>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-gradient-to-r from-blue-500/20 to-purple-600/20 border border-blue-500/30">
+                <BarChart3 className="h-4 w-4 text-blue-400" />
+                <span className="text-sm text-blue-100 font-medium">階層式技能樹</span>
+              </div>
             </div>
             <div className="flex items-center gap-1">
               <Button
@@ -496,18 +556,18 @@ export function AdvancedSkillTree() {
               <span className="sm:hidden">全部</span>
             </Button>
             {Object.entries(skillsByCategory)
-              .filter(([category, skills]) => {
+              .filter(([category, categoryData]) => {
                 // Only show categories that are valid strings and have skills
                 return typeof category === 'string' && 
                        category.trim() !== '' && 
                        category !== 'undefined' &&
                        category !== 'null' &&
-                       skills.length > 0
+                       categoryData.nodes && categoryData.nodes.length > 0
               })
-              .map(([category, skills]) => {
+              .map(([category, categoryData]) => {
                 const categoryInfo = getSkillCategoryInfo(category)
                 const IconComponent = categoryInfo.icon
-                const skillCount = skills.length
+                const skillCount = categoryData.nodes.length
                 
                 // Ensure category is displayed as string
                 const displayCategory = String(category)
@@ -541,10 +601,15 @@ export function AdvancedSkillTree() {
       </SoftCardHeader>
 
       <SoftCardContent>
-        {/* Advanced Skill Tree Visualization - Mobile Optimized */}
+        {/* Advanced Skill Tree Visualization with Integrated Hierarchy - Mobile Optimized */}
         <div 
           ref={containerRef}
-          className="relative w-full h-[400px] sm:h-[600px] lg:h-[800px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl overflow-hidden touch-pan-x touch-pan-y"
+          className="relative w-full min-h-[400px] sm:min-h-[600px] lg:min-h-[800px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl overflow-hidden touch-pan-x touch-pan-y"
+          style={{
+            height: activeTab !== 'all' && activeTabHierarchicalRows.length > 0 
+              ? `${Math.max(600, activeTabHierarchicalRows.length * 300 + 200)}px`
+              : undefined
+          }}
         >
           {/* Animated Background */}
           <div className="absolute inset-0">
@@ -595,7 +660,7 @@ export function AdvancedSkillTree() {
             }}
           >
             {activeTab === 'all' ? (
-              // Traditional job-level tree view
+              // Traditional job-level tree view with hierarchy guidance
               <div className="relative h-full w-full">
                 {/* Connection Lines for Job Levels */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
@@ -661,7 +726,7 @@ export function AdvancedSkillTree() {
                             <div
                               key={`skill-${skill.skillId}-${levelIndex}-${skillIndex}`}
                               className="cursor-pointer touch-manipulation"
-                              onClick={() => handleSkillClick(skill)}
+                              onClick={() => handleSkillClick(skill, false)}
                               onTouchStart={(e) => e.stopPropagation()}
                             >
                               {/* Skill Node */}
@@ -705,7 +770,7 @@ export function AdvancedSkillTree() {
             ) : (
               // Category-specific prerequisite-ordered view
               <div className="relative h-full w-full p-4">
-                <div className="max-w-6xl mx-auto">
+                <div className="max-w-6xl mx-auto pb-12">
                   {/* Category Title */}
                   <div className="text-center mb-8">
                     {(() => {
@@ -720,9 +785,34 @@ export function AdvancedSkillTree() {
                     })()}
                   </div>
 
-                  {/* Prerequisite-ordered Skills Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                    {activeTabSkills.map((node, index) => {
+                  {/* Hierarchical Skills by Prerequisite Depth */}
+                  <div className="space-y-12 pb-8">
+                    {activeTabHierarchicalRows.map((row, rowIndex) => (
+                      <div key={`row-${row.depth}-${rowIndex}`} className="space-y-6">
+                        {/* Row Header */}
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                              {row.depth + 1}
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-white">{row.title}</h3>
+                              <p className="text-sm text-white/70">
+                                {row.depth === 0 
+                                  ? "不需要前置技能的基礎技能" 
+                                  : `需要完成前 ${row.depth} 層相關技能的進階技能`}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex-1 h-px bg-gradient-to-r from-white/20 to-transparent"></div>
+                          <div className="px-3 py-1 rounded-full bg-white/10 text-white/80 text-sm">
+                            {row.nodes.length} 項技能
+                          </div>
+                        </div>
+
+                        {/* Skills Grid for this row */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 px-4">
+                          {row.nodes.map((node, index) => {
                       const skill = node.skill
                       const statusClass = getSkillStatusClass(skill)
                       const categoryInfo = getSkillCategoryInfo(skill.Skill?.category)
@@ -734,13 +824,13 @@ export function AdvancedSkillTree() {
                         <div
                           key={`category-skill-${skill.skillId}-${index}`}
                           className={`relative cursor-pointer touch-manipulation transition-all duration-300 ${
-                            isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
+                            isLocked ? 'opacity-70' : 'hover:scale-105'
                           }`}
-                          onClick={() => !isLocked && handleSkillClick(skill)}
+                          onClick={() => handleSkillClick(skill, isLocked)}
                           onTouchStart={(e) => e.stopPropagation()}
                         >
                           {/* Skill Card */}
-                          <div className={`relative p-4 rounded-xl border-2 backdrop-blur-sm transition-all duration-500 ${
+                          <div className={`relative p-3 rounded-xl border-2 backdrop-blur-sm transition-all duration-500 ${
                             statusClass === 'completed'
                               ? `bg-gradient-to-br ${categoryInfo.color} border-yellow-300 shadow-xl shadow-yellow-500/30`
                               : statusClass === 'in-progress'
@@ -750,33 +840,27 @@ export function AdvancedSkillTree() {
                               : `bg-gradient-to-br from-gray-600/80 to-gray-800/80 border-gray-500 hover:border-gray-400`
                           }`}>
                             
-                            {/* Lock Overlay */}
-                            {isLocked && (
-                              <div className="absolute inset-0 bg-gray-900/50 rounded-xl flex items-center justify-center">
-                                <Lock className="h-8 w-8 text-gray-400" />
-                              </div>
-                            )}
-                            
                             {/* Skill Icon */}
-                            <div className="flex justify-center mb-3">
-                              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/10 flex items-center justify-center">
-                                <IconComponent className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                            <div className="flex justify-center mb-2">
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 flex items-center justify-center">
+                                {isLocked ? (
+                                  <Lock className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                                ) : (
+                                  <IconComponent className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                                )}
                               </div>
                             </div>
                             
                             {/* Skill Info */}
                             <div className="text-center">
-                              <h3 className="text-sm sm:text-base font-semibold text-white mb-1 line-clamp-2">
+                              <h3 className="text-sm sm:text-base font-semibold text-white mb-2 line-clamp-2">
                                 {skill.Skill.name}
                               </h3>
-                              <p className="text-xs text-white/70 mb-2">
-                                {skill.jobLevel}
-                              </p>
                               
                               {/* Prerequisites Count */}
                               {dependency?.prerequisiteSkillIds.length > 0 && (
-                                <div className="text-xs text-white/60">
-                                  需要 {dependency.prerequisiteSkillIds.length} 項前置技能
+                                <div className="text-xs text-white/60 mt-1">
+                                  前置: {dependency.prerequisiteSkillIds.length} 項
                                 </div>
                               )}
                             </div>
@@ -796,8 +880,11 @@ export function AdvancedSkillTree() {
                             </div>
                           </div>
                         </div>
-                      )
-                    })}
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -892,7 +979,16 @@ export function AdvancedSkillTree() {
 
                   {/* Action Buttons */}
                   <div className="flex gap-3 pt-4 border-t">
-                    {selectedSkill.status === 'not_started' && (
+                    {selectedSkillLocked && (
+                      <div className="flex-1 p-3 rounded-lg bg-gray-100 border border-gray-300 text-center">
+                        <div className="flex items-center justify-center gap-2 text-gray-500">
+                          <Lock className="h-4 w-4" />
+                          <span className="text-sm">需完成前置技能才能開始學習</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {!selectedSkillLocked && selectedSkill.status === 'not_started' && (
                       <Button
                         onClick={() => handleStartLearning(selectedSkill)}
                         className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
@@ -902,7 +998,7 @@ export function AdvancedSkillTree() {
                       </Button>
                     )}
                     
-                    {((selectedSkill.status === 'completed' && (!selectedSkill.score || selectedSkill.score < 60)) || selectedSkill.status === 'in_progress') && 
+                    {!selectedSkillLocked && ((selectedSkill.status === 'completed' && (!selectedSkill.score || selectedSkill.score < 60)) || selectedSkill.status === 'in_progress') && 
                      (!selectedSkill.evaluationRequestedAt || (selectedSkill.evaluatedAt && selectedSkill.evaluatedAt >= selectedSkill.evaluationRequestedAt)) && (
                       <Button
                         onClick={() => handleStartEvaluation(selectedSkill)}

@@ -271,10 +271,12 @@ export function AdminJobList() {
         description: "職位更新成功"
       })
       
+      // Re-fetch the updated job data to ensure UI reflects latest state
+      await fetchJobs()
+      
       setIsEditDialogOpen(false)
       setEditingJob(null)
       resetForm()
-      fetchJobs()
     } catch (error: any) {
       toast({
         title: "錯誤",
@@ -665,7 +667,7 @@ export function AdminJobList() {
                   return Object.entries(groupedSkills).map(([categoryName, categoryData]) => {
                     const isExpanded = expandedCategories.has(categoryName)
                     const selectedInCategory = categoryData.skills.filter(skill => 
-                      formData.skillIds.some(s => s.id === skill.id)
+                      formData.skillIds.includes(skill.id)
                     ).length
                     
                     return (
@@ -824,7 +826,7 @@ export function AdminJobList() {
                   return Object.entries(groupedSkills).map(([categoryName, categoryData]) => {
                     const isExpanded = expandedCategories.has(categoryName)
                     const selectedInCategory = categoryData.skills.filter(skill => 
-                      formData.skillIds.some(s => s.id === skill.id)
+                      formData.skillIds.includes(skill.id)
                     ).length
                     
                     return (
