@@ -13,11 +13,19 @@ exports.getUserSkills = async (req, res, next) => {
         {
           model: Skill,
           attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
-          include: [{
-            model: SkillCategory,
-            as: 'category',
-            attributes: ['id', 'name', 'color', 'icon']
-          }]
+          include: [
+            {
+              model: SkillCategory,
+              as: 'category',
+              attributes: ['id', 'name', 'color', 'icon']
+            },
+            {
+              model: Skill,
+              as: 'prerequisites',
+              attributes: ['id', 'name'],
+              through: { attributes: [] }
+            }
+          ]
         },
         {
           model: User,
@@ -71,13 +79,102 @@ exports.getDepartmentProgression = async (req, res, next) => {
     // Get user's job and department
     const user = await User.findByPk(userId, {
       include: [
-        { model: Job, attributes: ['id', 'name', 'level', 'nextJobId'] },
-        { model: Department, attributes: ['id', 'name'] }
+        { model: Job, attributes: ['id', 'name', 'level', 'nextJobId'], required: false },
+        { model: Department, attributes: ['id', 'name'], required: false }
       ]
     });
     
-    if (!user || !user.Job || !user.Department) {
-      return res.status(404).json({ message: 'User job or department not found' });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Handle users without job assignments
+    if (!user.Job || !user.Department) {
+      console.warn(`User ${user.employeeId} (${user.name}) missing job or department assignment`);
+      
+      // Try to get a default job progression
+      let departmentJobs = [];
+      
+      if (user.Department) {
+        // User has department but no job - get department jobs
+        departmentJobs = await Job.findAll({
+          where: { departmentId: user.Department.id },
+          order: [['level', 'ASC']],
+          include: [
+            {
+              model: JobSkill,
+              include: [
+                {
+                  model: Skill,
+                  attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
+                  include: [
+                    {
+                      model: SkillCategory,
+                      as: 'category',
+                      attributes: ['id', 'name', 'color', 'icon']
+                    },
+                    {
+                      model: Skill,
+                      as: 'prerequisites',
+                      attributes: ['id', 'name'],
+                      through: { attributes: [] }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        });
+      } else {
+        // User has no department or job - get global default jobs
+        departmentJobs = await Job.findAll({
+          order: [['level', 'ASC']],
+          limit: 4, // Default progression
+          include: [
+            {
+              model: JobSkill,
+              include: [
+                {
+                  model: Skill,
+                  attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
+                  include: [
+                    {
+                      model: SkillCategory,
+                      as: 'category',
+                      attributes: ['id', 'name', 'color', 'icon']
+                    },
+                    {
+                      model: Skill,
+                      as: 'prerequisites',
+                      attributes: ['id', 'name'],
+                      through: { attributes: [] }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        });
+      }
+
+      // Format response with empty progression but available jobs
+      const jobProgression = departmentJobs.map((job, index) => ({
+        id: job.id,
+        name: job.name,
+        level: job.level,
+        isCurrentJob: index === 0, // Default to first job as current
+        skillsWithProgress: job.JobSkills?.map(jobSkill => ({
+          ...jobSkill.toJSON(),
+          userProgress: null // No progress since user has no job assignment
+        })) || []
+      }));
+
+      return res.status(200).json({ 
+        department: user.Department?.name || 'Unassigned',
+        currentJob: departmentJobs[0]?.name || 'Unassigned',
+        jobProgression,
+        warning: 'User missing job or department assignment. Showing default progression.'
+      });
     }
     
     // Get all jobs in the same department, ordered by level
@@ -91,11 +188,19 @@ exports.getDepartmentProgression = async (req, res, next) => {
             {
               model: Skill,
               attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
-              include: [{
-                model: SkillCategory,
-                as: 'category',
-                attributes: ['id', 'name', 'color', 'icon']
-              }]
+              include: [
+                {
+                  model: SkillCategory,
+                  as: 'category',
+                  attributes: ['id', 'name', 'color', 'icon']
+                },
+                {
+                  model: Skill,
+                  as: 'prerequisites',
+                  attributes: ['id', 'name'],
+                  through: { attributes: [] }
+                }
+              ]
             }
           ]
         }
@@ -166,11 +271,19 @@ exports.getJobSkills = async (req, res, next) => {
         {
           model: Skill,
           attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
-          include: [{
-            model: SkillCategory,
-            as: 'category',
-            attributes: ['id', 'name', 'color', 'icon']
-          }]
+          include: [
+            {
+              model: SkillCategory,
+              as: 'category',
+              attributes: ['id', 'name', 'color', 'icon']
+            },
+            {
+              model: Skill,
+              as: 'prerequisites',
+              attributes: ['id', 'name'],
+              through: { attributes: [] }
+            }
+          ]
         }
       ],
       order: [
@@ -246,11 +359,19 @@ exports.getSuggestedSkills = async (req, res, next) => {
         {
           model: Skill,
           attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
-          include: [{
-            model: SkillCategory,
-            as: 'category',
-            attributes: ['id', 'name', 'color', 'icon']
-          }]
+          include: [
+            {
+              model: SkillCategory,
+              as: 'category',
+              attributes: ['id', 'name', 'color', 'icon']
+            },
+            {
+              model: Skill,
+              as: 'prerequisites',
+              attributes: ['id', 'name'],
+              through: { attributes: [] }
+            }
+          ]
         }
       ],
       limit: 4 // Limit to 4 suggestions for UI
@@ -313,11 +434,19 @@ exports.updateUserSkill = async (req, res, next) => {
         {
           model: Skill,
           attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
-          include: [{
-            model: SkillCategory,
-            as: 'category',
-            attributes: ['id', 'name', 'color', 'icon']
-          }]
+          include: [
+            {
+              model: SkillCategory,
+              as: 'category',
+              attributes: ['id', 'name', 'color', 'icon']
+            },
+            {
+              model: Skill,
+              as: 'prerequisites',
+              attributes: ['id', 'name'],
+              through: { attributes: [] }
+            }
+          ]
         }
       ]
     });
@@ -786,11 +915,19 @@ exports.getEvaluationDetailsByUserSkillId = async (req, res, next) => {
         {
           model: Skill,
           attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod', 'syllabus'],
-          include: [{
-            model: SkillCategory,
-            as: 'category',
-            attributes: ['id', 'name', 'color', 'icon']
-          }]
+          include: [
+            {
+              model: SkillCategory,
+              as: 'category',
+              attributes: ['id', 'name', 'color', 'icon']
+            },
+            {
+              model: Skill,
+              as: 'prerequisites',
+              attributes: ['id', 'name'],
+              through: { attributes: [] }
+            }
+          ]
         },
         {
           model: User,
@@ -1078,7 +1215,7 @@ exports.getSkillPrerequisites = async (req, res, next) => {
             as: 'category',
             attributes: ['id', 'name', 'color']
           }],
-          through: { attributes: ['isRequired'] }
+          through: { attributes: [] }
         }
       ]
     });

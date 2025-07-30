@@ -501,13 +501,13 @@ const createMockApiClient = (): ApiClient => ({
     }
   },
 
-  getAdminDepartments: async (page = 1, limit = 10, search?: string, sortField = 'name', sortOrder = 'ASC') => {
+  getAdminDepartments: async (params: any) => {
     const result = await mockApi.getAdminDepartments({
-      page,
-      limit,
-      search,
-      sortField,
-      sortOrder
+      page: params.page || 1,
+      limit: params.limit || 10,
+      search: params.search,
+      sortField: params.sortField || 'name',
+      sortOrder: params.sortOrder || 'ASC'
     })
     return {
       data: {
@@ -554,14 +554,14 @@ const createMockApiClient = (): ApiClient => ({
   },
   exportCredits: async (params: any) => ({ data: 'Mock CSV data', status: 200 }),
   getJobsForDepartment: async (departmentId: string) => ({ data: { jobs: [] }, status: 200 }),
-  getAdminJobs: async (page = 1, limit = 10, search?: string, departmentId?: string, sortField = 'name', sortOrder = 'ASC') => {
+  getAdminJobs: async (params: any) => {
     const result = await mockApi.getAdminJobs({
-      page,
-      limit,
-      search,
-      departmentId,
-      sortField,
-      sortOrder
+      page: params.page || 1,
+      limit: params.limit || 10,
+      search: params.search,
+      departmentId: params.departmentId,
+      sortField: params.sortField || 'name',
+      sortOrder: params.sortOrder || 'ASC'
     })
     return {
       data: {

@@ -981,7 +981,7 @@ export const jobApi = {
     if (params.page) query.append('page', params.page.toString());
     if (params.limit) query.append('limit', params.limit.toString());
     if (params.search) query.append('search', params.search);
-    if (params.departmentId) query.append('departmentId', params.departmentId);
+    if (params.departmentId && params.departmentId !== 'all') query.append('departmentId', params.departmentId);
     if (params.sortField) query.append('sortField', params.sortField);
     if (params.sortOrder) query.append('sortOrder', params.sortOrder);
 
@@ -993,7 +993,7 @@ export const jobApi = {
         totalItems: number;
         itemsPerPage: number;
       };
-    }>(`/admin/jobs?${query.toString()}`, {
+    }>(`/jobs?${query.toString()}`, {
       method: 'GET',
       headers: createHeaders(),
     });
@@ -1005,7 +1005,7 @@ export const jobApi = {
     departmentId: string; 
     skillIds?: Array<{ id: string }> 
   }) => {
-    return fetchApi<{ message: string; job: any }>('/admin/jobs', {
+    return fetchApi<{ message: string; job: any }>('/jobs', {
       method: 'POST',
       headers: createHeaders(),
       body: JSON.stringify(data),
@@ -1018,7 +1018,7 @@ export const jobApi = {
     departmentId?: string;
     skillIds?: Array<{ id: string }>;
   }) => {
-    return fetchApi<{ message: string; job: any }>(`/admin/jobs/${id}`, {
+    return fetchApi<{ message: string; job: any }>(`/jobs/${id}`, {
       method: 'PUT',
       headers: createHeaders(),
       body: JSON.stringify(data),
@@ -1027,7 +1027,7 @@ export const jobApi = {
 
   // Admin: Delete job
   deleteJob: async (id: string) => {
-    return fetchApi<{ message: string }>(`/admin/jobs/${id}`, {
+    return fetchApi<{ message: string }>(`/jobs/${id}`, {
       method: 'DELETE',
       headers: createHeaders(),
     });
@@ -1376,6 +1376,7 @@ export default {
   creditApi,
   departmentApi,
   skillApi,
+  jobApi,
   csvApi,
   configApi,
   setAuthToken,

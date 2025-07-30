@@ -1,4 +1,4 @@
-const { Department, User } = require('../models');
+const { Department, User, Job, Skill, JobSkill } = require('../models');
 const { Op } = require('sequelize');
 
 // Get all departments
@@ -53,10 +53,25 @@ exports.getAdminDepartments = async (req, res, next) => {
       distinct: true
     });
 
-    // Add user count to each department
-    const departmentsWithCounts = departments.map(dept => ({
-      ...dept.toJSON(),
-      userCount: dept.Users ? dept.Users.length : 0
+    // Add user count and skill count to each department
+    const departmentsWithCounts = await Promise.all(departments.map(async (dept) => {
+      // Calculate skill count for this department
+      // Count unique skills across all jobs in this department
+      const skillCount = await JobSkill.count({
+        distinct: true,
+        col: 'skillId',
+        include: [{
+          model: Job,
+          where: { departmentId: dept.id },
+          attributes: []
+        }]
+      });
+
+      return {
+        ...dept.toJSON(),
+        userCount: dept.Users ? dept.Users.length : 0,
+        skillCount: skillCount || 0
+      };
     }));
 
     return res.status(200).json({

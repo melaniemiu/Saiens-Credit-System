@@ -32,7 +32,7 @@ interface Skill {
     icon?: string
   }
   JobSkill?: {
-    isRequired: boolean
+    // No more isRequired field
   }
 }
 
@@ -50,7 +50,7 @@ interface Job {
 interface JobFormData {
   name: string
   departmentId: string
-  skillIds: Array<{ id: string; isRequired: boolean }>
+  skillIds: string[]
 }
 
 export function AdminJobList() {
@@ -80,14 +80,14 @@ export function AdminJobList() {
   const fetchJobs = async () => {
     try {
       setLoading(true)
-      const response = await apiClient.getAdminJobs(
+      const response = await apiClient.getAdminJobs({
         page,
-        10,
-        searchTerm,
-        departmentFilter === "__all__" ? undefined : departmentFilter,
+        limit: 10,
+        search: searchTerm,
+        departmentId: departmentFilter === "__all__" ? undefined : departmentFilter,
         sortField,
         sortOrder
-      )
+      })
       
       if (response.data) {
         setJobs(response.data.jobs || [])
@@ -211,21 +211,12 @@ export function AdminJobList() {
     })
   }
 
-  const handleSkillToggle = (skillId: string, checked: boolean, isRequired: boolean = false) => {
+  const handleSkillToggle = (skillId: string, checked: boolean) => {
     setFormData(prev => ({
       ...prev,
       skillIds: checked
-        ? [...prev.skillIds, { id: skillId, isRequired }]
-        : prev.skillIds.filter(s => s.id !== skillId)
-    }))
-  }
-
-  const handleSkillRequiredToggle = (skillId: string, isRequired: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      skillIds: prev.skillIds.map(s => 
-        s.id === skillId ? { ...s, isRequired } : s
-      )
+        ? [...prev.skillIds, skillId]
+        : prev.skillIds.filter(id => id !== skillId)
     }))
   }
 
@@ -264,10 +255,7 @@ export function AdminJobList() {
     setFormData({
       name: job.name,
       departmentId: job.Department?.id || "",
-      skillIds: (job.skills || []).map(skill => ({
-        id: skill.id,
-        isRequired: skill.JobSkill?.isRequired || false
-      }))
+      skillIds: (job.skills || []).map(skill => skill.id)
     })
     setIsEditDialogOpen(true)
   }
@@ -724,8 +712,7 @@ export function AdminJobList() {
                             style={{ backgroundColor: `${categoryData.color}08` }}
                           >
                             {categoryData.skills.map((skill) => {
-                              const isSelected = formData.skillIds.some(s => s.id === skill.id)
-                              const skillData = formData.skillIds.find(s => s.id === skill.id)
+                              const isSelected = formData.skillIds.includes(skill.id)
                               
                               return (
                                 <div 
@@ -749,18 +736,6 @@ export function AdminJobList() {
                                       <span className="font-medium">{skill.name}</span>
                                     </Label>
                                   </div>
-                                  {isSelected && (
-                                    <div className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={`required-${skill.id}`}
-                                        checked={skillData?.isRequired || false}
-                                        onCheckedChange={(checked) => handleSkillRequiredToggle(skill.id, !!checked)}
-                                      />
-                                      <Label htmlFor={`required-${skill.id}`} className="text-xs">
-                                        必修
-                                      </Label>
-                                    </div>
-                                  )}
                                 </div>
                               )
                             })}
@@ -896,8 +871,7 @@ export function AdminJobList() {
                             style={{ backgroundColor: `${categoryData.color}08` }}
                           >
                             {categoryData.skills.map((skill) => {
-                              const isSelected = formData.skillIds.some(s => s.id === skill.id)
-                              const skillData = formData.skillIds.find(s => s.id === skill.id)
+                              const isSelected = formData.skillIds.includes(skill.id)
                               
                               return (
                                 <div 
@@ -921,18 +895,6 @@ export function AdminJobList() {
                                       <span className="font-medium">{skill.name}</span>
                                     </Label>
                                   </div>
-                                  {isSelected && (
-                                    <div className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={`edit-required-${skill.id}`}
-                                        checked={skillData?.isRequired || false}
-                                        onCheckedChange={(checked) => handleSkillRequiredToggle(skill.id, !!checked)}
-                                      />
-                                      <Label htmlFor={`edit-required-${skill.id}`} className="text-xs">
-                                        必修
-                                      </Label>
-                                    </div>
-                                  )}
                                 </div>
                               )
                             })}

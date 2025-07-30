@@ -643,11 +643,24 @@ export const mockApi = {
     const paginatedDepts = filteredDepts.slice(offset, offset + limit)
     
     // Add additional stats for each department
-    const departmentsWithStats = paginatedDepts.map(dept => ({
-      ...dept,
-      isActive: true,
-      userCount: mockUsers.filter(u => u.departmentId === dept.id).length
-    }))
+    const departmentsWithStats = paginatedDepts.map(dept => {
+      // Get all jobs for this department
+      const departmentJobs = mockJobs.filter(job => job.departmentId === dept.id)
+      
+      // Get all unique skills across all jobs in this department
+      const uniqueSkillIds = new Set<string>()
+      departmentJobs.forEach(job => {
+        const jobSkills = mockJobSkills.filter(js => js.jobId === job.id)
+        jobSkills.forEach(js => uniqueSkillIds.add(js.skillId))
+      })
+      
+      return {
+        ...dept,
+        isActive: true,
+        userCount: mockUsers.filter(u => u.departmentId === dept.id).length,
+        skillCount: uniqueSkillIds.size
+      }
+    })
     
     log('Get admin departments', { 
       total: filteredDepts.length, 
