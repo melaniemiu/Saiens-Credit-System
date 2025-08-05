@@ -52,8 +52,10 @@ export function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-50 bg-white shadow-soft-xl rounded-2xl mx-4 mt-4">
-      <div className="container mx-auto flex h-16 items-center px-6">
+    <div className="sticky top-0 z-50 mt-4">
+      <div className="container mx-auto px-6">
+        <nav className="bg-white shadow-soft-xl rounded-2xl">
+          <div className="flex h-16 items-center px-6">
         <div className="flex-1 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center">
             <h1 className="text-xl font-bold gradient-text">
@@ -151,7 +153,9 @@ export function Navbar() {
             )}
           </div>
         </div>
+          </div>
+        </nav>
       </div>
-    </nav>
+    </div>
   )
 }
