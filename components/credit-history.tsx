@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -31,7 +31,16 @@ interface Credit {
   }
 }
 
-export function CreditHistory() {
+interface CreditHistoryProps {
+  refreshTrigger?: number
+}
+
+export interface CreditHistoryRef {
+  refreshHistory: () => void
+}
+
+export const CreditHistory = forwardRef<CreditHistoryRef, CreditHistoryProps>(
+  ({ refreshTrigger }, ref) => {
   const [activeTab, setActiveTab] = useState("received")
   const [receivedCredits, setReceivedCredits] = useState<Credit[]>([])
   const [givenCredits, setGivenCredits] = useState<Credit[]>([])
@@ -76,10 +85,28 @@ export function CreditHistory() {
     }
   }
 
+  // Refresh function to be exposed via ref
+  const refreshHistory = () => {
+    fetchReceivedCredits(receivedPage)
+    fetchGivenCredits(givenPage)
+  }
+
+  // Expose refresh function via ref
+  useImperativeHandle(ref, () => ({
+    refreshHistory
+  }))
+
   useEffect(() => {
     fetchReceivedCredits(1)
     fetchGivenCredits(1)
   }, [])
+
+  // Watch for refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      refreshHistory()
+    }
+  }, [refreshTrigger])
 
   const handlePageChange = (type: 'received' | 'given', page: number) => {
     if (type === 'received') {
@@ -391,4 +418,6 @@ export function CreditHistory() {
       </TabsContent>
     </Tabs>
   )
-}
+})
+
+CreditHistory.displayName = "CreditHistory"

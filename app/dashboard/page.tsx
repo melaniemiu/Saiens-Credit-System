@@ -1,6 +1,7 @@
 "use client"
 
 import { SoftCard, SoftCardHeader, SoftCardContent, SoftCardIcon, SoftCardTitle, SoftCardDescription } from "@/components/ui/soft-card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { CreditHistory } from "@/components/credit-history"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -9,7 +10,7 @@ import { setAuthToken } from "@/lib/api"
 import { apiClient } from "@/lib/api-client"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Loader2, User, CreditCard, TrendingUp, Wallet } from "lucide-react"
+import { RefreshCw, Loader2, User, CreditCard, TrendingUp, Wallet, BarChart3 } from "lucide-react"
 import { AuthError } from "@/components/auth-error"
 import { GiveCreditButton } from "@/components/give-credit-button"
 import { SkillProgressCard } from "@/components/skill-progress-card"
@@ -239,18 +240,27 @@ function DashboardContent() {
     <div className="w-full px-6 py-6 mx-auto">
       {shouldShowDashboard() ? (
         <>
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-slate-700">員工儀表板</h1>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
-              onClick={handleManualRefresh}
-            >
-              <RefreshCw className="h-4 w-4" />
-              重新載入
-            </Button>
-          </div>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="h-6 w-6 text-blue-600" />
+                    <CardTitle>員工儀表板</CardTitle>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1"
+                    onClick={handleManualRefresh}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    重新載入
+                  </Button>
+                </div>
+                <CardDescription>個人資訊、Credits 統計與技能發展總覽</CardDescription>
+              </CardHeader>
+            </Card>
 
           {/* Row 1 - Personal Info and Skills */}
           <div className="flex flex-wrap -mx-3">
@@ -432,6 +442,7 @@ function DashboardContent() {
           </div>
 
           <GiveCreditButton />
+          </div>
         </>
       ) : (
         <div className="max-w-md mx-auto p-6">

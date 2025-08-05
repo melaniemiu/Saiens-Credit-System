@@ -28,14 +28,9 @@ export function Navbar() {
       icon: Home,
     },
     {
-      href: "/dashboard/give-credit",
-      label: "發送 Credit",
+      href: "/dashboard/credit",
+      label: "Credit 管理",
       icon: Gift,
-    },
-    {
-      href: "/dashboard/history",
-      label: "Credit 歷程",
-      icon: Clock,
     },
     {
       href: "/dashboard/skills",

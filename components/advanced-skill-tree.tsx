@@ -604,7 +604,7 @@ export function AdvancedSkillTree() {
         {/* Advanced Skill Tree Visualization with Integrated Hierarchy - Mobile Optimized */}
         <div 
           ref={containerRef}
-          className="relative w-full min-h-[400px] sm:min-h-[600px] lg:min-h-[800px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl overflow-hidden touch-pan-x touch-pan-y"
+          className="relative w-full min-h-[400px] sm:min-h-[600px] lg:min-h-[800px] max-h-[90vh] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl overflow-auto touch-pan-x touch-pan-y"
           style={{
             height: activeTab !== 'all' && activeTabHierarchicalRows.length > 0 
               ? `${Math.max(600, activeTabHierarchicalRows.length * 300 + 200)}px`

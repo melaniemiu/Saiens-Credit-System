@@ -23,7 +23,11 @@ interface Employee {
   department: string
 }
 
-export function GiveCreditForm() {
+interface GiveCreditFormProps {
+  onCreditGiven?: () => void
+}
+
+export function GiveCreditForm({ onCreditGiven }: GiveCreditFormProps) {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([])
   const [reason, setReason] = useState("")
@@ -167,6 +171,11 @@ export function GiveCreditForm() {
       setSelectedEmployeeIds([])
       setReason("")
       setSearchQuery("")
+
+      // Trigger callback to refresh credit history
+      if (onCreditGiven) {
+        onCreditGiven()
+      }
 
       refreshUser()
     } catch (error) {
