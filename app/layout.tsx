@@ -40,7 +40,7 @@ export default function RootLayout({
       <head>
         <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
       </head>
-      <body className={`${inter.className} ${openSans.variable}`}>
+      <body className={`${inter.className} ${openSans.variable} saiens-background`}>
         <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" disableTransitionOnChange>
           <AuthProvider>
             <EvaluationProvider>

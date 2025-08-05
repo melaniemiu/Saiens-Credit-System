@@ -6,7 +6,8 @@ import { Sparkles } from "lucide-react"
 
 export default function SkillsPage() {
   return (
-    <div className="mx-auto max-w-6xl space-y-6 min-h-screen pb-12">
+    <div className="w-full px-6 py-6 mx-auto">
+      <div className="space-y-6">
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -17,9 +18,10 @@ export default function SkillsPage() {
         </CardHeader>
       </Card>
 
-      {/* 進階技能樹 */}
-      <AdvancedSkillTree />
+        {/* 進階技能樹 */}
+        <AdvancedSkillTree />
 
+      </div>
     </div>
   )
 }

@@ -4,11 +4,22 @@
 
 /* Soft UI Base Styles */
 @layer base {
+  html {
+    /* Background image setup on html element for better control */
+    background-image: url("/saiensbkg.avif") !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+    min-height: 100vh !important;
+  }
+  
   body {
-    @apply font-open-sans antialiased text-slate-500 bg-gray-50;
+    @apply font-open-sans antialiased text-slate-500 bg-transparent;
     font-size: 1rem;
     line-height: 1.625;
     font-weight: 400;
+    min-height: 100vh;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -32,6 +43,16 @@
   
   .soft-icon-bg {
     @apply flex items-center justify-center w-12 h-12 text-center rounded-lg;
+  }
+  
+  /* Background image utility class as fallback */
+  .saiens-background {
+    background-image: url("/saiensbkg.avif") !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+    min-height: 100vh !important;
   }
 }
 
