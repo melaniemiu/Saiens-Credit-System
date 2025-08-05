@@ -1,4 +1,4 @@
-const { Department, Skill, SkillDepartment, User, SkillCategory } = require('../models');
+const { Department, User, Job, Skill, JobSkill } = require('../models');
 const { Op } = require('sequelize');
 
 // Get all departments
@@ -42,17 +42,6 @@ exports.getAdminDepartments = async (req, res, next) => {
       where: whereClause,
       include: [
         {
-          model: Skill,
-          as: 'skills',
-          attributes: ['id', 'name', 'categoryId'],
-          include: [{
-            model: SkillCategory,
-            as: 'category',
-            attributes: ['id', 'name', 'color']
-          }],
-          through: { attributes: [] }
-        },
-        {
           model: User,
           attributes: ['id'],
           required: false
@@ -64,11 +53,25 @@ exports.getAdminDepartments = async (req, res, next) => {
       distinct: true
     });
 
-    // Add skill count and user count to each department
-    const departmentsWithCounts = departments.map(dept => ({
-      ...dept.toJSON(),
-      skillCount: dept.skills ? dept.skills.length : 0,
-      userCount: dept.Users ? dept.Users.length : 0
+    // Add user count and skill count to each department
+    const departmentsWithCounts = await Promise.all(departments.map(async (dept) => {
+      // Calculate skill count for this department
+      // Count unique skills across all jobs in this department
+      const skillCount = await JobSkill.count({
+        distinct: true,
+        col: 'skillId',
+        include: [{
+          model: Job,
+          where: { departmentId: dept.id },
+          attributes: []
+        }]
+      });
+
+      return {
+        ...dept.toJSON(),
+        userCount: dept.Users ? dept.Users.length : 0,
+        skillCount: skillCount || 0
+      };
     }));
 
     return res.status(200).json({
@@ -165,17 +168,7 @@ exports.deleteDepartment = async (req, res, next) => {
 
     const department = await Department.findByPk(id, {
       include: [
-        { model: User, required: false },
-        { 
-          model: Skill, 
-          as: 'skills', 
-          required: false,
-          include: [{
-            model: SkillCategory,
-            as: 'category',
-            attributes: ['id', 'name', 'color']
-          }]
-        }
+        { model: User, required: false }
       ]
     });
 

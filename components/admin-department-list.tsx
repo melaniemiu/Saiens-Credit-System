@@ -56,13 +56,13 @@ export function AdminDepartmentList() {
   const fetchDepartments = async () => {
     try {
       setLoading(true)
-      const response = await apiClient.getAdminDepartments(
+      const response = await apiClient.getAdminDepartments({
         page,
-        10,
-        searchTerm,
+        limit: 10,
+        search: searchTerm,
         sortField,
         sortOrder
-      )
+      })
       
       if (response && response.data) {
         setDepartments(response.data.departments || [])

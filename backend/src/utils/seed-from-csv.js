@@ -51,11 +51,10 @@ async function createRealisticSkillProgress() {
       
       // Create skill progress records for lower-level job skills
       for (const jobSkill of lowerLevelSkills) {
-        const isRequired = jobSkill.isRequired;
-        const completionRate = isRequired ? 0.95 : 0.70; // 95% for required, 70% for optional
+        const completionRate = 0.80; // 80% completion rate for all skills
         
         if (Math.random() < completionRate) {
-          const baseScore = isRequired ? 85 : 75; // Higher base score for required skills
+          const baseScore = 80; // Base score for all skills
           const score = Math.min(100, baseScore + Math.floor(Math.random() * 15));
           
           // Create dates showing progression over time
@@ -258,15 +257,9 @@ async function createJobSkillRelationships() {
         
         // Create job-skill relationships
         for (const skill of uniqueSkills) {
-          // Determine if skill is required (deterministic)
-          const isRequired = skill.category === '山恩DNA' || 
-                            skill.category === '安全操作' || 
-                            (job.level <= 2 && skill.category === '產品知識');
-          
           relationships.push({
             jobId: job.id,
-            skillId: skill.id,
-            isRequired: isRequired
+            skillId: skill.id
           });
         }
       }
@@ -282,10 +275,7 @@ async function createJobSkillRelationships() {
     // Log summary by job
     for (const job of jobs) {
       const jobSkills = relationships.filter(r => r.jobId === job.id);
-      const required = jobSkills.filter(r => r.isRequired).length;
-      const optional = jobSkills.length - required;
-      
-      console.log(`   • ${job.name}: ${required} required, ${optional} optional skills`);
+      console.log(`   • ${job.name}: ${jobSkills.length} skills`);
     }
     
   } catch (error) {
@@ -358,7 +348,6 @@ async function createSkillPrerequisites() {
           prerequisites.push({
             skillId: skill.id,
             prerequisiteSkillId: prerequisiteSkill.id,
-            isRequired: true // All sample prerequisites are required
           });
         }
       }

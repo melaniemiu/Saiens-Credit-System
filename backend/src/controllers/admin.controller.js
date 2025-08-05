@@ -590,8 +590,7 @@ exports.checkUserPromotion = async (req, res, next) => {
               model: Skill,
               as: 'skills',
               through: { 
-                attributes: ['isRequired'],
-                where: { isRequired: true } // Only check required skills
+                attributes: []
               }
             }
           ]
@@ -718,7 +717,6 @@ exports.promoteUser = async (req, res, next) => {
     const requiredSkills = await JobSkill.findAll({
       where: {
         jobId: user.Job.id,
-        isRequired: true
       }
     });
 

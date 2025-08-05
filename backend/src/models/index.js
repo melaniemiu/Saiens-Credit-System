@@ -34,7 +34,6 @@ db.SkillCategory = require('./skill-category.model')(sequelize, Sequelize);
 db.Skill = require('./skill.model')(sequelize, Sequelize);
 db.JobSkill = require('./job-skill.model')(sequelize, Sequelize);
 db.UserSkill = require('./user-skill.model')(sequelize, Sequelize);
-db.SkillDepartment = require('./skill-department.model')(sequelize, Sequelize);
 db.SkillPrerequisite = require('./skill-prerequisite.model')(sequelize, Sequelize);
 db.Config = require('./config.model')(sequelize, Sequelize);
 
@@ -107,25 +106,6 @@ db.User.hasMany(db.UserSkill, { as: 'certifiedSkills', foreignKey: 'certifiedBy'
 db.User.hasMany(db.UserSkill, { as: 'evaluatedSkills', foreignKey: 'evaluatedBy' });
 db.Skill.hasMany(db.UserSkill, { foreignKey: 'skillId' });
 
-// Department and Skill many-to-many relationship through SkillDepartment
-db.Department.belongsToMany(db.Skill, { 
-  through: db.SkillDepartment, 
-  foreignKey: 'departmentId',
-  otherKey: 'skillId',
-  as: 'skills'
-});
-db.Skill.belongsToMany(db.Department, { 
-  through: db.SkillDepartment, 
-  foreignKey: 'skillId',
-  otherKey: 'departmentId',
-  as: 'departments'
-});
-
-// Direct associations for SkillDepartment
-db.SkillDepartment.belongsTo(db.Department, { foreignKey: 'departmentId' });
-db.SkillDepartment.belongsTo(db.Skill, { foreignKey: 'skillId' });
-db.Department.hasMany(db.SkillDepartment, { foreignKey: 'departmentId' });
-db.Skill.hasMany(db.SkillDepartment, { foreignKey: 'skillId' });
 
 // Skill prerequisites self-referential many-to-many relationship through SkillPrerequisite
 db.Skill.belongsToMany(db.Skill, {

@@ -643,15 +643,24 @@ export const mockApi = {
     const paginatedDepts = filteredDepts.slice(offset, offset + limit)
     
     // Add additional stats for each department
-    const departmentsWithStats = paginatedDepts.map(dept => ({
-      ...dept,
-      isActive: true,
-      skillCount: mockJobSkills.filter(js => {
-        const job = mockJobs.find(j => j.id === js.jobId)
-        return job && job.departmentId === dept.id
-      }).length,
-      userCount: mockUsers.filter(u => u.departmentId === dept.id).length
-    }))
+    const departmentsWithStats = paginatedDepts.map(dept => {
+      // Get all jobs for this department
+      const departmentJobs = mockJobs.filter(job => job.departmentId === dept.id)
+      
+      // Get all unique skills across all jobs in this department
+      const uniqueSkillIds = new Set<string>()
+      departmentJobs.forEach(job => {
+        const jobSkills = mockJobSkills.filter(js => js.jobId === job.id)
+        jobSkills.forEach(js => uniqueSkillIds.add(js.skillId))
+      })
+      
+      return {
+        ...dept,
+        isActive: true,
+        userCount: mockUsers.filter(u => u.departmentId === dept.id).length,
+        skillCount: uniqueSkillIds.size
+      }
+    })
     
     log('Get admin departments', { 
       total: filteredDepts.length, 
@@ -861,7 +870,6 @@ export const mockApi = {
           id: p.prerequisiteSkillId,
           name: prerequisiteSkill?.name || '',
           category: category ? { id: category.id, name: category.name, color: category.color } : null,
-          isRequired: p.isRequired
         }
       })
     
@@ -869,7 +877,7 @@ export const mockApi = {
     return { prerequisites }
   },
 
-  async addSkillPrerequisite(skillId: string, data: { prerequisiteSkillId: string; isRequired: boolean }) {
+  async addSkillPrerequisite(skillId: string, data: { prerequisiteSkillId: string }) {
     await delay()
     simulateError()
     
@@ -906,7 +914,6 @@ export const mockApi = {
       id: `prereq-${Date.now()}`,
       skillId,
       prerequisiteSkillId: data.prerequisiteSkillId,
-      isRequired: data.isRequired,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -993,8 +1000,6 @@ export const mockApi = {
         name: job.title, // Alias for consistency
         department: department ? { id: department.id, name: department.name } : null,
         skillCount: jobSkills.length,
-        requiredSkillCount: jobSkills.filter(js => js.isRequired).length,
-        optionalSkillCount: jobSkills.filter(js => !js.isRequired).length,
         userCount,
         skills: jobSkills.map(js => {
           const skill = mockSkills.find(s => s.id === js.skillId)

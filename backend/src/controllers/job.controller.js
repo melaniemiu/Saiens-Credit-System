@@ -49,7 +49,7 @@ const getAdminJobs = async (req, res) => {
             as: 'category',
             attributes: ['id', 'name', 'color']
           }],
-          through: { attributes: ['isRequired'] }
+          through: { attributes: [] }
         }
       ],
       order: [[orderField, orderDirection]],
@@ -120,8 +120,7 @@ const createJob = async (req, res) => {
     if (skillIds.length > 0) {
       const skillAssociations = skillIds.map(skillId => ({
         jobId: job.id,
-        skillId: skillId.id || skillId,
-        isRequired: skillId.isRequired || false
+        skillId: skillId
       }));
       
       await JobSkill.bulkCreate(skillAssociations);
@@ -143,7 +142,7 @@ const createJob = async (req, res) => {
             as: 'category',
             attributes: ['id', 'name', 'color']
           }],
-          through: { attributes: ['isRequired'] }
+          through: { attributes: [] }
         }
       ]
     });
@@ -203,17 +202,17 @@ const updateJob = async (req, res) => {
 
     // Update skill associations
     if (skillIds.length >= 0) {
-      // Remove existing skill associations
+      // Remove existing skill associations (force hard delete to avoid unique constraint issues)
       await JobSkill.destroy({
-        where: { jobId: id }
+        where: { jobId: id },
+        force: true
       });
 
       // Add new skill associations
       if (skillIds.length > 0) {
         const skillAssociations = skillIds.map(skillId => ({
           jobId: id,
-          skillId: skillId.id || skillId,
-          isRequired: skillId.isRequired || false
+          skillId: skillId
         }));
         
         await JobSkill.bulkCreate(skillAssociations);
@@ -236,7 +235,7 @@ const updateJob = async (req, res) => {
             as: 'category',
             attributes: ['id', 'name', 'color']
           }],
-          through: { attributes: ['isRequired'] }
+          through: { attributes: [] }
         }
       ]
     });

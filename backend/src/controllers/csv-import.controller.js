@@ -140,6 +140,14 @@ exports.importSkills = async (req, res, next) => {
     // Validate CSV structure and data
     CSVUtils.validateSkillData(csvData);
 
+    // Get all skill categories for mapping
+    const { SkillCategory } = require('../models');
+    const skillCategories = await SkillCategory.findAll();
+    const categoryMap = {};
+    skillCategories.forEach(cat => {
+      categoryMap[cat.name] = cat.id;
+    });
+
     // Process each skill
     const results = {
       success: 0,
@@ -154,9 +162,25 @@ exports.importSkills = async (req, res, next) => {
 
       try {
         // Clean and validate data
+        const categoryName = CSVUtils.cleanString(row.category);
+        
+        // Find or create skill category
+        let categoryId = categoryMap[categoryName];
+        if (!categoryId) {
+          const newCategory = await SkillCategory.create({
+            name: categoryName,
+            description: `Auto-created category for ${categoryName}`,
+            isActive: true,
+            sortOrder: Object.keys(categoryMap).length
+          });
+          categoryId = newCategory.id;
+          categoryMap[categoryName] = categoryId;
+          console.log(`📝 Created new skill category: ${categoryName}`);
+        }
+        
         const skillData = {
           name: CSVUtils.cleanString(row.name),
-          category: CSVUtils.cleanString(row.category),
+          categoryId: categoryId,
           learningMethod: CSVUtils.cleanString(row.learningMethod),
           assessmentMethod: CSVUtils.cleanString(row.assessmentMethod),
           syllabus: CSVUtils.cleanString(row.syllabus) || null
@@ -177,7 +201,7 @@ exports.importSkills = async (req, res, next) => {
         const newSkill = await Skill.create(skillData);
         results.created.push({
           name: newSkill.name,
-          category: newSkill.category
+          category: categoryName
         });
         results.success++;
 

@@ -753,7 +753,6 @@ export const skillApi = {
   createSkill: async (data: {
     name: string;
     category: string;
-    isRequired?: boolean;
     learningMethod: string;
     assessmentMethod: string;
     departmentIds?: string[];
@@ -769,7 +768,6 @@ export const skillApi = {
   updateSkill: async (id: string, data: {
     name?: string;
     category?: string;
-    isRequired?: boolean;
     learningMethod?: string;
     assessmentMethod?: string;
     departmentIds?: string[];
@@ -798,7 +796,7 @@ export const skillApi = {
   },
 
   // Add skill prerequisite
-  addSkillPrerequisite: async (skillId: string, data: { prerequisiteSkillId: string, isRequired?: boolean }) => {
+  addSkillPrerequisite: async (skillId: string, data: { prerequisiteSkillId: string }) => {
     return fetchApi<{ message: string }>(`/admin/skills/${skillId}/prerequisites`, {
       method: 'POST',
       headers: createHeaders(),
@@ -807,7 +805,7 @@ export const skillApi = {
   },
 
   // Update skill prerequisite
-  updateSkillPrerequisite: async (skillId: string, prerequisiteSkillId: string, data: { isRequired: boolean }) => {
+  updateSkillPrerequisite: async (skillId: string, prerequisiteSkillId: string, data: {}) => {
     return fetchApi<{ message: string }>(`/admin/skills/${skillId}/prerequisites/${prerequisiteSkillId}`, {
       method: 'PUT',
       headers: createHeaders(),
@@ -983,7 +981,7 @@ export const jobApi = {
     if (params.page) query.append('page', params.page.toString());
     if (params.limit) query.append('limit', params.limit.toString());
     if (params.search) query.append('search', params.search);
-    if (params.departmentId) query.append('departmentId', params.departmentId);
+    if (params.departmentId && params.departmentId !== 'all') query.append('departmentId', params.departmentId);
     if (params.sortField) query.append('sortField', params.sortField);
     if (params.sortOrder) query.append('sortOrder', params.sortOrder);
 
@@ -995,7 +993,7 @@ export const jobApi = {
         totalItems: number;
         itemsPerPage: number;
       };
-    }>(`/admin/jobs?${query.toString()}`, {
+    }>(`/jobs?${query.toString()}`, {
       method: 'GET',
       headers: createHeaders(),
     });
@@ -1005,9 +1003,9 @@ export const jobApi = {
   createJob: async (data: { 
     name: string; 
     departmentId: string; 
-    skillIds?: Array<{ id: string; isRequired: boolean }> 
+    skillIds?: Array<{ id: string }> 
   }) => {
-    return fetchApi<{ message: string; job: any }>('/admin/jobs', {
+    return fetchApi<{ message: string; job: any }>('/jobs', {
       method: 'POST',
       headers: createHeaders(),
       body: JSON.stringify(data),
@@ -1018,9 +1016,9 @@ export const jobApi = {
   updateJob: async (id: string, data: {
     name?: string;
     departmentId?: string;
-    skillIds?: Array<{ id: string; isRequired: boolean }>;
+    skillIds?: Array<{ id: string }>;
   }) => {
-    return fetchApi<{ message: string; job: any }>(`/admin/jobs/${id}`, {
+    return fetchApi<{ message: string; job: any }>(`/jobs/${id}`, {
       method: 'PUT',
       headers: createHeaders(),
       body: JSON.stringify(data),
@@ -1029,7 +1027,7 @@ export const jobApi = {
 
   // Admin: Delete job
   deleteJob: async (id: string) => {
-    return fetchApi<{ message: string }>(`/admin/jobs/${id}`, {
+    return fetchApi<{ message: string }>(`/jobs/${id}`, {
       method: 'DELETE',
       headers: createHeaders(),
     });
@@ -1378,6 +1376,7 @@ export default {
   creditApi,
   departmentApi,
   skillApi,
+  jobApi,
   csvApi,
   configApi,
   setAuthToken,

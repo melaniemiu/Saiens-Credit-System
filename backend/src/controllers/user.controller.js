@@ -17,34 +17,7 @@ exports.getCurrentUser = async (req, res, next) => {
         },
         {
           model: Job,
-          attributes: ['id', 'name'],
-          include: [
-            {
-              model: Skill,
-              as: 'skills',
-              attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod'],
-              include: [{
-                model: SkillCategory,
-                as: 'category',
-                attributes: ['id', 'name', 'color', 'icon']
-              }],
-              through: { attributes: ['isRequired'] }
-            }
-          ]
-        },
-        {
-          model: Skill,
-          as: 'skills',
-          attributes: ['id', 'name', 'categoryId', 'learningMethod', 'assessmentMethod'],
-          include: [{
-            model: SkillCategory,
-            as: 'category',
-            attributes: ['id', 'name', 'color', 'icon']
-          }],
-          through: { 
-            attributes: ['status', 'startedAt', 'completedAt', 'certifiedAt', 'score', 'attempts'],
-            as: 'progress'
-          }
+          attributes: ['id', 'name', 'level']
         }
       ]
     });
@@ -81,9 +54,8 @@ exports.getCurrentUser = async (req, res, next) => {
         Job: user.Job ? {
           id: user.Job.id,
           name: user.Job.name,
-          skills: user.Job.skills || []
+          level: user.Job.level
         } : null,
-        skills: user.skills || [],
         creditsReceived: user.creditsReceived,
         creditsSent: user.creditsSent,
         remainingDailyCredits: user.remainingDailyCredits,
