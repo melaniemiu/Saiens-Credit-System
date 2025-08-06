@@ -13,10 +13,6 @@ module.exports = (sequelize, DataTypes) => {
     description: {
       type: DataTypes.TEXT,
       allowNull: true
-    },
-    isActive: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true
     }
   }, {
     // Options

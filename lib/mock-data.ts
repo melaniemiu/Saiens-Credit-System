@@ -45,7 +45,6 @@ export interface MockSkillCategory {
   description: string | null;
   color: string;
   icon: string | null;
-  isActive: boolean;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -270,7 +269,6 @@ export const mockSkillCategories: MockSkillCategory[] = [
     description: "公司文化與價值觀相關技能",
     color: "#3B82F6",
     icon: null,
-    isActive: true,
     sortOrder: 1,
     createdAt: generateDate(365),
     updatedAt: generateDate(30),
@@ -281,7 +279,6 @@ export const mockSkillCategories: MockSkillCategory[] = [
     description: "產品相關知識與技能",
     color: "#10B981",
     icon: null,
-    isActive: true,
     sortOrder: 2,
     createdAt: generateDate(365),
     updatedAt: generateDate(30),
@@ -292,7 +289,6 @@ export const mockSkillCategories: MockSkillCategory[] = [
     description: "開發工具與軟體使用技能",
     color: "#F59E0B",
     icon: null,
-    isActive: true,
     sortOrder: 3,
     createdAt: generateDate(365),
     updatedAt: generateDate(30),
@@ -303,7 +299,6 @@ export const mockSkillCategories: MockSkillCategory[] = [
     description: "系統安裝與配置相關技能",
     color: "#EF4444",
     icon: null,
-    isActive: true,
     sortOrder: 4,
     createdAt: generateDate(365),
     updatedAt: generateDate(30),
@@ -314,7 +309,6 @@ export const mockSkillCategories: MockSkillCategory[] = [
     description: "資訊安全與操作規範",
     color: "#8B5CF6",
     icon: null,
-    isActive: true,
     sortOrder: 5,
     createdAt: generateDate(365),
     updatedAt: generateDate(30),
@@ -325,7 +319,6 @@ export const mockSkillCategories: MockSkillCategory[] = [
     description: "程式設計與開發相關技能",
     color: "#EC4899",
     icon: null,
-    isActive: true,
     sortOrder: 6,
     createdAt: generateDate(365),
     updatedAt: generateDate(30),

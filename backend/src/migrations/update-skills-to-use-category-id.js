@@ -57,8 +57,8 @@ module.exports = {
         const newId = uuidv4();
         
         await queryInterface.sequelize.query(
-          `INSERT INTO skill_categories (id, name, description, "isActive", "sortOrder", "createdAt", "updatedAt") 
-           VALUES (:categoryId, :categoryName, 'Migrated category', true, 999, NOW(), NOW())`,
+          `INSERT INTO skill_categories (id, name, description, "sortOrder", "createdAt", "updatedAt") 
+           VALUES (:categoryId, :categoryName, 'Migrated category', 999, NOW(), NOW())`,
           {
             replacements: { categoryId: newId, categoryName: skill.category }
           }

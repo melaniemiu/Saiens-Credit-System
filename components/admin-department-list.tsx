@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -22,7 +21,6 @@ interface Department {
   id: string
   name: string
   description?: string
-  isActive: boolean
   skillCount: number
   userCount: number
   createdAt: string
@@ -32,7 +30,6 @@ interface Department {
 interface DepartmentFormData {
   name: string
   description: string
-  isActive: boolean
 }
 
 export function AdminDepartmentList() {
@@ -48,8 +45,7 @@ export function AdminDepartmentList() {
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null)
   const [formData, setFormData] = useState<DepartmentFormData>({
     name: "",
-    description: "",
-    isActive: true
+    description: ""
   })
   const { toast } = useToast()
 
@@ -101,8 +97,7 @@ export function AdminDepartmentList() {
   const resetForm = () => {
     setFormData({
       name: "",
-      description: "",
-      isActive: true
+      description: ""
     })
   }
 
@@ -131,8 +126,7 @@ export function AdminDepartmentList() {
     setEditingDepartment(department)
     setFormData({
       name: department.name,
-      description: department.description || "",
-      isActive: department.isActive
+      description: department.description || ""
     })
     setIsEditDialogOpen(true)
   }
@@ -251,7 +245,6 @@ export function AdminDepartmentList() {
                         </div>
                       </TableHead>
                       <TableHead>描述</TableHead>
-                      <TableHead>狀態</TableHead>
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Users className="h-4 w-4" />
@@ -295,11 +288,6 @@ export function AdminDepartmentList() {
                             <span className="text-sm text-gray-600 max-w-xs truncate block">
                               {department.description || "無描述"}
                             </span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={department.isActive ? "default" : "secondary"}>
-                              {department.isActive ? "啟用" : "停用"}
-                            </Badge>
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge variant="outline">
@@ -384,9 +372,6 @@ export function AdminDepartmentList() {
                             {department.description || "無描述"}
                           </div>
                           <div className="flex items-center gap-2 mt-2">
-                            <Badge variant={department.isActive ? "default" : "secondary"}>
-                              {department.isActive ? "啟用" : "停用"}
-                            </Badge>
                             <span className="text-xs text-muted-foreground">
                               {department.userCount} 員工 · {department.skillCount} 技能
                             </span>
@@ -491,14 +476,6 @@ export function AdminDepartmentList() {
                 placeholder="請輸入部門描述（選填）"
               />
             </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="isActive"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
-              />
-              <Label htmlFor="isActive">啟用狀態</Label>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
@@ -538,14 +515,6 @@ export function AdminDepartmentList() {
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="請輸入部門描述（選填）"
               />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="edit-isActive"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
-              />
-              <Label htmlFor="edit-isActive">啟用狀態</Label>
             </div>
           </div>
           <DialogFooter>

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
@@ -21,7 +20,6 @@ interface SkillCategory {
   description?: string
   color?: string
   icon?: string
-  isActive: boolean
   sortOrder: number
   skillCount?: number
   createdAt: string
@@ -33,7 +31,6 @@ interface CategoryFormData {
   description: string
   color: string
   icon: string
-  isActive: boolean
   sortOrder: number
 }
 
@@ -49,7 +46,6 @@ export function AdminCategoryList() {
     description: "",
     color: "#6B7280",
     icon: "",
-    isActive: true,
     sortOrder: 0
   })
   const { toast } = useToast()
@@ -93,7 +89,6 @@ export function AdminCategoryList() {
       description: "",
       color: "#6B7280",
       icon: "",
-      isActive: true,
       sortOrder: 0
     })
   }
@@ -135,7 +130,6 @@ export function AdminCategoryList() {
       description: category.description || "",
       color: category.color || "#6B7280",
       icon: category.icon || "",
-      isActive: category.isActive,
       sortOrder: category.sortOrder
     })
     setIsEditDialogOpen(true)
@@ -221,7 +215,6 @@ export function AdminCategoryList() {
                     <TableHead>類別</TableHead>
                     <TableHead>描述</TableHead>
                     <TableHead className="text-center">技能數量</TableHead>
-                    <TableHead className="text-center">狀態</TableHead>
                     <TableHead className="text-center">排序</TableHead>
                     <TableHead>操作</TableHead>
                   </TableRow>
@@ -268,11 +261,6 @@ export function AdminCategoryList() {
                         <TableCell className="text-center">
                           <Badge variant="outline">
                             {category.skillCount || 0}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant={category.isActive ? "default" : "secondary"}>
-                            {category.isActive ? "啟用" : "停用"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center">
@@ -407,14 +395,6 @@ export function AdminCategoryList() {
               />
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="isActive"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
-              />
-              <Label htmlFor="isActive">啟用類別</Label>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
@@ -502,14 +482,6 @@ export function AdminCategoryList() {
               />
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="edit-isActive"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
-              />
-              <Label htmlFor="edit-isActive">啟用類別</Label>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>

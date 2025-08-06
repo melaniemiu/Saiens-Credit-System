@@ -788,7 +788,7 @@ export const mockApi = {
     return { categories }
   },
 
-  async createSkillCategory(data: { name: string; description?: string; color?: string; icon?: string; isActive?: boolean; sortOrder?: number }) {
+  async createSkillCategory(data: { name: string; description?: string; color?: string; icon?: string; sortOrder?: number }) {
     await delay()
     simulateError()
     
@@ -798,7 +798,6 @@ export const mockApi = {
       description: data.description || null,
       color: data.color || '#6B7280',
       icon: data.icon || null,
-      isActive: data.isActive !== false,
       sortOrder: data.sortOrder || mockSkillCategories.length + 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()

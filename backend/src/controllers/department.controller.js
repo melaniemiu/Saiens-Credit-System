@@ -91,7 +91,7 @@ exports.getAdminDepartments = async (req, res, next) => {
 // Admin: Create department
 exports.createDepartment = async (req, res, next) => {
   try {
-    const { name, description, isActive = true } = req.body;
+    const { name, description } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: '部門名稱為必填項目' });
@@ -108,8 +108,7 @@ exports.createDepartment = async (req, res, next) => {
 
     const department = await Department.create({
       name,
-      description,
-      isActive
+      description
     });
 
     return res.status(201).json({
@@ -125,7 +124,7 @@ exports.createDepartment = async (req, res, next) => {
 exports.updateDepartment = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, description, isActive } = req.body;
+    const { name, description } = req.body;
 
     const department = await Department.findByPk(id);
     if (!department) {
@@ -148,8 +147,7 @@ exports.updateDepartment = async (req, res, next) => {
 
     await department.update({
       name: name || department.name,
-      description: description !== undefined ? description : department.description,
-      isActive: isActive !== undefined ? isActive : department.isActive
+      description: description !== undefined ? description : department.description
     });
 
     return res.status(200).json({

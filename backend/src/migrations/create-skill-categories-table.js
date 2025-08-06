@@ -27,12 +27,6 @@ module.exports = {
         allowNull: true,
         comment: 'Icon name or code for UI display'
       },
-      isActive: {
-        type: Sequelize.BOOLEAN,
-        allowNull: false,
-        defaultValue: true,
-        comment: 'Whether this category is active and available for use'
-      },
       sortOrder: {
         type: Sequelize.INTEGER,
         allowNull: false,
@@ -57,10 +51,6 @@ module.exports = {
     await queryInterface.addIndex('skill_categories', ['name'], {
       unique: true,
       name: 'skill_categories_name_unique'
-    });
-    
-    await queryInterface.addIndex('skill_categories', ['isActive'], {
-      name: 'skill_categories_is_active_idx'
     });
     
     await queryInterface.addIndex('skill_categories', ['sortOrder'], {
@@ -92,7 +82,6 @@ module.exports = {
         description: category.description,
         color: category.color,
         icon: null,
-        isActive: true,
         sortOrder: category.sortOrder,
         createdAt: new Date(),
         updatedAt: new Date()

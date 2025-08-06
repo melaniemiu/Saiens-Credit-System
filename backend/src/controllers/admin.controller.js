@@ -28,7 +28,11 @@ exports.getUsers = async (req, res, next) => {
     }
 
     if (departmentId && departmentId !== "all") {
-      where.departmentId = departmentId;
+      if (departmentId === "null") {
+        where.departmentId = null; // Filter for users with no department
+      } else {
+        where.departmentId = departmentId;
+      }
     }
 
     if (role && role !== "all") {
@@ -253,7 +257,7 @@ exports.updateUser = async (req, res, next) => {
       email,
       employeeId,
       role,
-      departmentId,
+      departmentId: departmentId === "unassigned" ? null : departmentId,
     };
 
     // Only update jobId if it's provided (could be null to unassign)

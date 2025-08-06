@@ -26,12 +26,6 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       comment: 'Icon name or code for UI display'
     },
-    isActive: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: true,
-      comment: 'Whether this category is active and available for use'
-    },
     sortOrder: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -46,9 +40,6 @@ module.exports = (sequelize, DataTypes) => {
       {
         fields: ['name'],
         unique: true
-      },
-      {
-        fields: ['isActive']
       },
       {
         fields: ['sortOrder']

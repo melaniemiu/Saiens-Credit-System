@@ -209,9 +209,16 @@ export default function AdminPage() {
   }, [activeSection, userPage, userSearchTerm, userDepartmentFilter, userRoleFilter, userSortField, userSortOrder,
       creditPage, creditSearchTerm, creditDepartmentFilter, creditDateRange, creditSortField, creditSortOrder])
 
+  // Refresh departments when switching to users section
+  useEffect(() => {
+    if (activeSection === 'users') {
+      fetchDepartments()
+    }
+  }, [activeSection])
+
   // Load jobs when edit dialog opens
   useEffect(() => {
-    if (isEditDialogOpen && selectedUser) {
+    if (isEditDialogOpen && selectedUser && selectedUser.department?.id) {
       fetchJobsForDepartment(selectedUser.department.id)
     }
   }, [isEditDialogOpen, selectedUser])
@@ -259,7 +266,13 @@ export default function AdminPage() {
         sortOrder: userSortOrder,
       }
       if (userSearchTerm) params.search = userSearchTerm
-      if (userDepartmentFilter && userDepartmentFilter !== "all") params.departmentId = userDepartmentFilter
+      if (userDepartmentFilter && userDepartmentFilter !== "all") {
+        if (userDepartmentFilter === "unassigned") {
+          params.departmentId = "null" // Special value to indicate null department
+        } else {
+          params.departmentId = userDepartmentFilter
+        }
+      }
       if (userRoleFilter && userRoleFilter !== "all") params.role = userRoleFilter
 
       const response = await apiClient.getAdminUsers(params)
@@ -566,6 +579,7 @@ export default function AdminPage() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">所有部門</SelectItem>
+                            <SelectItem value="unassigned">未指派部門</SelectItem>
                             {departments.map((dept) => (
                               <SelectItem key={dept.id} value={dept.id}>
                                 {dept.name}
@@ -1334,15 +1348,18 @@ export default function AdminPage() {
                   <Label htmlFor="edit-department">部門</Label>
                   <Select 
                     name="departmentId" 
-                    defaultValue={selectedUser.department.id}
+                    defaultValue={selectedUser.department?.id || "unassigned"}
                     onValueChange={(value) => {
-                      fetchJobsForDepartment(value)
+                      if (value && value !== "unassigned") {
+                        fetchJobsForDepartment(value)
+                      }
                     }}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="z-[10000]">
+                      <SelectItem value="unassigned">未指派部門</SelectItem>
                       {departments.map((dept) => (
                         <SelectItem key={dept.id} value={dept.id}>
                           {dept.name}

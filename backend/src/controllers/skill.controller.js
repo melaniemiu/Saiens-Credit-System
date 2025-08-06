@@ -592,7 +592,6 @@ exports.getAdminSkills = async (req, res, next) => {
     // Get unique categories for filter
     const categoryRecords = await SkillCategory.findAll({
       attributes: ['name'],
-      where: { isActive: true },
       order: [['sortOrder', 'ASC']],
       raw: true
     });

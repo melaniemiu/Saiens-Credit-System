@@ -570,7 +570,7 @@ export const departmentApi = {
   },
 
   // Admin: Create department
-  createDepartment: async (data: { name: string; description?: string; isActive?: boolean }) => {
+  createDepartment: async (data: { name: string; description?: string }) => {
     return fetchApi<{ message: string; department: any }>('/admin/departments', {
       method: 'POST',
       headers: createHeaders(),
@@ -579,7 +579,7 @@ export const departmentApi = {
   },
 
   // Admin: Update department
-  updateDepartment: async (id: string, data: { name?: string; description?: string; isActive?: boolean }) => {
+  updateDepartment: async (id: string, data: { name?: string; description?: string }) => {
     return fetchApi<{ message: string; department: any }>(`/admin/departments/${id}`, {
       method: 'PUT',
       headers: createHeaders(),
@@ -885,7 +885,6 @@ export const skillCategoryApi = {
     description?: string;
     color?: string;
     icon?: string;
-    isActive?: boolean;
     sortOrder?: number;
   }) => {
     return fetchApi<{
@@ -935,7 +934,6 @@ export const skillCategoryApi = {
     description?: string;
     color?: string;
     icon?: string;
-    isActive?: boolean;
     sortOrder?: number;
   }) => {
     return fetchApi<{

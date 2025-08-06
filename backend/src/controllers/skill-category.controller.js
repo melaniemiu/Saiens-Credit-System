@@ -6,7 +6,6 @@ const getSkillCategories = async (req, res) => {
   try {
     const { 
       search = '', 
-      isActive = '',
       sortField = 'sortOrder',
       sortOrder = 'ASC',
       includeSkillCount = false
@@ -20,9 +19,6 @@ const getSkillCategories = async (req, res) => {
       };
     }
     
-    if (isActive !== '') {
-      whereClause.isActive = isActive === 'true';
-    }
 
     const include = [];
     if (includeSkillCount) {
@@ -36,10 +32,10 @@ const getSkillCategories = async (req, res) => {
 
     const attributes = includeSkillCount 
       ? [
-          'id', 'name', 'description', 'color', 'icon', 'isActive', 'sortOrder', 'createdAt', 'updatedAt',
+          'id', 'name', 'description', 'color', 'icon', 'sortOrder', 'createdAt', 'updatedAt',
           [Skill.sequelize.fn('COUNT', Skill.sequelize.col('skills.id')), 'skillCount']
         ]
-      : ['id', 'name', 'description', 'color', 'icon', 'isActive', 'sortOrder', 'createdAt', 'updatedAt'];
+      : ['id', 'name', 'description', 'color', 'icon', 'sortOrder', 'createdAt', 'updatedAt'];
 
     const categories = await SkillCategory.findAll({
       where: whereClause,
@@ -94,7 +90,7 @@ const getSkillCategoryById = async (req, res) => {
 // Create new skill category
 const createSkillCategory = async (req, res) => {
   try {
-    const { name, description, color, icon, isActive = true, sortOrder = 0 } = req.body;
+    const { name, description, color, icon, sortOrder = 0 } = req.body;
 
     if (!name || name.trim() === '') {
       return res.status(400).json({
@@ -120,7 +116,6 @@ const createSkillCategory = async (req, res) => {
       description: description?.trim() || null,
       color: color?.trim() || null,
       icon: icon?.trim() || null,
-      isActive,
       sortOrder
     });
 
@@ -142,7 +137,7 @@ const createSkillCategory = async (req, res) => {
 const updateSkillCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, color, icon, isActive, sortOrder } = req.body;
+    const { name, description, color, icon, sortOrder } = req.body;
 
     const category = await SkillCategory.findByPk(id);
 
@@ -176,7 +171,6 @@ const updateSkillCategory = async (req, res) => {
     if (description !== undefined) updateData.description = description?.trim() || null;
     if (color !== undefined) updateData.color = color?.trim() || null;
     if (icon !== undefined) updateData.icon = icon?.trim() || null;
-    if (isActive !== undefined) updateData.isActive = isActive;
     if (sortOrder !== undefined) updateData.sortOrder = sortOrder;
 
     await category.update(updateData);
@@ -259,7 +253,6 @@ const getOrCreateSkillCategoryHelper = async (categoryName) => {
       name: categoryName.trim(),
       description: `Auto-created category for ${categoryName.trim()}`,
       color: defaultColor,
-      isActive: true,
       sortOrder: maxSortOrder + 1
     });
   }
