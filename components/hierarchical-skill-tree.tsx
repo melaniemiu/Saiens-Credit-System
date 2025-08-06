@@ -292,7 +292,7 @@ export function HierarchicalSkillTree({ selectedCategory }: { selectedCategory?:
             const categoryInfo = getSkillCategoryInfo(selectedCategory)
             const IconComponent = categoryInfo.icon
             return (
-              <div className={`inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-white font-bold text-xl shadow-2xl backdrop-blur-sm border bg-gradient-to-r ${categoryInfo.color} border-white/20`}>
+              <div className={`inline-flex items-center gap-3 px-8 py-4 rounded-lg text-white font-bold text-xl shadow-2xl backdrop-blur-sm border bg-gradient-to-r ${categoryInfo.color} border-white/20`}>
                 <IconComponent className="h-8 w-8" />
                 {selectedCategory}
               </div>

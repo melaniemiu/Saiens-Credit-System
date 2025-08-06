@@ -151,7 +151,7 @@ export function SkillProgressCard() {
             <Skeleton className="h-4 w-full" />
             <div className="grid grid-cols-2 gap-3">
               {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+                <Skeleton key={i} className="h-16 w-full rounded-lg" />
               ))}
             </div>
           </div>

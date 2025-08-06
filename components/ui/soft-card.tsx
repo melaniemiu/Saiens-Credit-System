@@ -8,7 +8,7 @@ const SoftCard = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "relative flex flex-col min-w-0 break-words bg-white shadow-soft-xl rounded-2xl bg-clip-border",
+      "relative flex flex-col min-w-0 break-words bg-white shadow-soft-xl rounded-lg bg-clip-border",
       className
     )}
     {...props}

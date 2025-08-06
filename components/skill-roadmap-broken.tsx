@@ -316,7 +316,7 @@ export function SkillRoadmap() {
         </div>
 
         {/* Game-style Skill Tree */}
-        <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-8 overflow-x-auto min-h-[600px]">
+        <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-lg p-8 overflow-x-auto min-h-[600px]">
           {/* Background pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute inset-0" style={{

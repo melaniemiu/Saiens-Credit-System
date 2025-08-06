@@ -55,7 +55,7 @@ export function AdminNavbar({ activeSection, onSectionChange }: AdminNavbarProps
   ]
 
   return (
-    <nav className="sticky top-0 z-50 bg-white shadow-soft-xl rounded-2xl mx-4 mt-4">
+    <nav className="sticky top-0 z-50 bg-white shadow-soft-xl rounded-lg mx-4 mt-4">
       <div className="container mx-auto flex h-16 items-center px-6">
         <div className="flex-1 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center">

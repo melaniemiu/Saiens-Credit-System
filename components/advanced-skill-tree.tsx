@@ -604,7 +604,7 @@ export function AdvancedSkillTree() {
         {/* Advanced Skill Tree Visualization with Integrated Hierarchy - Mobile Optimized */}
         <div 
           ref={containerRef}
-          className="relative w-full min-h-[400px] sm:min-h-[600px] lg:min-h-[800px] max-h-[90vh] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl overflow-auto touch-pan-x touch-pan-y"
+          className="relative w-full min-h-[400px] sm:min-h-[600px] lg:min-h-[800px] max-h-[90vh] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-lg overflow-auto touch-pan-x touch-pan-y"
           style={{
             height: activeTab !== 'all' && activeTabHierarchicalRows.length > 0 
               ? `${Math.max(600, activeTabHierarchicalRows.length * 300 + 200)}px`
@@ -777,7 +777,7 @@ export function AdvancedSkillTree() {
                       const categoryInfo = getSkillCategoryInfo(activeTab)
                       const IconComponent = categoryInfo.icon
                       return (
-                        <div className={`inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-white font-bold text-xl shadow-2xl backdrop-blur-sm border bg-gradient-to-r ${categoryInfo.color} border-white/20`}>
+                        <div className={`inline-flex items-center gap-3 px-8 py-4 rounded-lg text-white font-bold text-xl shadow-2xl backdrop-blur-sm border bg-gradient-to-r ${categoryInfo.color} border-white/20`}>
                           <IconComponent className="h-8 w-8" />
                           {activeTab}
                         </div>
