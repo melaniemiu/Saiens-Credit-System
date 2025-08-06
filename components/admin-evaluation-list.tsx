@@ -27,6 +27,13 @@ const formatDate = (dateString: string | null | undefined, formatStr: string = '
   }
 }
 
+// Helper function to safely get category name
+const getCategoryName = (category: string | { id: string; name: string; color?: string; icon?: string } | undefined): string => {
+  if (!category) return '未知分類'
+  if (typeof category === 'string') return category
+  return category.name || '未知分類'
+}
+
 interface PendingEvaluation {
   id: string
   userSkillId: string
@@ -36,7 +43,7 @@ interface PendingEvaluation {
   userDepartment: string
   skillId: string
   skillName: string
-  skillCategory: string
+  skillCategory: string | { id: string; name: string; color?: string; icon?: string }
   learningMethod: string
   assessmentMethod: string
   syllabus?: string
@@ -335,7 +342,7 @@ export function AdminEvaluationList() {
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className="text-xs">
-                                {evaluation.skillCategory}
+                                {getCategoryName(evaluation.skillCategory)}
                               </Badge>
                             </TableCell>
                             <TableCell>
@@ -407,7 +414,7 @@ export function AdminEvaluationList() {
                           </div>
                           <div className="flex flex-wrap gap-2">
                             <Badge variant="outline" className="text-xs">
-                              {evaluation.skillCategory}
+                              {getCategoryName(evaluation.skillCategory)}
                             </Badge>
                             <Badge variant="secondary" className="text-xs">
                               {evaluation.learningMethod}

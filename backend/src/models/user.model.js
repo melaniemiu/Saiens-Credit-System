@@ -44,7 +44,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     departmentId: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
       field: 'departmentId',
       references: {
         model: 'departments',

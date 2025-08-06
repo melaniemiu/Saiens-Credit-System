@@ -53,7 +53,7 @@ export function GiveCreditForm({ onCreditGiven }: GiveCreditFormProps) {
 
         if (response.data?.users && isMounted) {
           const mappedEmployees = response.data.users.map(emp => {
-            let departmentName = "未分配部門";
+            let departmentName = "未指派部門";
             
             if (typeof emp.Department === 'object' && emp.Department && emp.Department.name) {
               departmentName = emp.Department.name;

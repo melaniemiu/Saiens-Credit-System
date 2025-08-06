@@ -132,7 +132,7 @@ async function fetchApi<T>(
       }
       
       return {
-        error: data.message || 'Something went wrong',
+        error: data.error || data.message || 'Something went wrong',
         status,
       };
     }

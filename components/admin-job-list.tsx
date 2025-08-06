@@ -429,7 +429,7 @@ export function AdminJobList() {
                           <TableCell>
                             <div className="flex items-center gap-1">
                               <Building2 className="h-3 w-3" />
-                              <span className="text-sm">{job.Department?.name || '未分配'}</span>
+                              <span className="text-sm">{job.Department?.name || '未指派部門'}</span>
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
@@ -519,7 +519,7 @@ export function AdminJobList() {
                           <div className="font-medium">{job.name}</div>
                           <div className="text-sm text-muted-foreground mt-1">
                             <Building2 className="h-3 w-3 inline mr-1" />
-                            {job.Department?.name || '未分配'}
+                            {job.Department?.name || '未指派部門'}
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
                             {job.skillCount} 技能 · {job.userCount} 用戶

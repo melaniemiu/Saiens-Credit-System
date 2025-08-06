@@ -320,7 +320,7 @@ export const CreditHistory = forwardRef<CreditHistoryRef, CreditHistoryProps>(
                 </span>
               </p>
               <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
-                {person?.Department?.name || "未知部門"}
+                {person?.Department?.name || "未指派部門"}
               </Badge>
             </div>
             <div className="flex items-center gap-1 text-xs text-gray-500">

@@ -348,7 +348,7 @@ function DashboardContent() {
                           <div className="flex justify-between items-center text-size-sm">
                             <span className="text-slate-400">部門</span>
                             <span className="font-semibold text-slate-700">
-                              {userData.department || "工程部"}
+                              {userData.department || "未指派部門"}
                             </span>
                           </div>
                           {userData.Job?.name && (

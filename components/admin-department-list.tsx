@@ -174,7 +174,7 @@ export function AdminDepartmentList() {
     } catch (error: any) {
       toast({
         title: "錯誤",
-        description: error.message || "刪除部門失敗",
+        description: error.error || error.message || "刪除部門失敗",
         variant: "destructive"
       })
     }

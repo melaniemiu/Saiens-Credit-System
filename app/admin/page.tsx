@@ -688,7 +688,7 @@ export default function AdminPage() {
                                       </div>
                                     </TableCell>
                                     <TableCell>{user.employeeId}</TableCell>
-                                    <TableCell>{user.department.name}</TableCell>
+                                    <TableCell>{user.department?.name || '未指派部門'}</TableCell>
                                     <TableCell>
                                       <span className={cn(
                                         "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
@@ -766,7 +766,7 @@ export default function AdminPage() {
                                     <div className="font-medium">{user.name}</div>
                                     <div className="text-sm text-muted-foreground">{user.email}</div>
                                     <div className="text-sm text-muted-foreground mt-1">
-                                      {user.employeeId} · {user.department.name} · {user.job?.name || '未指派'}
+                                      {user.employeeId} · {user.department?.name || '未指派部門'} · {user.job?.name || '未指派'}
                                     </div>
                                     <div className="flex items-center gap-2 mt-2">
                                       <span className={cn(
@@ -978,13 +978,13 @@ export default function AdminPage() {
                                     <TableCell>
                                       <div className="font-medium">{credit.sender?.name || '已刪除使用者'}</div>
                                       <div className="text-xs text-muted-foreground">
-                                        {credit.sender?.department?.name || '未知部門'}
+                                        {credit.sender?.department?.name || '未指派部門'}
                                       </div>
                                     </TableCell>
                                     <TableCell>
                                       <div className="font-medium">{credit.receiver?.name || '已刪除使用者'}</div>
                                       <div className="text-xs text-muted-foreground">
-                                        {credit.receiver?.department?.name || '未知部門'}
+                                        {credit.receiver?.department?.name || '未指派部門'}
                                       </div>
                                     </TableCell>
                                     <TableCell className="max-w-xs">{credit.reason}</TableCell>

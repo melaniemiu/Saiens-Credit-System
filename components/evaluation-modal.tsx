@@ -8,6 +8,13 @@ import { Award, BookOpen, User, Calendar, Target, Star } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { skillApi } from "@/lib/api"
 
+// Helper function to safely get category name
+const getCategoryName = (category: string | { id: string; name: string; color?: string; icon?: string } | undefined): string => {
+  if (!category) return '未知分類'
+  if (typeof category === 'string') return category
+  return category.name || '未知分類'
+}
+
 interface EvaluationRequest {
   userSkillId: string
   skillName: string
@@ -18,7 +25,7 @@ interface EvaluationData {
   skill: {
     id: string
     name: string
-    category: string
+    category: string | { id: string; name: string; color?: string; icon?: string }
     learningMethod: string
     assessmentMethod: string
     syllabus?: string
@@ -220,7 +227,7 @@ export function EvaluationModal({ isOpen, onClose, evaluationRequest }: Evaluati
                     <span className="text-sm text-gray-500">技能類別</span>
                     <div className="font-medium">
                       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                        {evaluationData.skill.category}
+                        {getCategoryName(evaluationData.skill.category)}
                       </Badge>
                     </div>
                   </div>
