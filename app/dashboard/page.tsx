@@ -393,12 +393,7 @@ function DashboardContent() {
                           {isLoading ? (
                             <Skeleton className="h-8 w-20" />
                           ) : (
-                            <>
-                              {user?.remainingDailyCredits || 0}
-                              <span className="leading-normal text-size-sm text-slate-400 ml-2">
-                                / 5
-                              </span>
-                            </>
+                            <>{user?.remainingDailyCredits || 0}</>
                           )}
                         </SoftCardTitle>
                       </div>
