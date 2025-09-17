@@ -9,13 +9,13 @@ module.exports = {
       // Add dailyCreditLimit column only if it doesn't exist
       await queryInterface.addColumn('users', 'dailyCreditLimit', {
         type: Sequelize.INTEGER,
-        defaultValue: 5,
+        defaultValue: 20,
         allowNull: false
       });
 
       // Update existing users to have their own dailyCreditLimit
       await queryInterface.sequelize.query(
-        `UPDATE users SET "dailyCreditLimit" = 5 WHERE "dailyCreditLimit" IS NULL`
+        `UPDATE users SET "dailyCreditLimit" = 20 WHERE "dailyCreditLimit" IS NULL`
       );
     }
   },

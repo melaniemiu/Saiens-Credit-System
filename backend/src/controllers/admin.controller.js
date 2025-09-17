@@ -163,7 +163,7 @@ exports.createUser = async (req, res, next) => {
     }
 
     // Get default daily credit limit from config
-    const defaultDailyCreditLimit = await Config.getConfigValue('default_daily_credit_limit', 5);
+    const defaultDailyCreditLimit = await Config.getConfigValue('default_daily_credit_limit', 20);
     
     // Create the user
     const user = await User.create({
@@ -234,8 +234,8 @@ exports.updateUser = async (req, res, next) => {
       }
     }
 
-    // Validate job assignment if provided
-    if (jobId) {
+    // Validate job assignment if provided (but skip validation for "none" which means no job)
+    if (jobId && jobId !== "none") {
       const job = await Job.findByPk(jobId);
       if (!job) {
         return res.status(400).json({
@@ -262,7 +262,7 @@ exports.updateUser = async (req, res, next) => {
 
     // Only update jobId if it's provided (could be null to unassign)
     if (jobId !== undefined) {
-      updateData.jobId = jobId || null;
+      updateData.jobId = (jobId === "none" || !jobId) ? null : jobId;
     }
 
     await user.update(updateData);

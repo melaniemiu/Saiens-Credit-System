@@ -657,7 +657,7 @@ async function seed() {
         },
         {
           key: 'default_daily_credit_limit',
-          value: '5',
+          value: '20',
           type: 'number',
           description: 'Default daily credit limit for new users',
           category: 'credits',

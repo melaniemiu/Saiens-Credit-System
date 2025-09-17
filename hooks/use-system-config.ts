@@ -12,7 +12,7 @@ interface SystemConfig {
 const defaultConfig: SystemConfig = {
   systemName: '山恩互動表彰系統',
   useMockApi: false,
-  defaultDailyCreditLimit: 5,
+  defaultDailyCreditLimit: 20,
   maintenanceMode: false
 }
 

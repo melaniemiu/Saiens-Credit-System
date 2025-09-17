@@ -192,7 +192,7 @@ exports.createUser = async (req, res, next) => {
       email,
       departmentId,
       role: role || 'user',
-      remainingDailyCredits: process.env.DAILY_CREDIT_LIMIT || 5,
+      remainingDailyCredits: process.env.DAILY_CREDIT_LIMIT || 20,
       dailyCreditResetDate: new Date()
     });
     
